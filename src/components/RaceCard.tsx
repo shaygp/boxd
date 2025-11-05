@@ -170,10 +170,6 @@ const RaceCardComponent = ({
   return (
     <Card
       onClick={handleClick}
-      onTouchEnd={(e) => {
-        e.preventDefault();
-        handleClick();
-      }}
       className="group relative overflow-hidden bg-black/90 border-2 border-red-900/40 hover:border-racing-red hover:ring-2 hover:ring-racing-red hover:shadow-xl hover:shadow-red-500/30 transition-all duration-200 cursor-pointer touch-manipulation backdrop-blur-sm"
     >
       {/* Poster */}
@@ -240,7 +236,6 @@ const RaceCardComponent = ({
                   variant="secondary"
                   className="min-h-[44px] min-w-[44px] h-11 w-11 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm touch-manipulation border border-red-900/50 text-white"
                   onClick={(e) => e.stopPropagation()}
-                  onTouchEnd={(e) => e.stopPropagation()}
                 >
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
@@ -251,7 +246,6 @@ const RaceCardComponent = ({
               variant="secondary"
               className="min-h-[44px] min-w-[44px] h-11 w-11 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm touch-manipulation border border-red-900/50 text-white"
               onClick={handleWatchlistToggle}
-              onTouchEnd={handleWatchlistToggle}
             >
               <Eye className={`w-4 h-4 sm:w-5 sm:h-5 ${isInWatchlist ? 'fill-white' : ''}`} />
             </Button>

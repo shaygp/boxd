@@ -154,6 +154,21 @@ All colors MUST be HSL.
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
+
+  /* Reduce sensitivity on mobile by preventing accidental touches */
+  @media (pointer: coarse) {
+    * {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* Allow text selection in specific areas */
+    input, textarea, [contenteditable] {
+      -webkit-user-select: auto;
+      user-select: auto;
+    }
+  }
 }
 
 @layer utilities {
