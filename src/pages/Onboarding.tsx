@@ -163,7 +163,7 @@ const Onboarding = () => {
           <div className={`w-20 h-2 rounded ${step >= 3 ? 'bg-racing-red shadow-lg shadow-red-500/50' : 'bg-gray-800'}`} />
         </div>
 
-        <Card className="p-8 border-2 border-red-900/30 bg-black/40 backdrop-blur">
+        <Card className="p-8 border-2 border-red-900/30 bg-black/40 backdrop-blur text-white">
           {step === 1 && (
             <div className="space-y-6">
               <div className="text-center space-y-2">
@@ -171,20 +171,20 @@ const Onboarding = () => {
                 <p className="text-gray-400 font-bold uppercase tracking-wider text-sm">Select the drivers you support</p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {drivers.map(driver => (
                   <Button
                     key={driver.id}
                     variant={selectedDrivers.includes(driver.id) ? "default" : "outline"}
-                    className={`h-auto py-4 flex flex-col items-start font-black uppercase tracking-wider text-xs ${
+                    className={`h-auto py-4 px-3 flex flex-col items-start font-black uppercase tracking-wider text-[11px] min-h-[70px] ${
                       selectedDrivers.includes(driver.id)
-                        ? 'bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30'
-                        : 'border-2 border-red-900/50 text-white hover:bg-white/10'
+                        ? 'bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30 text-white'
+                        : 'border-2 border-red-900/50 bg-black/60 text-white hover:bg-white/10'
                     }`}
                     onClick={() => toggleDriver(driver.id)}
                   >
-                    <span className="font-black">{driver.name}</span>
-                    <span className="text-[10px] text-gray-400 normal-case font-bold">{driver.team}</span>
+                    <span className="font-black text-left break-words w-full text-white">{driver.name}</span>
+                    <span className="text-[10px] text-gray-400 normal-case font-bold text-left">{driver.team}</span>
                   </Button>
                 ))}
               </div>
@@ -212,14 +212,14 @@ const Onboarding = () => {
                   <Button
                     key={team.id}
                     variant={selectedTeams.includes(team.id) ? "default" : "outline"}
-                    className={`h-auto py-4 font-black uppercase tracking-wider text-xs ${
+                    className={`h-auto py-4 px-3 font-black uppercase tracking-wider text-[11px] min-h-[60px] ${
                       selectedTeams.includes(team.id)
-                        ? 'bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30'
-                        : 'border-2 border-red-900/50 text-white hover:bg-white/10'
+                        ? 'bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30 text-white'
+                        : 'border-2 border-red-900/50 bg-black/60 text-white hover:bg-white/10'
                     }`}
                     onClick={() => toggleTeam(team.id)}
                   >
-                    {team.name}
+                    <span className="break-words text-center w-full text-white">{team.name}</span>
                   </Button>
                 ))}
               </div>
@@ -242,24 +242,24 @@ const Onboarding = () => {
                 <p className="text-gray-400 font-bold uppercase tracking-wider text-sm">Which tracks excite you the most?</p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {circuits.map(circuit => (
                   <Button
                     key={circuit.id}
                     variant={selectedCircuits.includes(circuit.id) ? "default" : "outline"}
-                    className={`h-auto py-4 flex items-center gap-2 font-black uppercase tracking-wider text-xs ${
+                    className={`h-auto py-4 px-3 flex items-center justify-start gap-2 font-black uppercase tracking-wider text-[11px] min-h-[60px] ${
                       selectedCircuits.includes(circuit.id)
-                        ? 'bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30'
-                        : 'border-2 border-red-900/50 text-white hover:bg-white/10'
+                        ? 'bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30 text-white'
+                        : 'border-2 border-red-900/50 bg-black/60 text-white hover:bg-white/10'
                     }`}
                     onClick={() => toggleCircuit(circuit.id)}
                   >
                     <img
                       src={`https://flagcdn.com/w40/${circuit.country}.png`}
                       alt={circuit.country}
-                      className="w-6 h-4 object-cover rounded"
+                      className="w-6 h-4 object-cover rounded flex-shrink-0"
                     />
-                    <span>{circuit.name}</span>
+                    <span className="break-words text-left flex-1 text-white">{circuit.name}</span>
                   </Button>
                 ))}
               </div>

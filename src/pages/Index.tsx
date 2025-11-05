@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { getPublicRaceLogs } from "@/services/raceLogs";
 import { getCurrentSeasonRaces, getPosterUrl, getRaceWinner } from "@/services/f1Api";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { getGlobalActivity, Activity } from "@/services/activity";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const Index = () => {
   const tagFilter = searchParams.get('tag');
   const [currentRaces, setCurrentRaces] = useState<any[]>([]);
   const [popularRaces, setPopularRaces] = useState<any[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [winners, setWinners] = useState<{ [key: string]: string }>({});
@@ -24,7 +26,13 @@ const Index = () => {
         const f1Races = await getCurrentSeasonRaces();
 
         if (Array.isArray(f1Races) && f1Races.length > 0) {
-          const racesToShow = f1Races.slice(0, 6);
+          // Sort races by date in descending order (most recent first)
+          const sortedRaces = [...f1Races].sort((a, b) =>
+            new Date(b.date_start).getTime() - new Date(a.date_start).getTime()
+          );
+
+          // Take the 6 most recent races
+          const racesToShow = sortedRaces.slice(0, 6);
           setCurrentRaces(racesToShow);
 
           // Fetch winners for past races (races that have already occurred) in parallel
@@ -56,6 +64,12 @@ const Index = () => {
         }
 
         try {
+          // Fetch activities
+          const activityFeed = await getGlobalActivity(50);
+          console.log('[Index] Loaded activities:', activityFeed.length);
+          setActivities(activityFeed);
+
+          // Also fetch public logs for the race cards
           const publicLogs = await getPublicRaceLogs(100);
           if (Array.isArray(publicLogs) && publicLogs.length > 0) {
             // Filter by tag if present
@@ -161,10 +175,10 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b-2 border-red-900/50">
             <div>
               <div className="inline-block px-4 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
-                <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">CURRENT SEASON</span>
+                <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">LATEST RACES</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">2025 CALENDAR</h2>
-              <p className="text-xs sm:text-sm text-gray-300 mt-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">F1 Grand Prix Schedule</p>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">RECENT GRANDS PRIX</h2>
+              <p className="text-xs sm:text-sm text-gray-300 mt-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Most Recent F1 Races</p>
             </div>
             <Button
               variant="outline"

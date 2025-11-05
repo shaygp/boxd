@@ -379,35 +379,35 @@ const Profile = () => {
                   return fullLog && fullLog.rating > 0;
                 })
                 .map((race) => (
-                  <Card key={race.id} className="p-6 border-2 border-red-900/30 bg-black/40 backdrop-blur hover:ring-2 hover:ring-racing-red transition-all">
+                  <Card key={race.id} className="p-6 border-2 border-red-900/40 bg-black/90 backdrop-blur hover:ring-2 hover:ring-racing-red transition-all">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-black/60 border-2 border-racing-red/40 flex items-center justify-center">
                         {profile?.photoURL ? (
                           <img src={profile.photoURL} alt={profile.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="text-lg font-bold">
+                          <div className="text-lg font-bold text-white">
                             {(profile?.name || profile?.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span className="font-semibold">{profile?.name || profile?.email?.split('@')[0]}</span>
-                          <span className="text-muted-foreground text-sm">reviewed</span>
+                          <span className="font-bold text-white">{profile?.name || profile?.email?.split('@')[0]}</span>
+                          <span className="text-gray-300 text-sm font-bold">reviewed</span>
                           <span
-                            className="font-semibold hover:text-racing-red cursor-pointer"
+                            className="font-bold text-white hover:text-racing-red cursor-pointer"
                             onClick={() => navigate(`/race/${race.season}/${race.round}`)}
                           >
                             {race.season} {race.gpName}
                           </span>
                           {race.rating && (
                             <div className="flex items-center gap-1 ml-auto">
-                              <Star className="w-4 h-4 fill-racing-red text-racing-red" />
-                              <span className="text-sm font-semibold">{race.rating.toFixed(1)}</span>
+                              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                              <span className="text-sm font-bold text-white">{race.rating.toFixed(1)}</span>
                             </div>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">
+                        <p className="text-sm text-gray-300 mb-2 font-bold">
                           Watched at {race.circuit} on {new Date(race.date).toLocaleDateString()}
                         </p>
                       </div>
@@ -431,19 +431,19 @@ const Profile = () => {
                 {lists.map((list) => (
                   <Card
                     key={list.id}
-                    className="p-6 hover:ring-2 hover:ring-racing-red border-2 border-red-900/30 bg-black/40 backdrop-blur transition-all cursor-pointer"
+                    className="p-6 hover:ring-2 hover:ring-racing-red border-2 border-red-900/40 bg-black/90 backdrop-blur transition-all cursor-pointer"
                     onClick={() => navigate(`/list/${list.id}`)}
                   >
                     <div className="flex items-start gap-3 mb-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-racing-red/20 to-racing-red/5 rounded-xl flex items-center justify-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-racing-red/20 to-racing-red/5 rounded-xl flex items-center justify-center border-2 border-racing-red/40">
                         <List className="w-6 h-6 text-racing-red" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold text-lg">{list.title}</h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{list.description}</p>
+                        <h3 className="font-bold text-lg text-white">{list.title}</h3>
+                        <p className="text-sm text-gray-300 line-clamp-2 font-bold">{list.description}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground pt-3 border-t">
+                    <div className="flex items-center gap-4 text-sm text-gray-300 pt-3 border-t border-red-900/40 font-bold">
                       <span>{list.races?.length || 0} races</span>
                       <div className="flex items-center gap-1">
                         <Heart className="w-4 h-4" />
@@ -523,20 +523,20 @@ const Profile = () => {
             ) : followers.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {followers.map((follower) => (
-                  <Card key={follower.id} className="p-4 border-2 border-red-900/30 bg-black/40 backdrop-blur">
+                  <Card key={follower.id} className="p-4 border-2 border-red-900/40 bg-black/90 backdrop-blur">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                      <div className="w-12 h-12 rounded-full bg-black/60 border-2 border-racing-red/40 flex items-center justify-center overflow-hidden">
                         {follower.photoURL ? (
                           <img src={follower.photoURL} alt={follower.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="text-lg font-bold">
+                          <div className="text-lg font-bold text-white">
                             {(follower.name || follower.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{follower.name || follower.email?.split('@')[0]}</p>
-                        <p className="text-sm text-muted-foreground truncate">@{follower.email?.split('@')[0]}</p>
+                        <p className="font-bold truncate text-white">{follower.name || follower.email?.split('@')[0]}</p>
+                        <p className="text-sm text-gray-300 truncate font-bold">@{follower.email?.split('@')[0]}</p>
                       </div>
                     </div>
                     <Button
@@ -565,20 +565,20 @@ const Profile = () => {
             ) : following.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {following.map((followedUser) => (
-                  <Card key={followedUser.id} className="p-4 border-2 border-red-900/30 bg-black/40 backdrop-blur">
+                  <Card key={followedUser.id} className="p-4 border-2 border-red-900/40 bg-black/90 backdrop-blur">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                      <div className="w-12 h-12 rounded-full bg-black/60 border-2 border-racing-red/40 flex items-center justify-center overflow-hidden">
                         {followedUser.photoURL ? (
                           <img src={followedUser.photoURL} alt={followedUser.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="text-lg font-bold">
+                          <div className="text-lg font-bold text-white">
                             {(followedUser.name || followedUser.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{followedUser.name || followedUser.email?.split('@')[0]}</p>
-                        <p className="text-sm text-muted-foreground truncate">@{followedUser.email?.split('@')[0]}</p>
+                        <p className="font-bold truncate text-white">{followedUser.name || followedUser.email?.split('@')[0]}</p>
+                        <p className="text-sm text-gray-300 truncate font-bold">@{followedUser.email?.split('@')[0]}</p>
                       </div>
                     </div>
                     <Button

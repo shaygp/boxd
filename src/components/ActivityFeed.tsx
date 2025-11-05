@@ -18,12 +18,15 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
 
   const loadActivities = async () => {
     try {
+      console.log('[ActivityFeed] Loading activities, feedType:', feedType, 'limit:', limit);
       const data = feedType === 'following'
         ? await getFollowingActivity(limit)
         : await getGlobalActivity(limit);
+      console.log('[ActivityFeed] Loaded activities:', data.length, 'activities');
       setActivities(data);
     } catch (error: any) {
-      console.error('Error loading activities:', error);
+      console.error('[ActivityFeed] Error loading activities:', error);
+      console.error('[ActivityFeed] Error details:', error.message);
     } finally {
       setLoading(false);
     }

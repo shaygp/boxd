@@ -122,6 +122,8 @@ All colors MUST be HSL.
 
   html {
     @apply dark;
+    /* Base font size - smaller for more compact UI */
+    font-size: 14px;
     /* Prevent double-tap zoom on iOS */
     touch-action: manipulation;
     /* Prevent horizontal overflow */

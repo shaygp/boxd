@@ -22,6 +22,7 @@ interface RaceCardProps {
   country?: string;
   showWatchlistButton?: boolean;
   winner?: string;
+  onWatchlistChange?: () => void;
 }
 
 const RaceCardComponent = ({
@@ -37,6 +38,7 @@ const RaceCardComponent = ({
   country,
   showWatchlistButton = true,
   winner,
+  onWatchlistChange,
 }: RaceCardProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -97,6 +99,13 @@ const RaceCardComponent = ({
       navigate(`/race/${id}`);
     } else if (season && round) {
       navigate(`/race/${season}/${round}`);
+    } else {
+      console.error('[RaceCard] Cannot navigate - missing id and season/round', { id, season, round });
+      toast({
+        title: "Error",
+        description: "Cannot view race details - missing information",
+        variant: "destructive"
+      });
     }
   };
 
@@ -120,6 +129,10 @@ const RaceCardComponent = ({
         setIsInWatchlist(false);
         setWatchlistId(null);
         toast({ title: "Removed from watchlist" });
+        // Notify parent component about the change
+        if (onWatchlistChange) {
+          onWatchlistChange();
+        }
       } else {
         console.log('[RaceCard] Adding to watchlist:', { season, gpName, circuit, date });
         const newId = await addToWatchlist({
@@ -136,6 +149,10 @@ const RaceCardComponent = ({
         setIsInWatchlist(true);
         setWatchlistId(newId);
         toast({ title: "Added to watchlist" });
+        // Notify parent component about the change
+        if (onWatchlistChange) {
+          onWatchlistChange();
+        }
       }
     } catch (error: any) {
       console.error('[RaceCard] Error toggling watchlist:', error);
@@ -182,10 +199,10 @@ const RaceCardComponent = ({
               </div>
             )}
             <div className="text-center space-y-1">
-              <div className="text-base sm:text-xl md:text-2xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season}</div>
-              <div className="text-[10px] sm:text-xs font-black line-clamp-2 px-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</div>
+              <div className="text-lg sm:text-xl md:text-2xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season}</div>
+              <div className="text-xs sm:text-sm font-black line-clamp-2 px-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</div>
               {displayWinner && (
-                <div className="text-[10px] sm:text-xs font-black text-racing-red line-clamp-1 px-1 flex items-center justify-center gap-1 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+                <div className="text-xs sm:text-sm font-black text-racing-red line-clamp-1 px-1 flex items-center justify-center gap-1 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
                   <span>🏆</span>
                   <span className="uppercase tracking-wider">{displayWinner}</span>
                 </div>
@@ -196,8 +213,8 @@ const RaceCardComponent = ({
 
         {/* Rating overlay */}
         {rating && (
-          <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 bg-black/90 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded border border-racing-red/50 flex items-center gap-0.5 sm:gap-1">
-            <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-racing-red text-racing-red drop-shadow-[0_0_4px_rgba(220,38,38,0.8)]" />
+          <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 bg-black/90 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded border border-yellow-500/50 flex items-center gap-0.5 sm:gap-1">
+            <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-yellow-500 text-yellow-500 drop-shadow-[0_0_4px_rgba(234,179,8,0.8)]" />
             <span className="text-[10px] sm:text-xs font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{rating.toFixed(1)}</span>
           </div>
         )}
@@ -221,32 +238,32 @@ const RaceCardComponent = ({
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="h-6 w-6 sm:h-8 sm:w-8 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm touch-manipulation border border-red-900/50 text-white"
+                  className="min-h-[44px] min-w-[44px] h-11 w-11 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm touch-manipulation border border-red-900/50 text-white"
                   onClick={(e) => e.stopPropagation()}
                   onTouchEnd={(e) => e.stopPropagation()}
                 >
-                  <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
               }
             />
             <Button
               size="icon"
               variant="secondary"
-              className="h-6 w-6 sm:h-8 sm:w-8 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm touch-manipulation border border-red-900/50 text-white"
+              className="min-h-[44px] min-w-[44px] h-11 w-11 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm touch-manipulation border border-red-900/50 text-white"
               onClick={handleWatchlistToggle}
               onTouchEnd={handleWatchlistToggle}
             >
-              <Eye className={`w-3 h-3 sm:w-4 sm:h-4 ${isInWatchlist ? 'fill-white' : ''}`} />
+              <Eye className={`w-4 h-4 sm:w-5 sm:h-5 ${isInWatchlist ? 'fill-white' : ''}`} />
             </Button>
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div className="p-2 sm:p-3 text-center sm:text-left bg-gradient-to-b from-black/90 to-black border-t-2 border-red-900/40">
-        <h3 className="font-black text-xs sm:text-sm line-clamp-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</h3>
-        <p className="text-[10px] sm:text-xs text-gray-300 mt-0.5 sm:mt-1 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season} • ROUND {round}</p>
-        <p className="text-[10px] sm:text-xs text-gray-400 line-clamp-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{circuit}</p>
+      <div className="p-[1vh] sm:p-[1.5vh] text-center sm:text-left bg-gradient-to-b from-black/90 to-black border-t-2 border-red-900/40">
+        <h3 className="font-black text-sm sm:text-base line-clamp-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</h3>
+        <p className="text-xs sm:text-sm text-gray-300 mt-0.5 sm:mt-1 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season} • ROUND {round}</p>
+        <p className="text-xs sm:text-sm text-gray-400 line-clamp-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{circuit}</p>
       </div>
     </Card>
   );

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flag } from "lucide-react";
+import { Star } from "lucide-react";
 
 interface StarRatingProps {
   rating: number;
@@ -52,7 +52,7 @@ export const StarRating = ({
     lg: "h-12",
   };
 
-  const flagSizes = {
+  const starSizes = {
     sm: 16,
     md: 18,
     lg: 22,
@@ -60,22 +60,14 @@ export const StarRating = ({
 
   const getRatingColor = (position: number) => {
     if (displayRating >= position) {
-      // Each flag gets its own color in a gradient from green to red
-      const colors = [
-        "bg-emerald-500",  // 1 - Green
-        "bg-lime-500",     // 2 - Light green
-        "bg-yellow-500",   // 3 - Yellow
-        "bg-orange-500",   // 4 - Orange
-        "bg-racing-red",   // 5 - Red
-      ];
-      return colors[position - 1];
+      return "bg-yellow-500";  // Star color
     }
     return "bg-muted";
   };
 
   return (
     <div className="space-y-2">
-      {/* Flags */}
+      {/* Stars */}
       <div className="flex items-center gap-2 sm:gap-2.5">
         {[1, 2, 3, 4, 5].map((position) => {
           const isActive = displayRating >= position;
@@ -107,23 +99,14 @@ export const StarRating = ({
                 style={{ width: `${fillPercentage}%` }}
               />
 
-              {/* Flag icon */}
+              {/* Star icon */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <Flag
-                  size={flagSizes[size]}
+                <Star
+                  size={starSizes[size]}
                   className={isActive || isPartial ? 'text-black' : 'text-muted-foreground'}
                   fill={isActive || isPartial ? 'currentColor' : 'none'}
                   strokeWidth={2.5}
                 />
-              </div>
-
-              {/* Position number */}
-              <div className="absolute bottom-1 right-1 pointer-events-none">
-                <span className={`text-[10px] sm:text-xs font-bold ${
-                  isActive || isPartial ? 'text-black/80' : 'text-muted-foreground/70'
-                }`}>
-                  {position}
-                </span>
               </div>
             </div>
           );
@@ -133,7 +116,7 @@ export const StarRating = ({
       {/* Rating Display */}
       {(readonly || displayRating > 0) && (
         <div className="flex items-baseline justify-center sm:justify-start gap-1.5">
-          <span className="text-3xl sm:text-4xl font-bold text-racing-red">{displayRating.toFixed(1)}</span>
+          <span className="text-3xl sm:text-4xl font-bold text-yellow-500">{displayRating.toFixed(1)}</span>
           <span className="text-lg sm:text-xl font-medium text-muted-foreground">/ 5.0</span>
         </div>
       )}

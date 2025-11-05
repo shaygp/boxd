@@ -51,13 +51,11 @@ export const LogRaceDialog = ({
   const setOpen = onOpenChange || setInternalOpen;
   const [date, setDate] = useState<Date>(new Date());
   const [rating, setRating] = useState(0);
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
   const [spoiler, setSpoiler] = useState(false);
   const [raceName, setRaceName] = useState("");
   const [raceLocation, setRaceLocation] = useState("");
   const [raceYear, setRaceYear] = useState(new Date().getFullYear());
-  const [sessionType, setSessionType] = useState<'race' | 'sprint' | 'qualifying' | 'highlights'>('race');
+  const [sessionType, setSessionType] = useState<'race' | 'sprint' | 'qualifying' | 'sprintQualifying'>('race');
   const [watchMode, setWatchMode] = useState<'live' | 'replay' | 'tvBroadcast' | 'highlights' | 'attendedInPerson'>('live');
   const [review, setReview] = useState("");
   const [companions, setCompanions] = useState<string[]>([]);
@@ -97,7 +95,6 @@ export const LogRaceDialog = ({
       setRaceYear(existingLog.raceYear || new Date().getFullYear());
       setRating(existingLog.rating || 0);
       setReview(existingLog.review || '');
-      setTags(existingLog.tags || []);
       setSessionType(existingLog.sessionType || 'race');
       setWatchMode(existingLog.watchMode || 'live');
       setVisibility(existingLog.visibility || 'public');
@@ -134,8 +131,6 @@ export const LogRaceDialog = ({
       if (defaultYear) setRaceYear(defaultYear);
     }
   }, [open, defaultRaceName, defaultCircuit, defaultYear, defaultCountryCode, editMode]);
-
-  const suggestedTags = ["rain", "safety-car", "overtake", "pitstop-chaos", "attended", "late-drama", "dnf"];
 
   const drivers2025 = [
     { id: "verstappen", name: "Max Verstappen", team: "Red Bull Racing" },
@@ -219,17 +214,6 @@ export const LogRaceDialog = ({
     setCompanions(companions.filter(c => c !== name));
   };
 
-  const addTag = (tag: string) => {
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
-      setTagInput("");
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    setTags(tags.filter(t => t !== tag));
-  };
-
   const handleSubmit = async () => {
     if (!user || !raceName || !raceLocation || !driverOfTheDay) {
       toast({
@@ -265,7 +249,6 @@ export const LogRaceDialog = ({
         watchMode,
         rating,
         review,
-        tags,
         companions,
         driverOfTheDay,
         raceWinner,
@@ -290,13 +273,16 @@ export const LogRaceDialog = ({
 
         // Only create activity for new public logs
         if (visibility === 'public') {
-          console.log('[LogRaceDialog] Creating activity for public log');
-          await createActivity({
-            type: review && review.length > 0 ? 'review' : 'log',
-            targetId: logId,
-            targetType: 'raceLog',
-            content: review && review.length > 0 ? review.substring(0, 100) : `${raceName} - ${raceYear}`,
-          });
+          try {
+            await createActivity({
+              type: review && review.length > 0 ? 'review' : 'log',
+              targetId: logId,
+              targetType: 'raceLog',
+              content: review && review.length > 0 ? review.substring(0, 100) : `${raceName} - ${raceYear}`,
+            });
+          } catch (activityError) {
+            console.error('Failed to create activity:', activityError);
+          }
         }
       }
 
@@ -309,7 +295,6 @@ export const LogRaceDialog = ({
       setCountryCode(undefined);
       setRating(0);
       setReview("");
-      setTags([]);
       setCompanions([]);
       setCompanionInput("");
       setDriverOfTheDay("");
@@ -336,17 +321,17 @@ export const LogRaceDialog = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-[#0a0a0a] border-2 border-racing-red/40 w-[95vw] sm:w-full">
-        <DialogHeader className="border-b-2 border-red-900/50 pb-4">
-          <DialogTitle className="text-2xl font-black flex items-center gap-2 uppercase tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-            <div className="w-1 h-8 bg-racing-red rounded-full shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col bg-[#0a0a0a] border-2 border-racing-red/40 w-[95vw] sm:w-full p-0">
+        <DialogHeader className="border-b-2 border-red-900/50 pb-3 px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
+          <DialogTitle className="text-base sm:text-xl font-black flex items-center gap-2 uppercase tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            <div className="w-1 h-6 bg-racing-red rounded-full shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
             {editMode ? 'Edit Race Log' : 'Log a Race'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-6">
+        <div className="space-y-4 py-4 px-4 sm:px-6 overflow-y-auto flex-1 overscroll-contain">
           {/* Race Info Section */}
-          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-6 space-y-4">
+          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-3 sm:p-6 space-y-3 sm:space-y-4">
             <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
               <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
               Race Information
@@ -392,10 +377,10 @@ export const LogRaceDialog = ({
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px] bg-black/95 border-2 border-red-900/40">
                     {circuits.map((circuit) => (
-                      <SelectItem key={circuit.location} value={circuit.location}>
+                      <SelectItem key={circuit.location} value={circuit.location} className="text-white hover:bg-racing-red/20">
                         <div className="flex flex-col">
-                          <span className="font-medium">{circuit.name}</span>
-                          <span className="text-xs text-muted-foreground">{circuit.location}</span>
+                          <span className="font-medium text-white">{circuit.name}</span>
+                          <span className="text-xs text-gray-400">{circuit.location}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -448,7 +433,7 @@ export const LogRaceDialog = ({
                     }
 
                     return years.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
+                      <SelectItem key={year} value={year.toString()} className="text-white hover:bg-racing-red/20 cursor-pointer">
                         {year}
                       </SelectItem>
                     ));
@@ -456,78 +441,25 @@ export const LogRaceDialog = ({
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Viewing Details Section */}
-          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-6 space-y-4">
-            <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
-              <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
-              Viewing Details
-            </h3>
-
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-gray-300 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Date Watched *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white",
-                        !date && "text-gray-400"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-black/95 border-2 border-red-900/40" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={(d) => d && setDate(d)}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-gray-300 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Session</Label>
-                <Select value={sessionType} onValueChange={(v: any) => setSessionType(v)}>
-                  <SelectTrigger className="border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-black/95 border-2 border-red-900/40">
-                    <SelectItem value="race">🏁 Race</SelectItem>
-                    <SelectItem value="sprint">⚡ Sprint</SelectItem>
-                    <SelectItem value="qualifying">🏎️ Qualifying</SelectItem>
-                    <SelectItem value="highlights">📺 Highlights</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-gray-300 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Watch Mode</Label>
-                <Select value={watchMode} onValueChange={(v: any) => setWatchMode(v)}>
-                  <SelectTrigger className="border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-black/95 border-2 border-red-900/40">
-                    <SelectItem value="live">🔴 Live</SelectItem>
-                    <SelectItem value="replay">▶️ Replay</SelectItem>
-                    <SelectItem value="tvBroadcast">📡 TV Broadcast</SelectItem>
-                    <SelectItem value="highlights">✨ Highlights</SelectItem>
-                    <SelectItem value="attendedInPerson">🎟️ Attended in Person</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-gray-300 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Session *</Label>
+              <Select value={sessionType} onValueChange={(v: any) => setSessionType(v)}>
+                <SelectTrigger className="border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-black border-2 border-racing-red/60 shadow-xl">
+                  <SelectItem value="race" className="text-white hover:bg-racing-red/30 focus:bg-racing-red/30 cursor-pointer">🏁 Race</SelectItem>
+                  <SelectItem value="sprint" className="text-white hover:bg-racing-red/30 focus:bg-racing-red/30 cursor-pointer">⚡ Sprint</SelectItem>
+                  <SelectItem value="qualifying" className="text-white hover:bg-racing-red/30 focus:bg-racing-red/30 cursor-pointer">🏎️ Qualifying</SelectItem>
+                  <SelectItem value="sprintQualifying" className="text-white hover:bg-racing-red/30 focus:bg-racing-red/30 cursor-pointer">🏁 Sprint Qualifying</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {/* Rating Section */}
-          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-6 space-y-4">
+          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-3 sm:p-6 space-y-3 sm:space-y-4">
             <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
               <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
               Your Rating
@@ -535,36 +467,8 @@ export const LogRaceDialog = ({
             <StarRating rating={rating} onRatingChange={setRating} />
           </div>
 
-          {/* Driver of the Day Section */}
-          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-6 space-y-4">
-            <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
-              <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
-              Driver of the Day *
-            </h3>
-            <Select
-              value={driverOfTheDay}
-              onValueChange={setDriverOfTheDay}
-              required
-            >
-              <SelectTrigger className="border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white">
-                <SelectValue placeholder="Select a driver..." />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px] bg-black/95 border-2 border-red-900/40">
-                {drivers2025.map((driver) => (
-                  <SelectItem key={driver.id} value={driver.name}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{driver.name}</span>
-                      <span className="text-xs text-muted-foreground">{driver.team}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-gray-400 font-bold">Who impressed you most during this race?</p>
-          </div>
-
           {/* Review Section */}
-          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-6 space-y-4">
+          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-3 sm:p-6 space-y-3 sm:space-y-4">
             <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
               <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
               Review (Optional)
@@ -587,33 +491,64 @@ export const LogRaceDialog = ({
             </div>
           </div>
 
-          {/* Tags & Social Section */}
-          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-6 space-y-6">
-            <div className="space-y-4">
-              <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
-                <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
-                Tags
-              </h3>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {tags.map(tag => (
-                  <Badge key={tag} variant="secondary" className="gap-1 hover:bg-racing-red hover:text-white hover:border-racing-red transition-colors border-2 bg-black/60 font-bold uppercase">
-                    #{tag}
-                    <X
-                      className="w-3 h-3 cursor-pointer"
-                      onClick={() => removeTag(tag)}
-                    />
-                  </Badge>
+          {/* Driver of the Day Section */}
+          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-3 sm:p-6 space-y-3 sm:space-y-4">
+            <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
+              <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+              Driver of the Day *
+            </h3>
+            <Select
+              value={driverOfTheDay}
+              onValueChange={setDriverOfTheDay}
+              required
+            >
+              <SelectTrigger className="border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white">
+                <SelectValue placeholder="Select a driver..." />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px] bg-black/95 border-2 border-red-900/40">
+                {drivers2025.map((driver) => (
+                  <SelectItem key={driver.id} value={driver.name} className="text-white hover:bg-racing-red/20">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-white">{driver.name}</span>
+                      <span className="text-xs text-gray-400">{driver.team}</span>
+                    </div>
+                  </SelectItem>
                 ))}
-              </div>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-400 font-bold">Who impressed you most during this race?</p>
+          </div>
+
+          {/* Watched With Section */}
+          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-3 sm:p-6 space-y-3 sm:space-y-4">
+            <div>
+              <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 mb-1 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
+                <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+                Watched With
+              </h3>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tag up to 2 people</p>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {companions.map(companion => (
+                <Badge key={companion} variant="secondary" className="gap-1 hover:bg-racing-red hover:text-white hover:border-racing-red transition-colors border-2 bg-black/60 font-bold uppercase">
+                  @{companion}
+                  <X
+                    className="w-3 h-3 cursor-pointer"
+                    onClick={() => removeCompanion(companion)}
+                  />
+                </Badge>
+              ))}
+            </div>
+            {companions.length < 2 && (
               <div className="flex gap-2">
                 <Input
-                  placeholder="Add custom tag"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
+                  placeholder="Username"
+                  value={companionInput}
+                  onChange={(e) => setCompanionInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      addTag(tagInput);
+                      addCompanion(companionInput);
                     }
                   }}
                   className="border-2 border-red-900/40 focus:border-racing-red bg-black/60 text-white"
@@ -621,105 +556,30 @@ export const LogRaceDialog = ({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => addTag(tagInput)}
+                  onClick={() => addCompanion(companionInput)}
+                  disabled={!companionInput.trim()}
                   className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-bold uppercase"
                 >
                   Add
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <p className="text-xs text-gray-400 w-full mb-1 font-bold uppercase tracking-wider">Quick tags:</p>
-                {suggestedTags.map(tag => (
-                  <Badge
-                    key={tag}
-                    variant="outline"
-                    className="cursor-pointer hover:bg-racing-red hover:text-white hover:border-racing-red transition-colors border-2 border-red-900/40 bg-black/40 font-bold uppercase"
-                    onClick={() => addTag(tag)}
-                  >
-                    #{tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-t-2 border-red-900/50 pt-6 space-y-4">
-              <div>
-                <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 mb-1 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
-                  <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
-                  Watched With
-                </h3>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tag up to 2 people</p>
-              </div>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {companions.map(companion => (
-                  <Badge key={companion} variant="secondary" className="gap-1 hover:bg-racing-red hover:text-white hover:border-racing-red transition-colors border-2 bg-black/60 font-bold uppercase">
-                    @{companion}
-                    <X
-                      className="w-3 h-3 cursor-pointer"
-                      onClick={() => removeCompanion(companion)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-              {companions.length < 2 && (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Username"
-                    value={companionInput}
-                    onChange={(e) => setCompanionInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addCompanion(companionInput);
-                      }
-                    }}
-                    className="border-2 border-red-900/40 focus:border-racing-red bg-black/60 text-white"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => addCompanion(companionInput)}
-                    disabled={!companionInput.trim()}
-                    className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-bold uppercase"
-                  >
-                    Add
-                  </Button>
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* Visibility Section */}
-          <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-6 space-y-4">
-            <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
-              <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
-              Privacy
-            </h3>
-            <Select value={visibility} onValueChange={(v: any) => setVisibility(v)}>
-              <SelectTrigger className="border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-black/95 border-2 border-red-900/40">
-                <SelectItem value="public">🌍 Public - Everyone can see</SelectItem>
-                <SelectItem value="friends">👥 Friends Only</SelectItem>
-                <SelectItem value="private">🔒 Private - Only you</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t-2 border-red-900/50">
+        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 p-4 sm:p-6 border-t-2 border-red-900/50 flex-shrink-0 bg-[#0a0a0a]">
           <Button
             variant="outline"
             onClick={() => setOpen(false)}
-            className="border-2 border-red-900/40 bg-black/60 text-white hover:bg-red-900/20 font-bold uppercase tracking-wider"
+            className="order-2 sm:order-1 border-2 border-red-900/40 bg-black/60 text-white hover:bg-red-900/20 font-bold uppercase tracking-wider h-11 px-6 w-full sm:w-auto"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={loading}
-            className="bg-racing-red hover:bg-red-600 text-white min-w-[120px] shadow-lg shadow-red-500/50 border-2 border-red-400 font-black uppercase tracking-wider"
+            className="order-1 sm:order-2 bg-racing-red hover:bg-red-600 text-white shadow-lg shadow-red-500/50 border-2 border-red-400 font-black uppercase tracking-wider h-11 px-6 w-full sm:w-auto"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -727,7 +587,7 @@ export const LogRaceDialog = ({
                 Saving...
               </span>
             ) : (
-              editMode ? '💾 Update Log' : '🏁 Save Log'
+              editMode ? 'Update' : 'Save'
             )}
           </Button>
         </div>
