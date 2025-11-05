@@ -318,10 +318,10 @@ const RaceDetail = () => {
   };
 
   return (
-    <div className="min-h-[100vh] min-h-[100dvh] bg-[#0a0a0a] racing-grid pb-[env(safe-area-inset-bottom,4rem)] lg:pb-0">
+    <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
       <Header />
 
-      <main className="container px-[4vw] py-[2vh] sm:py-[3vh] max-w-full">
+      <main className="container px-4 sm:px-6 py-6 sm:py-8 max-w-full">
         <div className="max-w-5xl mx-auto">
           {/* Main Content */}
           <div className="space-y-6">
@@ -373,13 +373,12 @@ const RaceDetail = () => {
                   <span>{new Date(race.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 </div>
 
-                {/* ICONS ONLY */}
+                {/* Action Icons */}
                 <div className="flex gap-2 justify-center md:justify-start mt-4">
                   <LogRaceDialog
                     trigger={
-                      <Button size="sm" className="gap-2 bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30 font-black uppercase tracking-wider">
+                      <Button size="icon" className="h-9 w-9 bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30">
                         <Plus className="w-4 h-4" />
-                        <span className="hidden xs:inline">Log</span>
                       </Button>
                     }
                     open={logDialogOpen}
@@ -403,31 +402,28 @@ const RaceDetail = () => {
                     raceLocation={race.circuit}
                     countryCode={race.countryCode}
                     trigger={
-                      <Button size="sm" variant="outline" className="gap-2 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+                      <Button size="icon" variant="outline" className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
                         <List className="w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />
-                        <span className="hidden sm:inline">Add to List</span>
                       </Button>
                     }
                   />
                   <Button
-                    size="sm"
+                    size="icon"
                     variant="outline"
-                    className="gap-2 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]"
+                    className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]"
                     onClick={handleWatchlistToggle}
                   >
                     <Eye className={`w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${isInWatchlist ? 'fill-current' : ''}`} />
-                    <span className="hidden sm:inline">{isInWatchlist ? 'In Watchlist' : 'Watchlist'}</span>
                   </Button>
                   {id && (
-                    <Button size="sm" variant="outline" className="gap-2 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" onClick={handleLikeRace}>
+                    <Button size="icon" variant="outline" className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" onClick={handleLikeRace}>
                       <Heart className={`w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${isLiked ? 'fill-racing-red text-racing-red' : ''}`} />
-                      <span className="hidden xs:inline">{isLiked ? 'Liked' : 'Like'}</span>
                     </Button>
                   )}
-                  <Button variant="outline" size="icon" className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" onClick={handleBookmark}>
+                  <Button variant="outline" size="icon" className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" onClick={handleBookmark}>
                     <Bookmark className={`w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${isBookmarked ? 'fill-current' : ''}`} />
                   </Button>
-                  <Button variant="outline" size="icon" className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" onClick={handleShare}>
+                  <Button variant="outline" size="icon" className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" onClick={handleShare}>
                     <Share2 className="w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />
                   </Button>
                 </div>

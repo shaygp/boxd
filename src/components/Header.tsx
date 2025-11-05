@@ -135,7 +135,7 @@ export const Header = () => {
 
         <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
           <form onSubmit={handleSearch} className="relative hidden lg:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 text-white" />
             <Input
               type="search"
               placeholder="Search races, users..."

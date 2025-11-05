@@ -115,7 +115,7 @@ export const StarRating = ({
 
       {/* Rating Display */}
       {(readonly || displayRating > 0) && (
-        <div className="flex items-baseline justify-center sm:justify-start gap-1.5">
+        <div className="flex items-baseline justify-center gap-1.5">
           <span className="text-3xl sm:text-4xl font-bold text-yellow-500">{displayRating.toFixed(1)}</span>
           <span className="text-lg sm:text-xl font-medium text-muted-foreground">/ 5.0</span>
         </div>

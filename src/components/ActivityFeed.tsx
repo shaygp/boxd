@@ -57,15 +57,25 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                 }
               }
 
-              return {
+              const activity = {
                 id: docSnapshot.id,
                 ...data,
                 username,
                 userAvatar,
                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
               } as Activity;
+
+              return activity;
             })
           );
+
+          // Log the first few activities to verify ordering
+          console.log('[ActivityFeed] First 3 activities:', activities.slice(0, 3).map(a => ({
+            id: a.id,
+            type: a.type,
+            content: a.content?.substring(0, 30),
+            createdAt: a.createdAt
+          })));
 
           setActivities(activities);
           setLoading(false);
