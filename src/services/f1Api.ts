@@ -1,5 +1,27 @@
 const OPENF1_BASE = 'https://api.openf1.org/v1';
 const JOLPICA_BASE = 'https://api.jolpi.ca/ergast/f1';
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+// Helper to make CORS-friendly requests using AllOrigins proxy
+const fetchWithCORS = async (url: string, signal?: AbortSignal) => {
+  // Use AllOrigins CORS proxy to avoid CORS issues
+  const proxiedUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+  console.log(`[F1 API] Fetching via AllOrigins proxy: ${proxiedUrl}`);
+
+  const response = await fetch(proxiedUrl, {
+    signal,
+    headers: {
+      'Accept': 'application/json',
+    }
+  });
+
+  if (!response.ok) {
+    console.warn(`[F1 API] Proxy returned HTTP ${response.status}: ${response.statusText}`);
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  return response;
+};
 
 export interface F1Meeting {
   circuit_key?: number;
@@ -74,11 +96,16 @@ export const getCurrentSeasonRaces = async (): Promise<F1Meeting[]> => {
   const year = new Date().getFullYear();
   console.log(`[F1 API] Fetching races for year ${year}...`);
 
-  // Try OpenF1 first
+  // Try OpenF1 first with short timeout (2 seconds)
   try {
     const url = `${OPENF1_BASE}/meetings?year=${year}`;
     console.log(`[F1 API] Trying OpenF1: ${url}`);
-    const response = await fetch(url);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000); // 2 second timeout - fail fast
+
+    const response = await fetchWithCORS(url, controller.signal);
+    clearTimeout(timeout);
 
     if (response.ok) {
       const data = await response.json();
@@ -96,14 +123,19 @@ export const getCurrentSeasonRaces = async (): Promise<F1Meeting[]> => {
       }
     }
   } catch (error) {
-    console.warn('[F1 API] OpenF1 failed:', error);
+    console.warn('[F1 API] OpenF1 failed or timed out after 2s, falling back to Jolpica:', error);
   }
 
-  // Fallback to Jolpica/Ergast
+  // Fallback to Jolpica/Ergast with CORS proxy
   try {
     const url = `${JOLPICA_BASE}/${year}.json`;
     console.log(`[F1 API] Trying Jolpica: ${url}`);
-    const response = await fetch(url);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout for Jolpica
+
+    const response = await fetchWithCORS(url, controller.signal);
+    clearTimeout(timeout);
 
     if (response.ok) {
       const data = await response.json();
@@ -129,11 +161,16 @@ export const getCurrentSeasonRaces = async (): Promise<F1Meeting[]> => {
 export const getRacesBySeason = async (year: number): Promise<F1Meeting[]> => {
   console.log(`[F1 API] getRacesBySeason for year ${year}`);
 
-  // Try OpenF1 first
+  // Try OpenF1 first with short timeout (2 seconds)
   try {
     const url = `${OPENF1_BASE}/meetings?year=${year}`;
     console.log(`[F1 API] Trying OpenF1: ${url}`);
-    const response = await fetch(url);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000); // 2 second timeout - fail fast
+
+    const response = await fetchWithCORS(url, controller.signal);
+    clearTimeout(timeout);
 
     if (response.ok) {
       const data = await response.json();
@@ -151,14 +188,19 @@ export const getRacesBySeason = async (year: number): Promise<F1Meeting[]> => {
       }
     }
   } catch (error) {
-    console.warn('[F1 API] OpenF1 failed:', error);
+    console.warn('[F1 API] OpenF1 failed or timed out after 2s, falling back to Jolpica:', error);
   }
 
-  // Fallback to Jolpica/Ergast
+  // Fallback to Jolpica/Ergast with CORS proxy
   try {
     const url = `${JOLPICA_BASE}/${year}.json`;
     console.log(`[F1 API] Trying Jolpica: ${url}`);
-    const response = await fetch(url);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout for Jolpica
+
+    const response = await fetchWithCORS(url, controller.signal);
+    clearTimeout(timeout);
 
     if (response.ok) {
       const data = await response.json();
@@ -231,6 +273,7 @@ const countryCodeMap: { [key: string]: string } = {
   'AUT': 'at',
   'AZE': 'az',
   'BEL': 'be',
+  'BHR': 'bh',
   'BRN': 'bh',
   'BRA': 'br',
   'CAN': 'ca',

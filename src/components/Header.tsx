@@ -135,11 +135,11 @@ export const Header = () => {
 
         <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
           <form onSubmit={handleSearch} className="relative hidden lg:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 text-gray-400" />
             <Input
               type="search"
               placeholder="Search races, users..."
-              className="pl-9 lg:pl-11 w-48 xl:w-64 bg-muted/50 lg:h-11"
+              className="pl-9 lg:pl-11 w-48 xl:w-64 bg-black/60 border-2 border-red-900/50 text-white placeholder:text-gray-400 focus:border-racing-red lg:h-11"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

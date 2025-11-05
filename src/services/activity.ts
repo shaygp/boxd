@@ -167,43 +167,61 @@ export const getFollowingActivity = async (limitCount: number = 50) => {
 };
 
 export const getGlobalActivity = async (limitCount: number = 50) => {
-  const q = query(
-    activitiesCollection,
-    orderBy('createdAt', 'desc'),
-    limit(limitCount)
-  );
-  const snapshot = await getDocs(q);
+  try {
+    console.log('[activity.ts] Fetching global activities with limit:', limitCount);
+    const q = query(
+      activitiesCollection,
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+    const snapshot = await getDocs(q);
+    console.log('[activity.ts] Query returned', snapshot.docs.length, 'documents');
 
-  // Fetch user profiles for activities missing userAvatar
-  const activities = await Promise.all(
-    snapshot.docs.map(async (docSnapshot) => {
-      const data = docSnapshot.data();
-      let userAvatar = data.userAvatar || '';
-      let username = data.username || 'User';
+    // Fetch user profiles for activities missing userAvatar
+    const activities = await Promise.all(
+      snapshot.docs.map(async (docSnapshot) => {
+        const data = docSnapshot.data();
+        let userAvatar = data.userAvatar || '';
+        let username = data.username || 'User';
 
-      // If userAvatar is missing or empty, fetch from users collection
-      if (!userAvatar && data.userId) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', data.userId));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            userAvatar = userData.photoURL || '';
-            username = userData.name || username;
+        // If userAvatar is missing or empty, fetch from users collection
+        if (!userAvatar && data.userId) {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', data.userId));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              userAvatar = userData.photoURL || '';
+              username = userData.name || username;
+            }
+          } catch (error) {
+            console.error('[activity.ts] Error fetching user profile for activity:', error);
           }
-        } catch (error) {
-          console.error('Error fetching user profile for activity:', error);
         }
-      }
 
-      return {
-        id: docSnapshot.id,
-        ...data,
-        username,
-        userAvatar,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
-      } as Activity;
-    })
-  );
+        return {
+          id: docSnapshot.id,
+          ...data,
+          username,
+          userAvatar,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+        } as Activity;
+      })
+    );
 
-  return activities;
+    console.log('[activity.ts] Returning', activities.length, 'activities');
+    return activities;
+  } catch (error: any) {
+    console.error('[activity.ts] Error in getGlobalActivity:', error);
+    console.error('[activity.ts] Error message:', error.message);
+    console.error('[activity.ts] Error code:', error.code);
+
+    // If it's an index error, provide helpful message
+    if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+      console.error('[activity.ts] ⚠️ FIRESTORE INDEX REQUIRED');
+      console.error('[activity.ts] Please create the index by clicking the link in the error above');
+    }
+
+    // Return empty array instead of throwing to prevent app from breaking
+    return [];
+  }
 };

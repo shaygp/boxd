@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPublicRaceLogs } from "@/services/raceLogs";
-import { getCurrentSeasonRaces, getPosterUrl, getRaceWinner } from "@/services/f1Api";
+import { getPosterUrl, getRaceWinner } from "@/services/f1Api";
+import { getCurrentSeasonRaces as getFirestoreRaces } from "@/services/f1Calendar";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getGlobalActivity, Activity } from "@/services/activity";
 
@@ -23,44 +24,75 @@ const Index = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const f1Races = await getCurrentSeasonRaces();
+        // Get races from Firestore instead of external APIs
+        const f1Races = await getFirestoreRaces();
+        console.log('[Index] getFirestoreRaces returned:', f1Races.length, 'races');
 
         if (Array.isArray(f1Races) && f1Races.length > 0) {
           // Sort races by date in descending order (most recent first)
           const sortedRaces = [...f1Races].sort((a, b) =>
-            new Date(b.date_start).getTime() - new Date(a.date_start).getTime()
+            new Date(b.dateStart).getTime() - new Date(a.dateStart).getTime()
           );
 
           // Take the 6 most recent races
           const racesToShow = sortedRaces.slice(0, 6);
-          setCurrentRaces(racesToShow);
+          console.log('[Index] Setting currentRaces:', racesToShow.length);
 
-          // Fetch winners for past races (races that have already occurred) in parallel
-          const today = new Date();
-          const winnersMap: { [key: string]: string } = {};
+          // Convert to expected format
+          const convertedRaces = racesToShow.map(race => ({
+            meeting_key: race.round,
+            year: race.year,
+            round: race.round,
+            meeting_name: race.raceName,
+            circuit_short_name: race.circuitName,
+            date_start: race.dateStart.toISOString(),
+            country_code: race.countryCode,
+            location: race.location,
+            circuit_key: race.round
+          }));
 
-          const winnerPromises = racesToShow
-            .filter(race => new Date(race.date_start) < today)
-            .map(async (race) => {
-              try {
-                const winner = await getRaceWinner(race.year, race.round);
-                if (winner) {
-                  return { key: `${race.year}-${race.round}`, winner };
+          setCurrentRaces(convertedRaces);
+
+          // Fetch winners for past races asynchronously (don't block card rendering)
+          const fetchWinners = async () => {
+            const today = new Date();
+            const winnersMap: { [key: string]: string } = {};
+
+            const winnerPromises = convertedRaces
+              .filter(race => new Date(race.date_start) < today)
+              .map(async (race) => {
+                try {
+                  const winner = await getRaceWinner(race.year, race.round);
+                  if (winner) {
+                    return { key: `${race.year}-${race.round}`, winner };
+                  }
+                } catch (error) {
+                  console.error(`Error fetching winner for ${race.year} round ${race.round}:`, error);
                 }
-              } catch (error) {
-                console.error(`Error fetching winner for ${race.year} round ${race.round}:`, error);
-              }
-              return null;
-            });
+                return null;
+              });
 
-          const winnerResults = await Promise.all(winnerPromises);
-          winnerResults.forEach(result => {
-            if (result) {
-              winnersMap[result.key] = result.winner;
+            try {
+              const winnerResults = await Promise.all(winnerPromises);
+              winnerResults.forEach(result => {
+                if (result) {
+                  winnersMap[result.key] = result.winner;
+                }
+              });
+              setWinners(winnersMap);
+            } catch (error) {
+              console.error('Error fetching winners:', error);
+              // Still set empty winners map so cards display without winners
+              setWinners({});
             }
-          });
+          };
 
-          setWinners(winnersMap);
+          // Fetch winners in background, don't await
+          fetchWinners();
+        } else {
+          // No races returned from API - set empty array so UI shows "No races available"
+          console.log('[Index] No races returned from API');
+          setCurrentRaces([]);
         }
 
         try {
@@ -177,8 +209,8 @@ const Index = () => {
               <div className="inline-block px-4 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
                 <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">LATEST RACES</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">RECENT GRANDS PRIX</h2>
-              <p className="text-xs sm:text-sm text-gray-300 mt-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Most Recent F1 Races</p>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">RECENT & UPCOMING GRAND PRIX</h2>
+              <p className="text-xs sm:text-sm text-gray-300 mt-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Recent & Upcoming F1 Races</p>
             </div>
             <Button
               variant="outline"

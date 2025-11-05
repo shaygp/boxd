@@ -9,7 +9,8 @@ import { TrendingUp, Star, List, Calendar, History } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPublicRaceLogs } from "@/services/raceLogs";
 import { getPublicLists } from "@/services/lists";
-import { getCurrentSeasonRaces, getRacesBySeason } from "@/services/f1Api";
+import { getPosterUrl } from "@/services/f1Api";
+import { getCurrentSeasonRaces as getFirestoreRaces, getRacesBySeason as getFirestoreRacesBySeason } from "@/services/f1Calendar";
 
 const Explore = () => {
   const [trendingRaces, setTrendingRaces] = useState<any[]>([]);
@@ -24,10 +25,10 @@ const Explore = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [logs, lists, upcoming] = await Promise.all([
+        const [logs, lists, firestoreRaces] = await Promise.all([
           getPublicRaceLogs(50),
           getPublicLists(),
-          getCurrentSeasonRaces()
+          getFirestoreRaces()
         ]);
 
         const logCounts: { [key: string]: number } = {};
@@ -64,8 +65,21 @@ const Explore = () => {
 
         setPopularLists(sortedLists);
 
+        // Convert Firestore races to expected format
         const today = new Date();
         const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const upcoming = firestoreRaces.map(race => ({
+          meeting_key: race.round,
+          year: race.year,
+          round: race.round,
+          meeting_name: race.raceName,
+          circuit_short_name: race.circuitName,
+          date_start: race.dateStart.toISOString(),
+          country_code: race.countryCode,
+          location: race.location,
+          circuit_key: race.round
+        }));
+
         const thisWeekRaces = upcoming.filter(race => {
           const raceDate = new Date(race.date_start);
           return raceDate >= today && raceDate <= nextWeek;
@@ -86,10 +100,23 @@ const Explore = () => {
     const loadSeasonRaces = async () => {
       setSeasonLoading(true);
       try {
-        const races = await getRacesBySeason(selectedSeason);
+        const firestoreRaces = await getFirestoreRacesBySeason(selectedSeason);
+        // Convert to expected format
+        const races = firestoreRaces.map(race => ({
+          meeting_key: race.round,
+          year: race.year,
+          round: race.round,
+          meeting_name: race.raceName,
+          circuit_short_name: race.circuitName,
+          date_start: race.dateStart.toISOString(),
+          country_code: race.countryCode,
+          location: race.location,
+          circuit_key: race.round
+        }));
         setSeasonRaces(races);
       } catch (error) {
         console.error('Error loading season races:', error);
+        setSeasonRaces([]);
       } finally {
         setSeasonLoading(false);
       }

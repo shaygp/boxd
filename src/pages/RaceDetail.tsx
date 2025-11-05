@@ -11,7 +11,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { addToWatchlist, removeFromWatchlist } from "@/services/watchlist";
 import { toggleLike } from "@/services/likes";
-import { getCountryFlag, getRaceByYearAndRound, getRaceWinner } from "@/services/f1Api";
+import { getCountryFlag } from "@/services/f1Api";
+import { getRaceByYearAndRound as getFirestoreRaceByYearAndRound } from "@/services/f1Calendar";
 import { getRaceLogById, getPublicRaceLogs, deleteRaceLog } from "@/services/raceLogs";
 import { auth } from "@/lib/firebase";
 import {
@@ -29,6 +30,8 @@ const RaceDetail = () => {
   const { id, season, round } = useParams();
   const navigate = useNavigate();
   const year = season;
+
+  // Only log on mount to avoid spam
   console.log('[RaceDetail] URL Params:', { id, season, year, round });
 
   const [isInWatchlist, setIsInWatchlist] = useState(false);
@@ -74,27 +77,34 @@ const RaceDetail = () => {
       } else if (year && round) {
         console.log('[RaceDetail] Loading by year/round:', year, round);
 
-        // Always fetch race info from F1 API
-        console.log('[RaceDetail] Fetching from F1 API: year=', parseInt(year), 'round=', parseInt(round));
-        const raceData = await getRaceByYearAndRound(parseInt(year), parseInt(round));
-        console.log('[RaceDetail] F1 API returned:', raceData);
-        if (raceData) {
+        // Fetch race info from Firestore
+        console.log('[RaceDetail] Fetching from Firestore: year=', parseInt(year), 'round=', parseInt(round));
+        const firestoreRace = await getFirestoreRaceByYearAndRound(parseInt(year), parseInt(round));
+        console.log('[RaceDetail] Firestore returned:', firestoreRace);
+
+        if (firestoreRace) {
+          console.log('[RaceDetail] ✅ Found race in Firestore:', firestoreRace);
+          // Convert Firestore format to expected format
+          const raceData = {
+            meeting_key: firestoreRace.round,
+            year: firestoreRace.year,
+            round: firestoreRace.round,
+            meeting_name: firestoreRace.raceName,
+            circuit_short_name: firestoreRace.circuitName,
+            date_start: firestoreRace.dateStart.toISOString(),
+            country_code: firestoreRace.countryCode,
+            country_name: firestoreRace.countryName,
+            location: firestoreRace.location
+          };
+
           setRaceInfo(raceData);
 
-          // Fetch winner if race is in the past
-          const raceDate = new Date(raceData.date_start);
-          if (raceDate < new Date()) {
-            try {
-              const raceWinner = await getRaceWinner(parseInt(year), parseInt(round));
-              if (raceWinner) {
-                setWinner(raceWinner);
-              }
-            } catch (error) {
-              console.error('[RaceDetail] Error fetching winner:', error);
-            }
-          }
+          // Winner will be stored in Firestore in the future
+          // For now, we don't fetch from external APIs
+          console.log('[RaceDetail] Race data loaded successfully from Firestore');
         } else {
-          console.error('[RaceDetail] F1 API returned null!');
+          console.error('[RaceDetail] ❌ Race not found in Firestore for year:', year, 'round:', round);
+          console.error('[RaceDetail] This race may not be seeded in the database yet.');
         }
       } else {
         console.error('[RaceDetail] No id, year, or round found in URL params!');
@@ -108,8 +118,10 @@ const RaceDetail = () => {
   };
 
   useEffect(() => {
+    console.log('[RaceDetail] useEffect triggered with:', { id, year, round });
+    setLoading(true);
     loadRaceData();
-  }, [id, year, round]);
+  }, [id, season, round]); // Use 'season' instead of 'year' to avoid stale closure
 
   if (loading) {
     return (
@@ -310,9 +322,9 @@ const RaceDetail = () => {
       <Header />
 
       <main className="container px-[4vw] py-[2vh] sm:py-[3vh] max-w-full">
-        <div className="grid lg:grid-cols-3 gap-[3vh] sm:gap-[4vh]">
+        <div className="max-w-5xl mx-auto">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             {/* Poster & Info */}
             <div className="flex flex-col md:flex-row gap-6">
               <div className="w-full md:w-56 lg:w-64 aspect-[16/9] md:aspect-[2/3] bg-gradient-to-br from-racing-red/30 to-black/90 rounded-lg overflow-hidden relative border-2 border-red-900/40 mx-auto md:mx-0">
@@ -574,27 +586,6 @@ const RaceDetail = () => {
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-4 sm:space-y-6">
-            <Card className="p-4 sm:p-5 md:p-6 border-2 border-red-900/40 bg-black/90 backdrop-blur-sm shadow-sm">
-              <div className="inline-block px-3 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-3">
-                <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">POPULAR</span>
-              </div>
-              <h3 className="font-black text-base sm:text-lg mb-3 sm:mb-4 text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">TRENDING TAGS</h3>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                {['overtake', 'late-drama', 'season-finale', 'sunset', 'rain', 'safety-car'].map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="text-xs hover:bg-racing-red/10 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/?tag=${encodeURIComponent(tag)}`)}
-                  >
-                    #{tag}
-                  </Badge>
-                ))}
-              </div>
-            </Card>
-          </div>
         </div>
       </main>
 

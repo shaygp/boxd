@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Heart, MessageCircle, List, UserPlus, Eye } from 'lucide-react';
-import { Activity, getFollowingActivity, getGlobalActivity } from '@/services/activity';
+import { Activity } from '@/services/activity';
 import { Link } from 'react-router-dom';
+import { collection, query, orderBy, limit as firestoreLimit, onSnapshot, where, doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { getFollowing } from '@/services/follows';
 
 interface ActivityFeedProps {
   feedType: 'following' | 'global';
@@ -16,24 +19,142 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
   const [loading, setLoading] = useState(true);
   const [showCount, setShowCount] = useState(initialShow);
 
-  const loadActivities = async () => {
-    try {
-      console.log('[ActivityFeed] Loading activities, feedType:', feedType, 'limit:', limit);
-      const data = feedType === 'following'
-        ? await getFollowingActivity(limit)
-        : await getGlobalActivity(limit);
-      console.log('[ActivityFeed] Loaded activities:', data.length, 'activities');
-      setActivities(data);
-    } catch (error: any) {
-      console.error('[ActivityFeed] Error loading activities:', error);
-      console.error('[ActivityFeed] Error details:', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadActivities();
+    console.log('[ActivityFeed] Setting up real-time listener, feedType:', feedType, 'limit:', limit);
+
+    const setupListener = async () => {
+      const activitiesCollection = collection(db, 'activities');
+
+      if (feedType === 'global') {
+        // Global feed - simple real-time listener
+        const q = query(
+          activitiesCollection,
+          orderBy('createdAt', 'desc'),
+          firestoreLimit(limit)
+        );
+
+        const unsubscribe = onSnapshot(q, async (snapshot) => {
+          console.log('[ActivityFeed] Real-time update: received', snapshot.docs.length, 'activities');
+
+          // Fetch user profiles for activities
+          const activities = await Promise.all(
+            snapshot.docs.map(async (docSnapshot) => {
+              const data = docSnapshot.data();
+              let userAvatar = data.userAvatar || '';
+              let username = data.username || 'User';
+
+              // If userAvatar is missing, fetch from users collection
+              if (!userAvatar && data.userId) {
+                try {
+                  const userDoc = await getDoc(doc(db, 'users', data.userId));
+                  if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    userAvatar = userData.photoURL || '';
+                    username = userData.name || username;
+                  }
+                } catch (error) {
+                  console.error('[ActivityFeed] Error fetching user profile:', error);
+                }
+              }
+
+              return {
+                id: docSnapshot.id,
+                ...data,
+                username,
+                userAvatar,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+              } as Activity;
+            })
+          );
+
+          setActivities(activities);
+          setLoading(false);
+        }, (error) => {
+          console.error('[ActivityFeed] Real-time listener error:', error);
+          setLoading(false);
+        });
+
+        return unsubscribe;
+      } else {
+        // Following feed - need to get following list first
+        const user = auth.currentUser;
+        if (!user) {
+          setLoading(false);
+          return () => {};
+        }
+
+        const following = await getFollowing(user.uid);
+        const followingIds = following.map(f => f.followingId).filter(id => id !== undefined && id !== null);
+
+        if (followingIds.length === 0) {
+          setActivities([]);
+          setLoading(false);
+          return () => {};
+        }
+
+        // Use first 10 following IDs (Firestore 'in' limit)
+        const batch = followingIds.slice(0, 10);
+        const q = query(
+          activitiesCollection,
+          where('userId', 'in', batch),
+          orderBy('createdAt', 'desc'),
+          firestoreLimit(limit)
+        );
+
+        const unsubscribe = onSnapshot(q, async (snapshot) => {
+          console.log('[ActivityFeed] Real-time update: received', snapshot.docs.length, 'activities');
+
+          const activities = await Promise.all(
+            snapshot.docs.map(async (docSnapshot) => {
+              const data = docSnapshot.data();
+              let userAvatar = data.userAvatar || '';
+              let username = data.username || 'User';
+
+              if (!userAvatar && data.userId) {
+                try {
+                  const userDoc = await getDoc(doc(db, 'users', data.userId));
+                  if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    userAvatar = userData.photoURL || '';
+                    username = userData.name || username;
+                  }
+                } catch (error) {
+                  console.error('[ActivityFeed] Error fetching user profile:', error);
+                }
+              }
+
+              return {
+                id: docSnapshot.id,
+                ...data,
+                username,
+                userAvatar,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+              } as Activity;
+            })
+          );
+
+          setActivities(activities);
+          setLoading(false);
+        }, (error) => {
+          console.error('[ActivityFeed] Real-time listener error:', error);
+          setLoading(false);
+        });
+
+        return unsubscribe;
+      }
+    };
+
+    let unsubscribe: (() => void) | undefined;
+    setupListener().then((unsub) => {
+      unsubscribe = unsub;
+    });
+
+    return () => {
+      if (unsubscribe) {
+        console.log('[ActivityFeed] Cleaning up real-time listener');
+        unsubscribe();
+      }
+    };
   }, [feedType, limit]);
 
   const getActivityIcon = (type: Activity['type']) => {

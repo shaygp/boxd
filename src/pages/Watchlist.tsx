@@ -6,7 +6,7 @@ import { Bell, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { getUserWatchlist } from "@/services/watchlist";
-import { getRacesBySeason } from "@/services/f1Api";
+import { getRacesBySeason as getFirestoreRacesBySeason } from "@/services/f1Calendar";
 import { onAuthStateChanged } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,11 +56,23 @@ const Watchlist = () => {
         yearMap.get(item.raceYear)!.push(item);
       });
 
-      // Fetch F1 data for each year
+      // Fetch F1 data for each year from Firestore
       const yearRacesMap = new Map<number, any[]>();
       for (const year of yearMap.keys()) {
         try {
-          const races = await getRacesBySeason(year);
+          const firestoreRaces = await getFirestoreRacesBySeason(year);
+          // Convert to expected format
+          const races = firestoreRaces.map(race => ({
+            meeting_key: race.round,
+            year: race.year,
+            round: race.round,
+            meeting_name: race.raceName,
+            circuit_short_name: race.circuitName,
+            date_start: race.dateStart.toISOString(),
+            country_code: race.countryCode,
+            location: race.location,
+            circuit_key: race.round
+          }));
           yearRacesMap.set(year, races);
         } catch (error) {
           console.warn(`[Watchlist Page] Failed to fetch F1 data for year ${year}:`, error);

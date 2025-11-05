@@ -8,7 +8,7 @@ import { Heart, MessageSquare, Share2, Edit, Trash2, Lock, Globe, Plus } from "l
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getListById, deleteList } from "@/services/lists";
-import { getRacesBySeason } from "@/services/f1Api";
+import { getRacesBySeason as getFirestoreRacesBySeason } from "@/services/f1Calendar";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -51,11 +51,24 @@ const ListDetail = () => {
             yearMap.get(race.raceYear)!.push(race);
           });
 
-          // Fetch F1 data for each year
+          // Fetch F1 data for each year from Firestore
           const enrichedRaces = await Promise.all(
             listData.races.map(async (race) => {
               try {
-                const yearRaces = await getRacesBySeason(race.raceYear);
+                const firestoreRaces = await getFirestoreRacesBySeason(race.raceYear);
+                // Convert to expected format
+                const yearRaces = firestoreRaces.map(r => ({
+                  meeting_key: r.round,
+                  year: r.year,
+                  round: r.round,
+                  meeting_name: r.raceName,
+                  circuit_short_name: r.circuitName,
+                  date_start: r.dateStart.toISOString(),
+                  country_code: r.countryCode,
+                  location: r.location,
+                  circuit_key: r.round
+                }));
+
                 const matchedRace = yearRaces.find(r =>
                   r.meeting_name.toLowerCase().includes(race.raceName.toLowerCase()) ||
                   race.raceName.toLowerCase().includes(r.meeting_name.toLowerCase())

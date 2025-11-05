@@ -7,7 +7,7 @@ import {
   limit
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getRacesBySeason } from './f1Api';
+import { getRacesBySeason as getFirestoreRacesBySeason } from './f1Calendar';
 
 export interface SearchResult {
   id: string;
@@ -22,9 +22,23 @@ export const searchRaces = async (searchTerm: string, limitCount: number = 10): 
 
   // Search across all seasons (2020-2025)
   const seasons = [2025, 2024, 2023, 2022, 2021, 2020];
-  const allRacesPromises = seasons.map(year => getRacesBySeason(year));
+  const allRacesPromises = seasons.map(year => getFirestoreRacesBySeason(year));
   const allRacesArrays = await Promise.all(allRacesPromises);
-  const allRaces = allRacesArrays.flat();
+  const firestoreRaces = allRacesArrays.flat();
+
+  // Convert Firestore races to expected format
+  const allRaces = firestoreRaces.map(race => ({
+    meeting_key: race.round,
+    year: race.year,
+    round: race.round,
+    meeting_name: race.raceName,
+    circuit_short_name: race.circuitName,
+    date_start: race.dateStart.toISOString(),
+    country_code: race.countryCode,
+    country_name: race.countryName,
+    location: race.location,
+    circuit_key: race.round
+  }));
 
   const filteredRaces = allRaces.filter(race =>
     race.meeting_name?.toLowerCase().includes(term) ||
