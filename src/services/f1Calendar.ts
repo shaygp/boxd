@@ -90,6 +90,39 @@ export const getRaceByYearAndRound = async (year: number, round: number): Promis
   }
 };
 
+// Get a specific race by name and year
+export const getRaceByNameAndYear = async (raceName: string, year: number): Promise<F1Race | null> => {
+  console.log(`[F1Calendar] getRaceByNameAndYear: raceName=${raceName}, year=${year}`);
+
+  try {
+    const q = query(
+      racesCollection,
+      where('year', '==', year),
+      where('raceName', '==', raceName)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      console.log(`[F1Calendar] No race found for ${raceName} in ${year}`);
+      return null;
+    }
+
+    const data = snapshot.docs[0].data();
+    console.log(`[F1Calendar] Found race:`, data);
+
+    return {
+      id: snapshot.docs[0].id,
+      ...data,
+      dateStart: data.dateStart?.toDate ? data.dateStart.toDate() : new Date(data.dateStart),
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+    } as F1Race;
+  } catch (error) {
+    console.error(`[F1Calendar] Error fetching race by name:`, error);
+    return null;
+  }
+};
+
 // Seed 2025 F1 calendar data
 export const seed2025Calendar = async () => {
   console.log('[F1Calendar] Seeding 2025 F1 calendar data...');

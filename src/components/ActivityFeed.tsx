@@ -1,18 +1,41 @@
 import { useEffect, useState } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Heart, MessageCircle, List, UserPlus, Eye } from 'lucide-react';
+import { Heart, MessageCircle, List, UserPlus, Eye, Star, ArrowRight } from 'lucide-react';
 import { Activity } from '@/services/activity';
 import { Link } from 'react-router-dom';
 import { collection, query, orderBy, limit as firestoreLimit, onSnapshot, where, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { getFollowing } from '@/services/follows';
+import { StarRating } from './StarRating';
 
 interface ActivityFeedProps {
   feedType: 'following' | 'global';
   limit?: number;
   initialShow?: number;
 }
+
+// Racing team colors - subtle F1 team inspired backgrounds
+const teamColors = [
+  'from-red-900/80 to-red-950/90',        // Ferrari red (subtle)
+  'from-blue-900/80 to-blue-950/90',      // Red Bull blue (subtle)
+  'from-green-900/80 to-green-950/90',    // Aston Martin green (subtle)
+  'from-orange-900/80 to-orange-950/90',  // McLaren orange (subtle)
+  'from-pink-900/80 to-pink-950/90',      // Alpine pink (subtle)
+  'from-cyan-900/80 to-cyan-950/90',      // Mercedes cyan (subtle)
+  'from-purple-900/80 to-purple-950/90',  // Purple (subtle)
+  'from-yellow-900/80 to-yellow-950/90',  // Renault yellow (subtle)
+  'from-gray-700/80 to-gray-800/90',      // Haas gray (subtle)
+];
+
+// Generate consistent team color for user based on their ID
+const getUserTeamColor = (userId: string) => {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return teamColors[Math.abs(hash) % teamColors.length];
+};
 
 export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: ActivityFeedProps) => {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -200,9 +223,18 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
   const getActivityLink = (activity: Activity) => {
     switch (activity.targetType) {
       case 'raceLog':
-        return `/race/${activity.targetId}`;
+        // Use raceLog ID to link directly to the race detail page
+        if (activity.targetId) {
+          return `/race/${activity.targetId}`;
+        }
+        // Fallback to year/round if available in metadata
+        if (activity.raceYear && activity.raceName) {
+          // This won't work without round, but keeping as fallback
+          console.warn('[ActivityFeed] Race log missing targetId, metadata:', activity);
+        }
+        return '#';
       case 'list':
-        return `/lists/${activity.targetId}`;
+        return `/list/${activity.targetId}`;
       case 'user':
         return `/user/${activity.targetId}`;
       default:
@@ -211,17 +243,30 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-gray-300 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Loading activity...</div>;
+    return (
+      <div className="text-center py-12">
+        <div className="inline-flex items-center gap-2 text-gray-400">
+          <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse" />
+          <span className="text-sm">Loading activity...</span>
+        </div>
+      </div>
+    );
   }
 
   if (activities.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
-        <p className="font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-          {feedType === 'following'
-            ? 'FOLLOW USERS TO SEE THEIR ACTIVITY'
-            : 'NO ACTIVITY YET'}
-        </p>
+      <div className="text-center py-16 px-4">
+        <div className="max-w-md mx-auto space-y-3">
+          <div className="text-4xl">🏁</div>
+          <h3 className="text-lg font-semibold text-white">
+            {feedType === 'following' ? 'No Activity Yet' : 'No Activity Yet'}
+          </h3>
+          <p className="text-sm text-gray-400">
+            {feedType === 'following'
+              ? 'Follow users to see their race logs, reviews, and lists.'
+              : 'Be the first to log a race and start the conversation!'}
+          </p>
+        </div>
       </div>
     );
   }
@@ -230,16 +275,18 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
   const hasMore = activities.length > showCount;
 
   return (
-    <div className="space-y-3 sm:space-y-4 max-w-2xl mx-auto px-2 sm:px-0">
+    <div className="space-y-3 sm:space-y-4 md:space-y-5 max-w-3xl mx-auto px-3 sm:px-4">
       {displayedActivities.map((activity) => (
-        <Card key={activity.id} className="group bg-black/90 border-2 border-red-900/40 hover:border-racing-red hover:shadow-xl hover:shadow-red-500/30 transition-all relative overflow-hidden backdrop-blur-sm">
+        <Card key={activity.id} className="group bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30">
+          {/* Racing accent line */}
           <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
-          <div className="p-3 sm:p-4 md:p-5">
-            <div className="flex items-start gap-2 sm:gap-3">
-              {/* Avatar with racing ring */}
-              <Link to={`/user/${activity.userId}`} className="flex-shrink-0">
+
+          <div className="p-3 sm:p-4 md:p-5 lg:p-6">
+            <div className="flex gap-2.5 sm:gap-3 md:gap-4">
+              {/* Avatar Section */}
+              <Link to={`/user/${activity.userId}`} className="flex-shrink-0 group/avatar">
                 <div className="relative">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-racing-red/30 to-black flex items-center justify-center border-2 border-racing-red/40 group-hover:border-racing-red transition-colors overflow-hidden shadow-lg shadow-black/50">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br ${activity.userAvatar ? 'from-gray-800 to-gray-900' : getUserTeamColor(activity.userId)} flex items-center justify-center border-2 border-gray-700 group-hover/avatar:border-racing-red transition-all duration-300 overflow-hidden ring-2 ring-black/50`}>
                     {activity.userAvatar ? (
                       <img
                         src={activity.userAvatar}
@@ -247,63 +294,151 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-xs sm:text-sm md:text-base font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+                      <span className="text-base sm:text-lg md:text-xl font-black text-white drop-shadow-lg uppercase">
                         {activity.username.charAt(0).toUpperCase()}
                       </span>
                     )}
                   </div>
-                  {/* Activity type badge */}
-                  <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-racing-red border-2 border-black flex items-center justify-center shadow-lg shadow-red-500/50">
-                    <div className="w-3 h-3 sm:w-4 sm:h-4 text-white">
+                  {/* Activity type badge - Letterboxd style */}
+                  <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full bg-racing-red border-2 border-black flex items-center justify-center shadow-lg">
+                    <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-white">
                       {getActivityIcon(activity.type)}
                     </div>
                   </div>
                 </div>
               </Link>
 
-              <div className="flex-1 min-w-0">
-                {/* Header */}
-                <div className="flex items-baseline gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 flex-wrap">
-                  <Link to={`/user/${activity.userId}`} className="font-black text-sm sm:text-base text-white hover:text-racing-red transition-colors uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                    {activity.username}
-                  </Link>
-                  <span className="text-xs sm:text-sm text-gray-200 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{getActivityText(activity)}</span>
-                  {activity.targetType === 'raceLog' && (
-                    <Link to={getActivityLink(activity)} className="text-xs sm:text-sm font-semibold text-racing-red hover:underline">
-                      a race
+              <div className="flex-1 min-w-0 space-y-2 sm:space-y-2.5 md:space-y-3">
+                {/* Header - Letterboxd style action line */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs sm:text-sm md:text-base leading-snug">
+                    <Link
+                      to={`/user/${activity.userId}`}
+                      className="font-bold text-white hover:text-racing-red transition-colors"
+                    >
+                      {activity.username}
                     </Link>
-                  )}
-                  {activity.targetType === 'list' && (
-                    <Link to={getActivityLink(activity)} className="text-xs sm:text-sm font-semibold text-racing-red hover:underline">
-                      a list
-                    </Link>
-                  )}
-                  {activity.targetType === 'user' && activity.type === 'follow' && (
-                    <Link to={getActivityLink(activity)} className="text-xs sm:text-sm font-semibold text-racing-red hover:underline">
-                      a user
-                    </Link>
-                  )}
+                    <span className="text-gray-400">{getActivityText(activity)}</span>
+                    {activity.targetType === 'raceLog' && activity.raceName && (
+                      <Link
+                        to={getActivityLink(activity)}
+                        className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"
+                      >
+                        {activity.raceName}
+                      </Link>
+                    )}
+                    {activity.targetType === 'raceLog' && !activity.raceName && (
+                      <Link
+                        to={getActivityLink(activity)}
+                        className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"
+                      >
+                        a race
+                      </Link>
+                    )}
+                    {activity.targetType === 'list' && (
+                      <Link
+                        to={getActivityLink(activity)}
+                        className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"
+                      >
+                        a list
+                      </Link>
+                    )}
+                    {activity.targetType === 'user' && activity.type === 'follow' && (
+                      <Link
+                        to={getActivityLink(activity)}
+                        className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"
+                      >
+                        {activity.content || 'a user'}
+                      </Link>
+                    )}
+                    {activity.rating && activity.rating > 0 && (
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-3.5 h-3.5 ${
+                              i < activity.rating!
+                                ? 'fill-racing-red text-racing-red'
+                                : 'text-gray-600'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Timestamp and race metadata - Letterboxd style subtle */}
+                  <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                    <span>
+                      {new Date(activity.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: new Date(activity.createdAt).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                      })}
+                    </span>
+                    <span className="text-gray-700">•</span>
+                    <span>
+                      {new Date(activity.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </span>
+                    {activity.raceYear && (
+                      <>
+                        <span className="text-gray-700">•</span>
+                        <span>{activity.raceYear}</span>
+                      </>
+                    )}
+                    {activity.raceLocation && (
+                      <>
+                        <span className="text-gray-700">•</span>
+                        <span>{activity.raceLocation}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
 
-                {/* Content */}
-                {activity.content && (
-                  <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-black/60 rounded-lg border border-red-900/30">
-                    <p className="text-xs sm:text-sm leading-relaxed line-clamp-3 italic text-gray-200 font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">"{activity.content}"</p>
+                {/* Review/Content - Letterboxd style with better typography */}
+                {activity.content && activity.type === 'review' && (
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <div className="bg-black/40 rounded-lg p-2.5 sm:p-3 md:p-4 border border-gray-800/50">
+                      <p className="text-xs sm:text-sm md:text-base leading-relaxed text-gray-200 line-clamp-3 sm:line-clamp-4">
+                        {activity.content}
+                      </p>
+                    </div>
+                    <Link
+                      to={getActivityLink(activity)}
+                      className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-gray-400 hover:text-racing-red transition-colors font-medium"
+                    >
+                      Read more
+                      <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    </Link>
                   </div>
                 )}
 
-                {/* Footer */}
-                <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-gray-300 font-bold">
-                  <span className="flex items-center gap-0.5 sm:gap-1">
-                    <span>📅</span>
-                    {new Date(activity.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
-                  <span className="text-racing-red">•</span>
-                  <span className="flex items-center gap-0.5 sm:gap-1">
-                    <span>🕐</span>
-                    {new Date(activity.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
+                {/* Simple content for non-reviews */}
+                {activity.content && activity.type !== 'review' && (
+                  <p className="text-xs sm:text-sm text-gray-400 italic leading-relaxed">
+                    {activity.content}
+                  </p>
+                )}
+
+                {/* Interaction bar - Letterboxd style - Links to full activity page */}
+                {activity.targetType === 'raceLog' && (
+                  <div className="flex items-center gap-4 pt-2 border-t border-gray-800/50">
+                    <Link
+                      to={getActivityLink(activity)}
+                      className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-400 hover:text-racing-red transition-colors"
+                    >
+                      <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Like</span>
+                    </Link>
+                    <Link
+                      to={getActivityLink(activity)}
+                      className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-400 hover:text-racing-red transition-colors"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Comment</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -311,19 +446,19 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
       ))}
 
       {hasMore && (
-        <div className="flex justify-center pt-4">
+        <div className="flex justify-center pt-6">
           <Button
             variant="outline"
             onClick={() => setShowCount(prev => prev + 10)}
-            className="w-full sm:w-auto bg-black/90 border-2 border-red-900/50 text-white hover:bg-racing-red hover:text-white hover:border-racing-red font-black uppercase tracking-wider"
+            className="w-full sm:w-auto bg-black/80 border border-gray-700 text-gray-300 hover:bg-racing-red hover:text-white hover:border-racing-red transition-all duration-300 font-semibold px-8"
           >
-            VIEW MORE ({activities.length - showCount} REMAINING)
+            Load More ({activities.length - showCount} remaining)
           </Button>
         </div>
       )}
 
       {!hasMore && activities.length > initialShow && (
-        <div className="text-center pt-4 text-sm text-gray-300 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+        <div className="text-center pt-6 text-sm text-gray-500">
           Showing all {activities.length} activities
         </div>
       )}

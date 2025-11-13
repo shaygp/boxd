@@ -23,6 +23,13 @@ export interface Activity {
   targetType: 'raceLog' | 'list' | 'user';
   content?: string;
   createdAt: Date;
+  // Optional race metadata for enhanced display
+  raceName?: string;
+  raceYear?: number;
+  round?: number;
+  raceLocation?: string;
+  rating?: number;
+  posterUrl?: string;
 }
 
 const activitiesCollection = collection(db, 'activities');

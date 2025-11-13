@@ -173,7 +173,7 @@ const RaceCardComponent = ({
       className="group relative overflow-hidden bg-black/90 border-2 border-red-900/40 hover:border-racing-red hover:ring-2 hover:ring-racing-red hover:shadow-xl hover:shadow-red-500/30 transition-all duration-200 cursor-pointer touch-manipulation backdrop-blur-sm"
     >
       {/* Poster */}
-      <div className="aspect-square sm:aspect-[2/3] relative overflow-hidden bg-gradient-to-br from-racing-red/30 to-black/90">
+      <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-racing-red/30 to-black/90">
         {posterUrl ? (
           <img
             src={posterUrl}
@@ -254,10 +254,10 @@ const RaceCardComponent = ({
       </div>
 
       {/* Info */}
-      <div className="p-[1vh] sm:p-[1.5vh] text-center sm:text-left bg-gradient-to-b from-black/90 to-black border-t-2 border-red-900/40">
-        <h3 className="font-black text-sm sm:text-base line-clamp-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</h3>
-        <p className="text-xs sm:text-sm text-gray-300 mt-0.5 sm:mt-1 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season} • ROUND {round}</p>
-        <p className="text-xs sm:text-sm text-gray-400 line-clamp-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{circuit}</p>
+      <div className="p-1.5 sm:p-2 text-center sm:text-left bg-gradient-to-b from-black/90 to-black border-t-2 border-red-900/40">
+        <h3 className="font-black text-xs sm:text-sm line-clamp-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</h3>
+        <p className="text-[10px] sm:text-xs text-gray-300 mt-0.5 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season} • R{round}</p>
+        <p className="text-[10px] sm:text-xs text-gray-400 line-clamp-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{circuit}</p>
       </div>
     </Card>
   );

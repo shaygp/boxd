@@ -18,6 +18,7 @@ import { createRaceLog, updateRaceLog } from "@/services/raceLogs";
 import { createActivity } from "@/services/activity";
 import { getUserProfile } from "@/services/auth";
 import { getCountryCodeFromName, getRaceWinner } from "@/services/f1Api";
+import { getRaceByNameAndYear } from "@/services/f1Calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Timestamp } from "firebase/firestore";
 
@@ -237,12 +238,25 @@ export const LogRaceDialog = ({
         watchMode,
       });
 
+      // Try to fetch the round number from the F1 calendar
+      let round: number | undefined;
+      try {
+        const raceInfo = await getRaceByNameAndYear(raceName, raceYear);
+        if (raceInfo) {
+          round = raceInfo.round;
+          console.log('[LogRaceDialog] Found round number:', round);
+        }
+      } catch (error) {
+        console.warn('[LogRaceDialog] Could not fetch round number:', error);
+      }
+
       const logData = {
         userId: user.uid,
         username: username,
         raceYear,
         raceName,
         raceLocation,
+        round,
         countryCode,
         dateWatched: date,
         sessionType,
@@ -278,8 +292,14 @@ export const LogRaceDialog = ({
               type: review && review.length > 0 ? 'review' : 'log',
               targetId: logId,
               targetType: 'raceLog',
-              content: review && review.length > 0 ? review.substring(0, 100) : `${raceName} - ${raceYear}`,
+              content: review && review.length > 0 ? review.substring(0, 200) : undefined,
+              raceName,
+              raceYear,
+              raceLocation,
+              rating,
+              round,
             });
+            console.log('[LogRaceDialog] Activity created successfully');
           } catch (activityError) {
             console.error('Failed to create activity:', activityError);
           }

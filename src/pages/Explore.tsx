@@ -7,12 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Star, List, Calendar, History } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getPublicRaceLogs } from "@/services/raceLogs";
 import { getPublicLists } from "@/services/lists";
 import { getPosterUrl } from "@/services/f1Api";
 import { getCurrentSeasonRaces as getFirestoreRaces, getRacesBySeason as getFirestoreRacesBySeason } from "@/services/f1Calendar";
 
 const Explore = () => {
+  const navigate = useNavigate();
   const [trendingRaces, setTrendingRaces] = useState<any[]>([]);
   const [topReviews, setTopReviews] = useState<any[]>([]);
   const [popularLists, setPopularLists] = useState<any[]>([]);
@@ -274,7 +276,7 @@ const Explore = () => {
                   <Card
                     key={review.id}
                     className="p-6 space-y-4 hover:ring-2 hover:ring-racing-red border-2 border-red-900/40 bg-black/90 backdrop-blur transition-all cursor-pointer"
-                    onClick={() => window.location.href = `/race/${review.id}`}
+                    onClick={() => navigate(`/race/${review.id}`)}
                   >
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-full bg-black/80 border-2 border-racing-red/40 flex items-center justify-center font-bold overflow-hidden shadow-lg">
