@@ -158,25 +158,25 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20">
           <Edit className="w-4 h-4" />
           Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md w-[95vw] sm:w-full">
+      <DialogContent className="max-w-md w-[95vw] sm:w-full bg-black border-2 border-racing-red/40">
         <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogTitle className="text-white">Edit Profile</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
-            <Label>Profile Picture</Label>
+            <Label className="text-gray-300">Profile Picture</Label>
             <div className="flex items-center gap-4">
-              <div className="relative w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+              <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-900 border-2 border-racing-red/40 flex items-center justify-center">
                 {photoPreview ? (
                   <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="text-2xl font-bold">
+                  <div className="text-2xl font-bold text-white">
                     {(name || profile?.name || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -194,7 +194,7 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
                   variant="outline"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
-                  className="gap-2"
+                  className="gap-2 border-racing-red/40 bg-black/60 text-white hover:bg-racing-red/20"
                 >
                   <Camera className="w-4 h-4" />
                   {photoPreview ? 'Change Photo' : 'Upload Photo'}
@@ -205,7 +205,7 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
                     variant="ghost"
                     size="sm"
                     onClick={removePhoto}
-                    className="gap-2"
+                    className="gap-2 text-gray-400 hover:text-white hover:bg-gray-800"
                   >
                     <X className="w-4 h-4" />
                     Remove
@@ -213,13 +213,13 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
                 )}
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500">
               Recommended: Square image, max 5MB
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name" className="text-gray-300">Name *</Label>
             <Input
               id="name"
               value={name}
@@ -227,23 +227,24 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
               placeholder="Your name"
               maxLength={50}
               required
+              className="bg-black/60 border-racing-red/40 text-white placeholder:text-gray-500"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500">
               {name.length}/50 characters
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Bio</Label>
+            <Label htmlFor="description" className="text-gray-300">Bio</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Tell us about yourself and your love for F1..."
-              className="min-h-[100px] resize-none"
+              className="min-h-[100px] resize-none bg-black/60 border-racing-red/40 text-white placeholder:text-gray-500"
               maxLength={500}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500">
               {description.length}/500 characters
             </p>
           </div>
@@ -253,10 +254,11 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
+              className="border-gray-600 bg-transparent text-white hover:bg-gray-800"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="bg-racing-red hover:bg-red-600 text-white">
               {loading ? "Saving..." : "Save Changes"}
             </Button>
           </div>

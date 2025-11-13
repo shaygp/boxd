@@ -181,9 +181,9 @@ const RaceCardComponent = ({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 space-y-2 sm:space-y-3 bg-gradient-to-b from-transparent via-black/30 to-black/70">
+          <div className="w-full h-full flex flex-col items-center justify-center p-2 sm:p-3 space-y-1.5 sm:space-y-2 bg-gradient-to-b from-transparent via-black/30 to-black/70">
             {flagUrl && (
-              <div className="w-16 h-10 sm:w-20 sm:h-12 md:w-24 md:h-16 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex items-center justify-center">
+              <div className="w-20 h-12 sm:w-24 sm:h-14 md:w-28 md:h-16 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex items-center justify-center">
                 <img
                   src={flagUrl}
                   alt={country || circuit}
@@ -194,13 +194,12 @@ const RaceCardComponent = ({
                 />
               </div>
             )}
-            <div className="text-center space-y-1">
-              <div className="text-lg sm:text-xl md:text-2xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season}</div>
-              <div className="text-xs sm:text-sm font-black line-clamp-2 px-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</div>
+            <div className="text-center space-y-0.5">
+              <div className="text-base sm:text-lg md:text-xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season}</div>
+              <div className="text-[10px] sm:text-xs font-black line-clamp-2 px-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</div>
               {displayWinner && (
                 <div className="text-xs sm:text-sm font-black text-racing-red line-clamp-1 px-1 flex items-center justify-center gap-1 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                  <span>🏆</span>
-                  <span className="uppercase tracking-wider">{displayWinner}</span>
+                  <span>🏆 {displayWinner}</span>
                 </div>
               )}
             </div>
@@ -209,7 +208,7 @@ const RaceCardComponent = ({
 
         {/* Rating overlay */}
         {rating && (
-          <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 bg-black/90 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded border border-yellow-500/50 flex items-center gap-0.5 sm:gap-1">
+          <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-black/90 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded border border-yellow-500/50 flex items-center gap-0.5 sm:gap-1">
             <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-yellow-500 text-yellow-500 drop-shadow-[0_0_4px_rgba(234,179,8,0.8)]" />
             <span className="text-[10px] sm:text-xs font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{rating.toFixed(1)}</span>
           </div>

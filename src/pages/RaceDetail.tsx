@@ -326,24 +326,24 @@ const RaceDetail = () => {
           {/* Main Content */}
           <div className="space-y-6">
             {/* Poster & Info */}
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="w-full md:w-56 lg:w-64 aspect-[16/9] md:aspect-[2/3] bg-gradient-to-br from-racing-red/30 to-black/90 rounded-lg overflow-hidden relative border-2 border-red-900/40 mx-auto md:mx-0">
-                <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-6 gap-3 md:gap-4 bg-gradient-to-b from-transparent via-black/30 to-black/70">
-                  <div className="w-28 h-[70px] md:w-32 md:h-20 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex-shrink-0">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-4 md:items-center">
+              <div className="w-48 md:w-40 lg:w-44 aspect-[2/3] bg-gradient-to-br from-racing-red/30 to-black/90 rounded-lg overflow-hidden relative border-2 border-red-900/40 mx-auto md:mx-0 flex-shrink-0">
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-6 gap-2 md:gap-3 bg-gradient-to-b from-transparent via-black/30 to-black/90">
+                  <div className="w-24 h-14 md:w-28 md:h-16 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex-shrink-0">
                     <img
                       src={flagUrl}
                       alt={race.country}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="text-center flex-shrink-0">
-                    <div className="text-2xl md:text-3xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{race.season}</div>
-                    <div className="text-xs md:text-sm mt-1 md:mt-2 font-black line-clamp-2 uppercase tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)] px-2">{race.gpName}</div>
+                  <div className="text-center flex-shrink-0 space-y-1">
+                    <div className="text-xl md:text-2xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{race.season}</div>
+                    <div className="text-[10px] md:text-xs font-black line-clamp-2 uppercase tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)] px-2 max-w-[200px]">{race.gpName}</div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex-1 space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {winner && (
                   <div className="p-4 bg-racing-red/15 border-2 border-racing-red/40 rounded-lg">
                     <p className="text-sm text-gray-200 mb-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-center md:text-left">Race Winner</p>
@@ -365,7 +365,7 @@ const RaceDetail = () => {
                 </div>
 
                 {/* Small info boxes */}
-                <div className="flex gap-2 text-xs text-gray-400 justify-center md:justify-start">
+                <div className="flex gap-2 text-xs text-gray-400 justify-center md:justify-start flex-wrap">
                   <span>{race.circuit}</span>
                   <span>•</span>
                   <span>{race.country}</span>
@@ -434,11 +434,8 @@ const RaceDetail = () => {
             <div>
               <div className="mb-4 md:mb-6">
                 <div className="inline-block px-4 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
-                  <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">RACE REVIEWS</span>
+                  <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">RACE REVIEWS ({reviews.length})</span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                  COMMUNITY THOUGHTS <span className="text-gray-200 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">({reviews.length})</span>
-                </h2>
               </div>
 
               <div className="space-y-4 md:space-y-6">
@@ -449,10 +446,10 @@ const RaceDetail = () => {
                   </div>
                 ) : (
                   reviews.map((review) => (
-                    <Card key={review.id} className="p-5 sm:p-6 border-2 border-red-900/40 bg-black/90 backdrop-blur-sm hover:border-racing-red/60 transition-all">
-                      {/* Header with avatar, name, and rating */}
-                      <div className="flex items-start gap-4 mb-4">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black/90 border-2 border-racing-red/40 flex items-center justify-center font-black text-base overflow-hidden text-white flex-shrink-0">
+                    <Card key={review.id} className="p-4 sm:p-5 border border-gray-800 bg-black/60 backdrop-blur-sm hover:bg-black/80 transition-all">
+                      {/* Header with avatar and name */}
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center font-bold text-sm overflow-hidden text-white flex-shrink-0">
                           {review.userAvatar ? (
                             <img
                               src={review.userAvatar}
@@ -464,78 +461,77 @@ const RaceDetail = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="font-black text-base sm:text-lg hover:text-racing-red transition-colors cursor-pointer text-white">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-sm sm:text-base hover:text-racing-red transition-colors cursor-pointer text-white">
                               {review.username}
                             </span>
-                            <div className="flex items-center gap-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${
-                                    i < review.rating
-                                      ? 'fill-yellow-500 text-yellow-500'
-                                      : 'text-gray-600 fill-gray-600'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <div className="text-sm text-gray-400 mt-1">
-                            {review.dateWatched instanceof Date
-                              ? review.dateWatched.toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric'
-                                })
-                              : review.createdAt instanceof Date
-                                ? review.createdAt.toLocaleDateString('en-US', {
+                            <span className="text-xs text-gray-500">•</span>
+                            <span className="text-xs text-gray-400">
+                              {review.dateWatched instanceof Date
+                                ? review.dateWatched.toLocaleDateString('en-US', {
                                     month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric'
+                                    day: 'numeric'
                                   })
-                                : 'Recently'}
+                                : review.createdAt instanceof Date
+                                  ? review.createdAt.toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric'
+                                    })
+                                  : 'Recently'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 mt-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-3.5 h-3.5 ${
+                                  i < review.rating
+                                    ? 'fill-yellow-500 text-yellow-500'
+                                    : 'text-gray-700 fill-gray-700'
+                                }`}
+                              />
+                            ))}
                           </div>
                         </div>
                       </div>
 
                       {/* Review content */}
-                      <div className="space-y-3">
+                      <div className="space-y-2.5">
                         {/* Driver of the Day */}
                         {review.driverOfTheDay && (
-                          <div className="text-sm text-gray-300">
-                            <span className="font-bold">Driver of the Day: </span>
-                            <span className="text-white font-bold">🏆 {review.driverOfTheDay}</span>
+                          <div className="text-xs text-gray-400">
+                            <span className="font-medium">Driver of the Day: </span>
+                            <span className="text-white font-semibold">🏆 {review.driverOfTheDay}</span>
                           </div>
                         )}
 
                         {/* Review text */}
                         {review.spoilerWarning && !revealedSpoilers.has(review.id) ? (
-                          <div className="relative min-h-[100px]">
-                            <div className="text-base leading-relaxed blur-sm select-none pointer-events-none text-gray-200">
+                          <div className="relative min-h-[80px]">
+                            <div className="text-sm leading-relaxed blur-sm select-none pointer-events-none text-gray-300">
                               {review.review}
                             </div>
                             <div className="absolute inset-0 flex items-center justify-center">
                               <button
                                 onClick={() => setRevealedSpoilers(new Set([...revealedSpoilers, review.id]))}
-                                className="bg-racing-red hover:bg-racing-red/90 text-white px-4 py-2 rounded text-sm font-bold shadow-lg"
+                                className="bg-racing-red hover:bg-red-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
                               >
                                 ⚠️ Show Spoilers
                               </button>
                             </div>
                           </div>
                         ) : review.review && (
-                          <p className="text-base leading-relaxed text-gray-200">
+                          <p className="text-sm leading-relaxed text-gray-200">
                             {review.review}
                           </p>
                         )}
 
                         {/* Companions */}
                         {review.companions && review.companions.length > 0 && (
-                          <div className="flex flex-wrap items-center gap-1.5 text-sm text-gray-400">
+                          <div className="flex flex-wrap items-center gap-1 text-xs text-gray-500">
                             <span>Watched with</span>
                             {review.companions.map((companion: string) => (
-                              <span key={companion} className="text-white font-medium">
+                              <span key={companion} className="text-racing-red font-medium">
                                 @{companion}
                               </span>
                             ))}
@@ -544,9 +540,9 @@ const RaceDetail = () => {
                       </div>
 
                       {/* Actions footer */}
-                      <div className="flex items-center justify-between gap-4 mt-4">
+                      <div className="flex items-center gap-6 mt-3 pt-3 border-t border-gray-800">
                         <button
-                          className="flex items-center gap-2 text-sm text-gray-400 hover:text-racing-red transition-colors"
+                          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-racing-red transition-colors"
                           onClick={() => review.id && handleLikeReview(review.id)}
                         >
                           <Heart className={`w-4 h-4 ${
@@ -554,7 +550,7 @@ const RaceDetail = () => {
                               ? 'fill-racing-red text-racing-red'
                               : ''
                           }`} />
-                          <span>{review.likesCount > 0 ? review.likesCount : 'Like'}</span>
+                          <span className="font-medium">{review.likesCount > 0 ? review.likesCount : 'Like'}</span>
                         </button>
 
                         {/* Edit & Delete buttons - only show for own reviews */}

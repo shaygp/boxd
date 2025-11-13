@@ -89,7 +89,9 @@ const Profile = () => {
         round: log.round || 1,
         gpName: log.raceName,
         circuit: log.raceLocation,
-        date: log.dateWatched.toString(),
+        date: log.dateWatched instanceof Date
+          ? log.dateWatched.toISOString()
+          : new Date(log.dateWatched).toISOString(),
         rating: log.rating,
         watched: true,
         country: log.countryCode,
@@ -179,15 +181,13 @@ const Profile = () => {
     <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
       <Header />
 
-      <main className="container px-4 sm:px-6 py-6 sm:py-8">
-        {/* Profile Header */}
-        <div className="space-y-6 mb-6 sm:mb-8">
-          {/* Profile Info */}
-          <div className="px-0 sm:px-6">
-            <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-4 sm:p-6">
-            {/* Avatar */}
-            <div className="flex items-end justify-between mb-4">
-              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-racing-red/40 overflow-hidden bg-black/80 flex items-center justify-center shadow-xl shadow-red-500/30">
+      <main className="container px-4 sm:px-6 py-6 sm:py-8 max-w-5xl mx-auto">
+        {/* Profile Header - Letterboxd Style */}
+        <div className="mb-8">
+          <div className="flex items-start gap-6">
+            {/* Avatar - Larger, more prominent */}
+            <div className="flex-shrink-0">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full border-2 border-gray-700 overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center shadow-2xl">
                 {profile?.photoURL ? (
                   <img
                     src={profile.photoURL}
@@ -195,158 +195,191 @@ const Profile = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="text-3xl sm:text-4xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+                  <div className="text-4xl sm:text-5xl md:text-6xl font-bold text-white">
                     {(profile?.name || profile?.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
+            </div>
 
-              <div className="mb-2">
+            {/* Profile Info */}
+            <div className="flex-1 min-w-0 pt-2">
+              {/* Name and Username */}
+              <div className="mb-4">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1">
+                  {profile?.name || 'Loading...'}
+                </h1>
+                <p className="text-sm sm:text-base text-gray-400">
+                  @{profile?.email?.split('@')[0] || 'user'}
+                </p>
+              </div>
+
+              {/* Stats - Letterboxd Style */}
+              <div className="flex flex-wrap gap-4 sm:gap-6 text-sm mb-4">
+                <button className="hover:text-racing-red transition-colors">
+                  <span className="font-semibold text-white">{stats.racesWatched}</span>{' '}
+                  <span className="text-gray-400">races</span>
+                </button>
+                <button className="hover:text-racing-red transition-colors">
+                  <span className="font-semibold text-white">{stats.followers}</span>{' '}
+                  <span className="text-gray-400">followers</span>
+                </button>
+                <button className="hover:text-racing-red transition-colors">
+                  <span className="font-semibold text-white">{stats.following}</span>{' '}
+                  <span className="text-gray-400">following</span>
+                </button>
+              </div>
+
+              {/* Bio */}
+              {profile?.description && (
+                <p className="text-sm sm:text-base text-gray-300 leading-relaxed mb-4">
+                  {profile.description}
+                </p>
+              )}
+
+              {/* Action Button */}
+              <div>
                 {currentUser?.uid === (userId || currentUser?.uid) ? (
                   <EditProfileDialog profile={profile} onSuccess={loadProfile} />
                 ) : (
                   <Button
                     onClick={handleFollowToggle}
                     disabled={followLoading}
+                    size="sm"
                     variant={followingUser ? "outline" : "default"}
-                    className={followingUser ? "border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" : "bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30 font-black uppercase tracking-wider"}
+                    className={followingUser
+                      ? "border border-gray-600 bg-transparent text-white hover:bg-gray-800 hover:border-gray-500"
+                      : "bg-racing-red hover:bg-red-600 text-white"
+                    }
                   >
-                    {followingUser ? 'Unfollow' : 'Follow'}
+                    {followingUser ? (
+                      <>
+                        <UserMinus className="w-4 h-4 mr-2" />
+                        Unfollow
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Follow
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Name and Bio */}
-            <div className="mb-6">
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-1">
-                {profile?.name || 'Loading...'}
-              </h1>
-              <p className="text-sm sm:text-base text-gray-200 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                @{profile?.email?.split('@')[0] || 'user'}
-              </p>
-
-              {profile?.description && (
-                <p className="mt-3 text-sm sm:text-base text-gray-200 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                  {profile.description}
-                </p>
-              )}
-            </div>
-
-            {/* Stats */}
-            <div className="flex flex-wrap gap-4 sm:gap-6 text-sm mb-6">
+          {/* Secondary Stats Row */}
+          <div className="mt-6 pt-6 border-t border-gray-800">
+            <div className="flex flex-wrap gap-4 sm:gap-6 text-sm">
               <div>
-                <span className="font-black text-racing-red drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{stats.racesWatched}</span>{' '}
-                <span className="text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Races</span>
-              </div>
-              <div>
-                <span className="font-black text-racing-red drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{stats.followers}</span>{' '}
-                <span className="text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Followers</span>
-              </div>
-              <div>
-                <span className="font-black text-racing-red drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{stats.following}</span>{' '}
-                <span className="text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Following</span>
-              </div>
-            </div>
-
-            {/* Time Spent Watching */}
-            <div className="mb-6 py-3 px-4 bg-gradient-to-r from-racing-red/10 via-racing-red/15 to-racing-red/10 rounded-lg border-2 border-racing-red/40">
-              <div className="flex items-center gap-1.5 flex-wrap text-sm sm:text-base">
-                <span className="text-gray-100 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{currentUser?.uid === (userId || currentUser?.uid) ? "You've" : `${profile?.name || 'They'} has`} spent</span>
-                {(() => {
+                <span className="text-gray-400">
+                  {currentUser?.uid === (userId || currentUser?.uid) ? "You've" : `${profile?.name || 'User'} has`} spent{' '}
+                </span>
+                <span className="font-semibold text-racing-red">{(() => {
                   const totalHours = stats.hoursSpent;
                   const months = Math.floor(totalHours / (24 * 30));
                   const remainingAfterMonths = totalHours % (24 * 30);
                   const days = Math.floor(remainingAfterMonths / 24);
                   const hours = remainingAfterMonths % 24;
-
-                  return (
-                    <>
-                      {months > 0 && (
-                        <>
-                          <span className="font-black text-racing-red drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{months}</span>
-                          <span className="text-gray-200 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{months === 1 ? 'month' : 'months'}</span>
-                        </>
-                      )}
-                      {days > 0 && (
-                        <>
-                          <span className="font-black text-racing-red drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{days}</span>
-                          <span className="text-gray-200 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{days === 1 ? 'day' : 'days'}</span>
-                        </>
-                      )}
-                      <span className="font-black text-racing-red drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{hours}</span>
-                      <span className="text-gray-200 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{hours === 1 ? 'hour' : 'hours'}</span>
-                      <span className="text-gray-100 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">watching GPs 🏎️</span>
-                    </>
-                  );
-                })()}
+                  const parts = [];
+                  if (months > 0) parts.push(`${months} ${months === 1 ? 'month' : 'months'}`);
+                  if (days > 0) parts.push(`${days} ${days === 1 ? 'day' : 'days'}`);
+                  parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`);
+                  return parts.join(', ');
+                })()}</span>{' '}
+                <span className="text-gray-400">watching GPs 🏎️</span>
               </div>
-            </div>
-
-            {/* Favourites */}
-            {(statsDoc?.exists() && (statsDoc.data()?.favoriteDriver || statsDoc.data()?.favoriteCircuit || statsDoc.data()?.favoriteTeam)) && (
-              <Card className="p-4 sm:p-5 mb-6 border-2 border-red-900/40 bg-black/90 backdrop-blur-sm">
-                <h3 className="text-base sm:text-lg font-black tracking-tight text-white mb-3 sm:mb-4 flex items-center gap-2 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                  <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-racing-red fill-racing-red drop-shadow-[0_0_4px_rgba(220,38,38,0.8)]" />
-                  FAVORITES
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
-                  {statsDoc.data()?.favoriteDriver && (
-                    <div className="p-2.5 sm:p-3 rounded-lg bg-racing-red/15 border border-racing-red/40">
-                      <p className="text-[10px] sm:text-xs text-gray-200 mb-0.5 sm:mb-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Driver</p>
-                      <p className="font-black text-xs sm:text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{statsDoc.data().favoriteDriver}</p>
-                    </div>
-                  )}
-                  {statsDoc.data()?.favoriteCircuit && (
-                    <div className="p-2.5 sm:p-3 rounded-lg bg-racing-red/15 border border-racing-red/40">
-                      <p className="text-[10px] sm:text-xs text-gray-200 mb-0.5 sm:mb-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Circuit</p>
-                      <p className="font-black text-xs sm:text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{statsDoc.data().favoriteCircuit}</p>
-                    </div>
-                  )}
-                  {statsDoc.data()?.favoriteTeam && (
-                    <div className="p-2.5 sm:p-3 rounded-lg bg-racing-red/15 border border-racing-red/40">
-                      <p className="text-[10px] sm:text-xs text-gray-200 mb-0.5 sm:mb-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Team</p>
-                      <p className="font-black text-xs sm:text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{statsDoc.data().favoriteTeam}</p>
-                    </div>
-                  )}
+              {stats.reviews > 0 && (
+                <div>
+                  <span className="font-semibold text-racing-red">{stats.reviews}</span>{' '}
+                  <span className="text-gray-400">reviews</span>
                 </div>
-              </Card>
-            )}
+              )}
+              {stats.lists > 0 && (
+                <div>
+                  <span className="font-semibold text-racing-red">{stats.lists}</span>{' '}
+                  <span className="text-gray-400">lists</span>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Favourites - Letterboxd Style */}
+          {(statsDoc?.exists() && (statsDoc.data()?.favoriteDriver || statsDoc.data()?.favoriteCircuit || statsDoc.data()?.favoriteTeam)) && (
+            <div className="mt-6 pt-6 border-t border-gray-800">
+              <h3 className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">
+                Favorites
+              </h3>
+              <div className="flex flex-wrap gap-4">
+                {statsDoc.data()?.favoriteDriver && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-500">Driver:</span>
+                    <span className="text-white font-medium">{statsDoc.data().favoriteDriver}</span>
+                  </div>
+                )}
+                {statsDoc.data()?.favoriteCircuit && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-500">Circuit:</span>
+                    <span className="text-white font-medium">{statsDoc.data().favoriteCircuit}</span>
+                  </div>
+                )}
+                {statsDoc.data()?.favoriteTeam && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-500">Team:</span>
+                    <span className="text-white font-medium">{statsDoc.data().favoriteTeam}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - Letterboxd Style */}
         <Tabs defaultValue="logs" className="space-y-6">
-          <div className="w-full overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="w-full sm:w-auto inline-flex justify-start min-w-max border-2 border-red-900/30 bg-black/50">
-              <TabsTrigger value="logs" className="gap-1 sm:gap-2 text-[10px] sm:text-xs px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+          <div className="border-b border-gray-800">
+            <TabsList className="w-full justify-start bg-transparent h-auto p-0 space-x-0">
+              <TabsTrigger
+                value="logs"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
+              >
                 Logs
               </TabsTrigger>
-              <TabsTrigger value="reviews" className="gap-1 sm:gap-2 text-[10px] sm:text-xs px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <Star className="w-3 h-3 sm:w-4 sm:h-4" />
+              <TabsTrigger
+                value="reviews"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
+              >
                 Reviews
               </TabsTrigger>
-              <TabsTrigger value="lists" className="gap-1 sm:gap-2 text-[10px] sm:text-xs px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <List className="w-3 h-3 sm:w-4 sm:h-4" />
+              <TabsTrigger
+                value="lists"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
+              >
                 Lists
               </TabsTrigger>
-              <TabsTrigger value="watchlist" className="gap-1 sm:gap-2 text-[10px] sm:text-xs px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                Watch
+              <TabsTrigger
+                value="watchlist"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
+              >
+                Watchlist
               </TabsTrigger>
-              <TabsTrigger value="likes" className="gap-1 sm:gap-2 text-[10px] sm:text-xs px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
+              <TabsTrigger
+                value="likes"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
+              >
                 Likes
               </TabsTrigger>
-              <TabsTrigger value="followers" className="gap-1 sm:gap-2 text-[10px] sm:text-xs px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-                Fans
+              <TabsTrigger
+                value="followers"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
+              >
+                Followers
               </TabsTrigger>
-              <TabsTrigger value="following" className="gap-1 sm:gap-2 text-[10px] sm:text-xs px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-                Follow
+              <TabsTrigger
+                value="following"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
+              >
+                Following
               </TabsTrigger>
             </TabsList>
           </div>
@@ -396,7 +429,7 @@ const Profile = () => {
                           <span className="text-gray-300 text-sm font-bold">reviewed</span>
                           <span
                             className="font-bold text-white hover:text-racing-red cursor-pointer"
-                            onClick={() => navigate(`/race/${race.season}/${race.round}`)}
+                            onClick={() => navigate(`/race/${race.id}`)}
                           >
                             {race.season} {race.gpName}
                           </span>
