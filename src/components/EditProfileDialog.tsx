@@ -13,7 +13,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateUserProfile, uploadProfilePicture } from "@/services/auth";
-import { Edit, Camera, X } from "lucide-react";
+import { Edit, Camera, X, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface EditProfileDialogProps {
   profile: any;
@@ -27,6 +37,7 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -155,6 +166,34 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      // Delete user's account
+      await user.delete();
+
+      toast({
+        title: "Account deleted",
+        description: "Your account has been permanently deleted",
+      });
+
+      // Redirect to login
+      window.location.href = '/login';
+    } catch (error: any) {
+      console.error('[EditProfileDialog] Error deleting account:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete account. You may need to re-authenticate.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -262,8 +301,52 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
               {loading ? "Saving..." : "Save Changes"}
             </Button>
           </div>
+
+          {/* Delete Account Section */}
+          <div className="pt-6 mt-6 border-t border-gray-800">
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-gray-300">Danger Zone</h3>
+              <p className="text-xs text-gray-500">
+                Once you delete your account, there is no going back. Please be certain.
+              </p>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+                className="w-full gap-2 bg-red-900/20 border border-red-900/40 text-red-500 hover:bg-red-900/30 hover:text-red-400"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Account
+              </Button>
+            </div>
+          </div>
         </form>
       </DialogContent>
+
+      {/* Delete Account Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-black border-2 border-red-900/40">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              This action cannot be undone. This will permanently delete your account
+              and remove all your data including race logs, reviews, and lists from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-gray-600 bg-transparent text-white hover:bg-gray-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={loading}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {loading ? "Deleting..." : "Yes, delete my account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };
