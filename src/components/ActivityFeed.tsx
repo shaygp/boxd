@@ -96,6 +96,9 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
           console.log('[ActivityFeed] First 3 activities:', activities.slice(0, 3).map(a => ({
             id: a.id,
             type: a.type,
+            raceName: a.raceName,
+            raceYear: a.raceYear,
+            round: a.round,
             content: a.content?.substring(0, 30),
             createdAt: a.createdAt
           })));
@@ -223,14 +226,13 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
   const getActivityLink = (activity: Activity) => {
     switch (activity.targetType) {
       case 'raceLog':
-        // Use raceLog ID to link directly to the race detail page
+        // Link to race detail page by year/round if available
+        if (activity.raceYear && activity.round) {
+          return `/race/${activity.raceYear}/${activity.round}`;
+        }
+        // Fallback to race log ID if no year/round
         if (activity.targetId) {
           return `/race/${activity.targetId}`;
-        }
-        // Fallback to year/round if available in metadata
-        if (activity.raceYear && activity.raceName) {
-          // This won't work without round, but keeping as fallback
-          console.warn('[ActivityFeed] Race log missing targetId, metadata:', activity);
         }
         return '#';
       case 'list':
@@ -319,22 +321,21 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                       {activity.username}
                     </Link>
                     <span className="text-gray-400">{getActivityText(activity)}</span>
-                    {activity.targetType === 'raceLog' && activity.raceName && (
+                    {activity.targetType === 'raceLog' && (activity.raceName || activity.raceYear) ? (
                       <Link
                         to={getActivityLink(activity)}
                         className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"
                       >
-                        {activity.raceName}
+                        {activity.raceName || 'a race'}
                       </Link>
-                    )}
-                    {activity.targetType === 'raceLog' && !activity.raceName && (
+                    ) : activity.targetType === 'raceLog' ? (
                       <Link
                         to={getActivityLink(activity)}
                         className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"
                       >
                         a race
                       </Link>
-                    )}
+                    ) : null}
                     {activity.targetType === 'list' && (
                       <Link
                         to={getActivityLink(activity)}

@@ -68,11 +68,37 @@ const RaceDetail = () => {
         console.log('[RaceDetail] Loading by ID:', id);
         const log = await getRaceLogById(id);
         console.log('[RaceDetail] Race log by ID:', log);
-        setRaceLog(log);
 
-        const user = auth.currentUser;
-        if (user && log) {
-          setIsLiked(log.likedBy?.includes(user.uid) || false);
+        if (log) {
+          setRaceLog(log);
+
+          const user = auth.currentUser;
+          if (user) {
+            setIsLiked(log.likedBy?.includes(user.uid) || false);
+          }
+
+          // Try to load the race info from Firestore using the log's race details
+          if (log.raceYear && log.round) {
+            try {
+              const firestoreRace = await getFirestoreRaceByYearAndRound(log.raceYear, log.round);
+              if (firestoreRace) {
+                const raceData = {
+                  meeting_key: firestoreRace.round,
+                  year: firestoreRace.year,
+                  round: firestoreRace.round,
+                  meeting_name: firestoreRace.raceName,
+                  circuit_short_name: firestoreRace.circuitName,
+                  date_start: firestoreRace.dateStart.toISOString(),
+                  country_code: firestoreRace.countryCode,
+                  country_name: firestoreRace.countryName,
+                  location: firestoreRace.location
+                };
+                setRaceInfo(raceData);
+              }
+            } catch (error) {
+              console.warn('[RaceDetail] Could not load race info for log:', error);
+            }
+          }
         }
       } else if (year && round) {
         console.log('[RaceDetail] Loading by year/round:', year, round);
@@ -326,19 +352,19 @@ const RaceDetail = () => {
           {/* Main Content */}
           <div className="space-y-6">
             {/* Poster & Info */}
-            <div className="flex flex-col md:flex-row gap-4 md:gap-4 md:items-center">
-              <div className="w-48 md:w-40 lg:w-44 aspect-[2/3] bg-gradient-to-br from-racing-red/30 to-black/90 rounded-lg overflow-hidden relative border-2 border-red-900/40 mx-auto md:mx-0 flex-shrink-0">
-                <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-6 gap-2 md:gap-3 bg-gradient-to-b from-transparent via-black/30 to-black/90">
-                  <div className="w-24 h-14 md:w-28 md:h-16 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex-shrink-0">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6 md:items-start">
+              <div className="w-full md:w-auto bg-gradient-to-br from-racing-red/30 to-black/90 rounded-lg overflow-hidden relative border-2 border-red-900/40 flex-shrink-0">
+                <div className="flex flex-row items-center justify-start p-4 md:p-6 gap-4 md:gap-6 bg-gradient-to-b from-transparent via-black/30 to-black/90">
+                  <div className="w-24 h-16 md:w-32 md:h-20 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex-shrink-0">
                     <img
                       src={flagUrl}
                       alt={race.country}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="text-center flex-shrink-0 space-y-1">
-                    <div className="text-xl md:text-2xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{race.season}</div>
-                    <div className="text-[10px] md:text-xs font-black line-clamp-2 uppercase tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)] px-2 max-w-[200px]">{race.gpName}</div>
+                  <div className="flex flex-col items-start justify-center flex-1 space-y-1 min-w-0">
+                    <div className="text-2xl md:text-3xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{race.season}</div>
+                    <div className="text-sm md:text-base font-black uppercase tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)] leading-tight">{race.gpName}</div>
                   </div>
                 </div>
               </div>
@@ -361,6 +387,7 @@ const RaceDetail = () => {
                     readonly
                     totalRatings={race.totalRatings}
                     onClickWhenReadonly={() => setLogDialogOpen(true)}
+                    size="sm"
                   />
                 </div>
 

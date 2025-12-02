@@ -53,11 +53,24 @@ export const toggleLike = async (raceLogId: string) => {
         likesCount: increment(1)
       });
 
+      // Extract race metadata
+      const raceData = raceLogDoc.data();
+      const raceName = raceData.raceName;
+      const raceYear = raceData.raceYear;
+      const round = raceData.round;
+      const raceLocation = raceData.raceLocation;
+      const rating = raceData.rating;
+
       try {
         await createActivity({
           type: 'like',
           targetId: raceLogId,
           targetType: 'raceLog',
+          raceName,
+          raceYear,
+          round,
+          raceLocation,
+          rating,
         });
       } catch (error) {
         console.error('Failed to create activity:', error);
@@ -65,13 +78,12 @@ export const toggleLike = async (raceLogId: string) => {
 
       // Create notification for the race log owner
       try {
-        const raceLogOwnerId = raceLogDoc.data().userId;
+        const raceLogOwnerId = raceData.userId;
         if (raceLogOwnerId && raceLogOwnerId !== user.uid) {
           const likerDoc = await getDoc(doc(db, 'users', user.uid));
           const likerData = likerDoc.exists() ? likerDoc.data() : {};
           const likerName = likerData.name || user.displayName || user.email?.split('@')[0] || 'Someone';
           const likerPhoto = likerData.photoURL || user.photoURL;
-          const raceName = raceLogDoc.data().raceName || 'your race log';
 
           await createNotification({
             userId: raceLogOwnerId,
@@ -79,7 +91,7 @@ export const toggleLike = async (raceLogId: string) => {
             actorId: user.uid,
             actorName: likerName,
             actorPhotoURL: likerPhoto,
-            content: `liked your review of ${raceName}`,
+            content: `liked your review of ${raceName || 'your race log'}`,
             linkTo: `/race/${raceLogId}`,
           });
           console.log('[toggleLike] Notification created for like');

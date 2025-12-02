@@ -54,11 +54,17 @@ export const followUser = async (userIdToFollow: string) => {
     followingCount: increment(1)
   });
 
+  // Get followed user's name for activity
   try {
+    const followedUserDoc = await getDoc(doc(db, 'users', userIdToFollow));
+    const followedUserData = followedUserDoc.exists() ? followedUserDoc.data() : {};
+    const followedUserName = followedUserData.name || 'a user';
+
     await createActivity({
       type: 'follow',
       targetId: userIdToFollow,
       targetType: 'user',
+      content: followedUserName,
     });
   } catch (error) {
     console.error('Failed to create activity:', error);

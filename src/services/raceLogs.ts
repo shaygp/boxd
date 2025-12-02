@@ -31,8 +31,9 @@ export interface RaceLog {
   watchMode: 'live' | 'replay' | 'tvBroadcast' | 'highlights' | 'attendedInPerson';
   rating: number;
   review: string;
-  tags: string[];
   companions: string[];
+  driverOfTheDay?: string;
+  raceWinner?: string;
   mediaUrls: string[];
   spoilerWarning: boolean;
   visibility: 'public' | 'private' | 'friends';
@@ -276,32 +277,6 @@ export const getRaceLogsByYear = async (year: number) => {
   }
 };
 
-export const getRaceLogsByTag = async (tag: string) => {
-  try {
-    const q = query(
-      raceLogsCollection,
-      where('tags', 'array-contains', tag),
-      where('visibility', '==', 'public'),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => {
-      const data = doc.data();
-      // Convert Firestore Timestamps to Date objects
-      return {
-        id: doc.id,
-        ...data,
-        dateWatched: data.dateWatched?.toDate ? data.dateWatched.toDate() : new Date(data.dateWatched),
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
-        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt),
-      } as RaceLog;
-    });
-  } catch (error) {
-    console.error('Error fetching race logs by tag:', error);
-    console.error('Tag:', tag);
-    throw new Error('Failed to fetch race logs by tag: ' + (error instanceof Error ? error.message : 'Unknown error'));
-  }
-};
 
 export const calculateTotalHoursWatched = (logs: RaceLog[]): number => {
   return logs.reduce((total, log) => {
@@ -318,6 +293,11 @@ export const calculateTotalHoursWatched = (logs: RaceLog[]): number => {
         break;
       case 'highlights':
         hours = 0.25;
+        break;
+      default:
+        // Fallback for any unhandled session types (e.g., 'sprintQualifying')
+        hours = 1;
+        console.warn(`[calculateTotalHoursWatched] Unknown sessionType: ${log.sessionType}, using 1 hour default`);
         break;
     }
     return total + hours;

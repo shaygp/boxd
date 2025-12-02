@@ -8,6 +8,7 @@ interface StarRatingProps {
   size?: "sm" | "md" | "lg";
   totalRatings?: number;
   onClickWhenReadonly?: () => void;
+  hideStars?: boolean;
 }
 
 export const StarRating = ({
@@ -17,6 +18,7 @@ export const StarRating = ({
   size = "md",
   totalRatings = 0,
   onClickWhenReadonly,
+  hideStars = false,
 }: StarRatingProps) => {
   const [hoverRating, setHoverRating] = useState(0);
 
@@ -68,6 +70,7 @@ export const StarRating = ({
   return (
     <div className="space-y-2">
       {/* Stars */}
+      {!hideStars && (
       <div className="flex items-center gap-2 sm:gap-2.5">
         {[1, 2, 3, 4, 5].map((position) => {
           const isActive = displayRating >= position;
@@ -112,6 +115,7 @@ export const StarRating = ({
           );
         })}
       </div>
+      )}
 
       {/* Rating Display */}
       {(readonly || displayRating > 0) && (
