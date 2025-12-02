@@ -38,6 +38,36 @@ export const createActivity = async (activity: Omit<Activity, 'id' | 'createdAt'
   const user = auth.currentUser;
   if (!user) throw new Error('User not authenticated');
 
+  // Check for duplicate activities - prevent same user from creating multiple activities for the same target
+  // This prevents showing "liked a race" and "logged a race" for the same race
+  try {
+    const duplicateQuery = query(
+      activitiesCollection,
+      where('userId', '==', user.uid),
+      where('targetId', '==', activity.targetId),
+      where('targetType', '==', activity.targetType),
+      orderBy('createdAt', 'desc'),
+      limit(1)
+    );
+
+    const duplicateSnapshot = await getDocs(duplicateQuery);
+
+    if (!duplicateSnapshot.empty) {
+      const existingActivity = duplicateSnapshot.docs[0].data();
+      const existingTime = existingActivity.createdAt?.toDate?.() || new Date(existingActivity.createdAt);
+      const timeDiff = Date.now() - existingTime.getTime();
+
+      // If there's an existing activity for the same target within the last 24 hours, skip creating a new one
+      if (timeDiff < 24 * 60 * 60 * 1000) {
+        console.log('[createActivity] Skipping duplicate activity creation for same target');
+        return duplicateSnapshot.docs[0].id;
+      }
+    }
+  } catch (error) {
+    console.error('[createActivity] Error checking for duplicates:', error);
+    // Continue with creation if duplicate check fails
+  }
+
   // Fetch user's profile from Firestore to get the latest photoURL
   let userAvatar = user.photoURL || '';
   let username = user.displayName || user.email?.split('@')[0] || 'User';

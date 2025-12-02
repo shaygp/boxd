@@ -60,20 +60,24 @@ export const toggleLike = async (raceLogId: string) => {
       const round = raceData.round;
       const raceLocation = raceData.raceLocation;
       const rating = raceData.rating;
+      const raceLogOwnerId = raceData.userId;
 
-      try {
-        await createActivity({
-          type: 'like',
-          targetId: raceLogId,
-          targetType: 'raceLog',
-          raceName,
-          raceYear,
-          round,
-          raceLocation,
-          rating,
-        });
-      } catch (error) {
-        console.error('Failed to create activity:', error);
+      // Only create activity if user is liking someone else's race log (not their own)
+      if (raceLogOwnerId !== user.uid) {
+        try {
+          await createActivity({
+            type: 'like',
+            targetId: raceLogId,
+            targetType: 'raceLog',
+            raceName,
+            raceYear,
+            round,
+            raceLocation,
+            rating,
+          });
+        } catch (error) {
+          console.error('Failed to create activity:', error);
+        }
       }
 
       // Create notification for the race log owner

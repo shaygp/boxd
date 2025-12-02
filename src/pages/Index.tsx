@@ -2,7 +2,7 @@ import { Header } from "@/components/Header";
 import { RaceCard } from "@/components/RaceCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, X, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPublicRaceLogs } from "@/services/raceLogs";
 import { getPosterUrl, getRaceWinner } from "@/services/f1Api";
@@ -252,6 +252,57 @@ const Index = () => {
           ) : (
             <div className="text-center py-12 text-gray-400 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">No races available</div>
           )}
+        </section>
+
+        {/* Formula Wrapped Section */}
+        <section
+          className="relative overflow-hidden rounded-2xl border-2 border-racing-red/60 bg-gradient-to-br from-racing-red/20 via-black to-black cursor-pointer group hover:border-racing-red transition-all duration-300"
+          onClick={() => navigate('/wrapped')}
+        >
+          {/* Animated background effects */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-0 left-0 w-full h-1 bg-racing-red animate-pulse" />
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-racing-red animate-pulse" />
+            <div className="absolute top-1/4 -left-full w-full h-16 bg-gradient-to-r from-transparent via-racing-red to-transparent skew-y-12 animate-[slide_3s_ease-in-out_infinite]" />
+          </div>
+
+          {/* Checkered flag pattern */}
+          <div className="absolute top-4 right-4 w-12 h-12 opacity-20 group-hover:opacity-30 transition-opacity" style={{
+            backgroundImage: 'repeating-conic-gradient(#000 0% 25%, #fff 0% 50%)',
+            backgroundPosition: '0 0, 8px 8px',
+            backgroundSize: '16px 16px'
+          }} />
+
+          <div className="relative z-10 p-8 sm:p-12 text-center space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-racing-red/20 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
+              <Sparkles className="w-4 h-4 text-racing-red animate-pulse" />
+              <span className="text-racing-red font-black text-xs tracking-widest">YOUR 2025 WRAPPED</span>
+              <Sparkles className="w-4 h-4 text-racing-red animate-pulse" />
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
+              FORMULA <span className="text-racing-red drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]">WRAPPED</span>
+            </h2>
+
+            <p className="text-sm sm:text-base text-gray-300 max-w-2xl mx-auto font-bold">
+              From a calm season to a three contenders finale. How was your 2025?
+            </p>
+
+            <div className="flex gap-2 justify-center my-4">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className={`h-1 w-3 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
+              ))}
+            </div>
+
+            <Button
+              size="lg"
+              className="gap-2 bg-racing-red hover:bg-red-600 shadow-xl shadow-red-500/50 border-2 border-red-400 font-black uppercase tracking-wider group-hover:scale-105 transition-transform"
+            >
+              <Sparkles className="w-5 h-5" />
+              View Your Wrapped
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+          </div>
         </section>
 
         <section className="space-y-6">

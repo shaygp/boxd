@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LogRaceDialog } from "@/components/LogRaceDialog";
-import { Search, Plus, User, Bell, LogOut, Settings, Menu, X, Home, Compass, Activity, Calendar, Eye } from "lucide-react";
+import { Search, Plus, User, Bell, LogOut, Settings, Menu, X, Home, Compass, Activity, Calendar, Eye, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -259,6 +259,13 @@ export const Header = () => {
               >
                 <User className="w-5 h-5 mr-3" />
                 Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigate('/wrapped')}
+                className="cursor-pointer py-3 px-4 text-base bg-gradient-to-r from-racing-red/10 to-transparent"
+              >
+                <Sparkles className="w-5 h-5 mr-3 text-racing-red" />
+                <span className="font-black text-racing-red">Formula Wrapped</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigate('/settings')}
