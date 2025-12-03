@@ -247,7 +247,7 @@ export const FormulaWrapped = () => {
 
   const slides = [
     // Slide 0: Opening
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden">
       {/* Animated racing stripes */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-0 w-full h-2 bg-racing-red animate-pulse" />
@@ -271,7 +271,7 @@ export const FormulaWrapped = () => {
       <div className="relative space-y-8 animate-fade-in z-10">
         <div className="inline-block relative">
           <div className="absolute -inset-8 bg-racing-red/30 blur-3xl animate-pulse" />
-          <h1 className="relative text-7xl md:text-9xl font-black text-white tracking-tighter uppercase" style={{
+          <h1 className="relative text-5xl sm:text-7xl md:text-9xl font-black text-white tracking-tighter uppercase" style={{
             textShadow: '0 0 40px rgba(220,38,38,0.8), 0 0 80px rgba(220,38,38,0.4)'
           }}>
             YOUR 2025
@@ -283,7 +283,7 @@ export const FormulaWrapped = () => {
           </div>
         </div>
         <div className="relative">
-          <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tight animate-pulse" style={{
+          <h2 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase tracking-tight animate-pulse" style={{
             background: 'linear-gradient(90deg, #dc2626 0%, #ffffff 50%, #dc2626 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -303,7 +303,7 @@ export const FormulaWrapped = () => {
     </div>,
 
     // Slide 1: Total Hours
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden">
       {/* Dramatic speed lines */}
       <div className="absolute inset-0 opacity-20">
         {[...Array(12)].map((_, i) => (
@@ -328,23 +328,23 @@ export const FormulaWrapped = () => {
           <div className="relative inline-block">
             <div className="absolute -inset-8 bg-racing-red/30 blur-3xl animate-pulse" />
             <div className="relative space-y-2">
-              <div className="flex items-baseline justify-center gap-3">
-                <h1 className="text-7xl md:text-9xl font-black text-racing-red drop-shadow-[0_0_60px_rgba(220,38,38,0.8)]">
+              <div className="flex items-baseline justify-center gap-2 sm:gap-3">
+                <h1 className="text-5xl sm:text-7xl md:text-9xl font-black text-racing-red drop-shadow-[0_0_60px_rgba(220,38,38,0.8)]">
                   {Math.floor(stats.totalHours / 24)}
                 </h1>
-                <span className="text-3xl md:text-4xl font-black text-white uppercase">days</span>
+                <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase">days</span>
               </div>
-              <div className="flex items-baseline justify-center gap-3">
-                <h2 className="text-5xl md:text-6xl font-black text-white drop-shadow-[0_0_40px_rgba(220,38,38,0.6)]">
+              <div className="flex items-baseline justify-center gap-2 sm:gap-3">
+                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-[0_0_40px_rgba(220,38,38,0.6)]">
                   {stats.totalHours % 24}
                 </h2>
-                <span className="text-2xl md:text-3xl font-black text-gray-400 uppercase">hours</span>
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-gray-400 uppercase">hours</span>
               </div>
-              <div className="flex items-baseline justify-center gap-3">
-                <h3 className="text-4xl md:text-5xl font-black text-gray-300 drop-shadow-[0_0_30px_rgba(220,38,38,0.4)]">
+              <div className="flex items-baseline justify-center gap-2 sm:gap-3">
+                <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-300 drop-shadow-[0_0_30px_rgba(220,38,38,0.4)]">
                   {((stats.totalHours % 1) * 60).toFixed(0)}
                 </h3>
-                <span className="text-xl md:text-2xl font-black text-gray-500 uppercase">minutes</span>
+                <span className="text-lg sm:text-xl md:text-2xl font-black text-gray-500 uppercase">minutes</span>
               </div>
             </div>
           </div>
@@ -355,7 +355,7 @@ export const FormulaWrapped = () => {
             ))}
           </div>
 
-          <p className="text-2xl md:text-3xl text-white font-black uppercase tracking-tight">
+          <p className="text-xl sm:text-2xl md:text-3xl text-white font-black uppercase tracking-tight">
             Watching Formula 1
           </p>
         </div>
@@ -392,7 +392,7 @@ export const FormulaWrapped = () => {
     </div>,
 
     // Slide 2: Most Watched Circuit
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden">
       {/* Racing tire marks */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-20 left-10 w-64 h-2 bg-white transform -rotate-12" />
@@ -414,7 +414,7 @@ export const FormulaWrapped = () => {
               <div key={i} className={`h-1 w-12 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
             ))}
           </div>
-          <h1 className="text-5xl md:text-6xl font-black text-white uppercase tracking-tight leading-tight" style={{
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tight leading-tight" style={{
             textShadow: '0 0 30px rgba(220,38,38,0.6)'
           }}>
             {stats.mostWatchedCircuit.name}
@@ -439,7 +439,7 @@ export const FormulaWrapped = () => {
     </div>,
 
     // Slide 4: Top Races
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden py-12">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden py-12">
       {/* Podium steps background */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-48 bg-racing-red" />
@@ -450,7 +450,7 @@ export const FormulaWrapped = () => {
       <div className="relative space-y-8 animate-fade-in max-w-2xl w-full z-10 overflow-y-auto max-h-full">
         <div className="space-y-3 sticky top-0 bg-black/80 backdrop-blur-sm pb-4 pt-2">
           <p className="text-xs text-gray-500 uppercase tracking-[0.5em] font-bold">The races that made you</p>
-          <h1 className="text-3xl md:text-4xl font-black text-racing-red uppercase tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-racing-red uppercase tracking-tight">
             Jump off your seat
           </h1>
           <div className="flex gap-1 justify-center">
@@ -475,10 +475,10 @@ export const FormulaWrapped = () => {
                     </div>
                   </div>
                   <div className="flex-1 text-left space-y-1">
-                    <p className="text-xl font-black text-white uppercase tracking-tight leading-tight">
+                    <p className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight leading-tight">
                       {race.raceName}
                     </p>
-                    <p className="text-sm text-gray-500 uppercase tracking-wider">{race.raceYear}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wider">{race.raceYear}</p>
                   </div>
                   <div className="flex flex-col items-center gap-1 px-4">
                     <div className="flex items-center gap-1.5">
@@ -505,7 +505,7 @@ export const FormulaWrapped = () => {
     </div>,
 
     // Slide 5: Driver of the Year
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden">
       {/* Racing background effects */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 left-0 w-full h-1 bg-racing-red" />
@@ -529,7 +529,7 @@ export const FormulaWrapped = () => {
                 <div key={i} className={`h-1 w-8 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
               ))}
             </div>
-            <h1 className="text-6xl md:text-8xl font-black text-white uppercase tracking-tight" style={{
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white uppercase tracking-tight" style={{
               textShadow: '0 0 40px rgba(220,38,38,0.6)'
             }}>
               {stats.topDriver}
@@ -557,7 +557,7 @@ export const FormulaWrapped = () => {
     </div>,
 
     // Slide 7: The Roast
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden">
       {/* Checkered flag everywhere */}
       <div className="absolute inset-0 opacity-5" style={{
         backgroundImage: 'repeating-conic-gradient(#000 0% 25%, #fff 0% 50%)',
@@ -591,7 +591,7 @@ export const FormulaWrapped = () => {
 
         <div className="relative inline-block">
           <div className="absolute -inset-6 bg-racing-red/30 blur-3xl animate-pulse" />
-          <h1 className="relative text-5xl md:text-6xl font-black text-white uppercase tracking-tight leading-tight" style={{
+          <h1 className="relative text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tight leading-tight" style={{
             textShadow: '0 0 40px rgba(220,38,38,0.8)'
           }}>
             {stats.personality}
@@ -609,7 +609,7 @@ export const FormulaWrapped = () => {
           <div className="absolute top-2 right-2 text-2xl">🏆</div>
           <div className="absolute bottom-2 left-2 text-2xl">🏎️</div>
           <p className="text-xs text-racing-red uppercase tracking-[0.4em] mb-4 font-black">THE VERDICT</p>
-          <p className="text-2xl md:text-3xl font-black text-white leading-relaxed">
+          <p className="text-lg sm:text-2xl md:text-3xl font-black text-white leading-relaxed">
             {stats.roast}
           </p>
         </div>
@@ -625,9 +625,9 @@ export const FormulaWrapped = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-racing-red via-black to-racing-red flex flex-col items-center justify-center gap-4">
-        <div className="text-white text-3xl md:text-5xl font-black animate-pulse">LOADING YOUR</div>
-        <div className="text-racing-red text-4xl md:text-6xl font-black animate-pulse">FORMULA WRAPPED</div>
+      <div className="min-h-screen bg-gradient-to-br from-racing-red via-black to-racing-red flex flex-col items-center justify-center gap-4 px-4">
+        <div className="text-white text-2xl sm:text-3xl md:text-5xl font-black animate-pulse text-center">LOADING YOUR</div>
+        <div className="text-racing-red text-3xl sm:text-4xl md:text-6xl font-black animate-pulse text-center">FORMULA WRAPPED</div>
         <div className="mt-4">
           <div className="w-16 h-16 border-4 border-racing-red border-t-transparent rounded-full animate-spin"></div>
         </div>
@@ -637,9 +637,9 @@ export const FormulaWrapped = () => {
 
   if (logs.length === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
+      <div className="min-h-screen bg-black flex items-center justify-center p-4 sm:p-6">
         <div className="max-w-md text-center space-y-6">
-          <h1 className="text-4xl font-black text-racing-red">NO DATA YET</h1>
+          <h1 className="text-3xl sm:text-4xl font-black text-racing-red">NO DATA YET</h1>
           <p className="text-xl text-gray-400">
             You haven't logged any races yet! Go watch some Grand Prix and come back for your Formula Wrapped.
           </p>
@@ -652,9 +652,17 @@ export const FormulaWrapped = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 overflow-hidden">
+    <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+      <div className="w-full h-full max-w-md bg-black overflow-hidden relative" style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)'
+      }}>
       {/* Action buttons */}
-      <div className="absolute top-4 right-4 z-50 flex gap-2">
+      <div className="absolute top-4 right-4 z-50 flex gap-2" style={{
+        top: 'max(1rem, env(safe-area-inset-top))'
+      }}>
         <button
           onClick={handleShare}
           className="p-2 bg-black/60 border border-racing-red/40 rounded-full text-white hover:bg-racing-red/20 transition-colors"
@@ -670,7 +678,10 @@ export const FormulaWrapped = () => {
       </div>
 
       {/* Progress bar */}
-      <div className="absolute top-4 left-4 right-20 z-50 flex gap-1.5">
+      <div className="absolute top-4 left-4 right-20 z-50 flex gap-1.5" style={{
+        top: 'max(1rem, env(safe-area-inset-top))',
+        left: 'max(1rem, env(safe-area-inset-left))'
+      }}>
         {slides.map((_, idx) => (
           <div
             key={idx}
@@ -715,15 +726,19 @@ export const FormulaWrapped = () => {
 
       {/* Next indicator */}
       {currentSlide < slides.length - 1 && (
-        <div className="absolute bottom-8 right-8 z-50 animate-bounce">
+        <div className="absolute bottom-8 right-8 z-50 animate-bounce" style={{
+          bottom: 'max(2rem, env(safe-area-inset-bottom))',
+          right: 'max(2rem, env(safe-area-inset-right))'
+        }}>
           <Button
             onClick={nextSlide}
-            className="rounded-full w-16 h-16 bg-racing-red hover:bg-red-600 shadow-2xl"
+            className="rounded-full w-12 h-12 sm:w-16 sm:h-16 bg-racing-red hover:bg-red-600 shadow-2xl"
           >
-            <ChevronRight className="w-8 h-8" />
+            <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
           </Button>
         </div>
       )}
+      </div>
     </div>
   );
 };
