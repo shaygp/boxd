@@ -55,6 +55,7 @@ export const LogRaceDialog = ({
   const [spoiler, setSpoiler] = useState(false);
   const [raceName, setRaceName] = useState("");
   const [raceLocation, setRaceLocation] = useState("");
+  const [selectedCircuitId, setSelectedCircuitId] = useState("");
   const [raceYear, setRaceYear] = useState(new Date().getFullYear());
   const [sessionType, setSessionType] = useState<'race' | 'sprint' | 'qualifying' | 'sprintQualifying'>('race');
   const [watchMode, setWatchMode] = useState<'live' | 'replay' | 'tvBroadcast' | 'highlights' | 'attendedInPerson'>('live');
@@ -68,6 +69,8 @@ export const LogRaceDialog = ({
   const [driverOfTheDay, setDriverOfTheDay] = useState("");
   const [raceWinner, setRaceWinner] = useState<string>("");
   const [loadingWinner, setLoadingWinner] = useState(false);
+  const [historicalRaces, setHistoricalRaces] = useState<any[]>([]);
+  const [loadingCircuits, setLoadingCircuits] = useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -115,15 +118,24 @@ export const LogRaceDialog = ({
     }
   }, [editMode, existingLog]);
 
-  // Pre-fill with default values when dialog opens
+  // Pre-fill with default values when dialog opens and circuits are loaded
   useEffect(() => {
-    if (open && !editMode) {
-      // Find the matching circuit from the circuits array
-      const matchingCircuit = allCircuits.find(c =>
+    if (open && !editMode && historicalRaces.length > 0 && defaultRaceName && !selectedCircuitId) {
+      // Build circuits list from historical races
+      const circuitsList = historicalRaces.map(race => ({
+        name: race.meeting_name,
+        location: race.circuit_short_name,
+        country: race.country_name,
+        uniqueId: `${race.meeting_name}-${race.circuit_short_name}`
+      }));
+
+      // Find the matching circuit from the loaded circuits array
+      const matchingCircuit = circuitsList.find(c =>
         c.location === defaultCircuit || c.name === defaultRaceName
       );
 
       if (matchingCircuit) {
+        setSelectedCircuitId(matchingCircuit.uniqueId);
         setRaceName(matchingCircuit.name);
         setRaceLocation(matchingCircuit.location);
         setCountryCode(getCountryCodeFromName(matchingCircuit.country));
@@ -131,7 +143,7 @@ export const LogRaceDialog = ({
 
       if (defaultYear) setRaceYear(defaultYear);
     }
-  }, [open, defaultRaceName, defaultCircuit, defaultYear, defaultCountryCode, editMode]);
+  }, [open, defaultRaceName, defaultCircuit, defaultYear, defaultCountryCode, editMode, historicalRaces, selectedCircuitId]);
 
   const drivers2025 = [
     { id: "verstappen", name: "Max Verstappen", team: "Red Bull Racing" },
@@ -157,12 +169,14 @@ export const LogRaceDialog = ({
   ];
 
   const allCircuits = [
+    // Current/Recent Circuits
     { name: "Monaco Grand Prix", location: "Circuit de Monaco", country: "Monaco" },
     { name: "Italian Grand Prix", location: "Autodromo Nazionale di Monza", country: "Italy" },
     { name: "British Grand Prix", location: "Silverstone Circuit", country: "United Kingdom" },
     { name: "Belgian Grand Prix", location: "Circuit de Spa-Francorchamps", country: "Belgium" },
     { name: "Japanese Grand Prix", location: "Suzuka Circuit", country: "Japan" },
     { name: "Brazilian Grand Prix", location: "Autódromo José Carlos Pace", country: "Brazil" },
+    { name: "São Paulo Grand Prix", location: "Autódromo José Carlos Pace", country: "Brazil" },
     { name: "Australian Grand Prix", location: "Albert Park Circuit", country: "Australia" },
     { name: "Austrian Grand Prix", location: "Red Bull Ring", country: "Austria" },
     { name: "Canadian Grand Prix", location: "Circuit Gilles Villeneuve", country: "Canada" },
@@ -181,11 +195,110 @@ export const LogRaceDialog = ({
     { name: "French Grand Prix", location: "Circuit Paul Ricard", country: "France" },
     { name: "Portuguese Grand Prix", location: "Algarve International Circuit", country: "Portugal" },
     { name: "Turkish Grand Prix", location: "Istanbul Park", country: "Turkey" },
+    { name: "Chinese Grand Prix", location: "Shanghai International Circuit", country: "China" },
+    { name: "Qatar Grand Prix", location: "Lusail International Circuit", country: "Qatar" },
+    { name: "Emilia Romagna Grand Prix", location: "Autodromo Enzo e Dino Ferrari", country: "Italy" },
+
+    // Historic/Alternate Circuits
+    { name: "German Grand Prix", location: "Hockenheimring", country: "Germany" },
+    { name: "German Grand Prix", location: "Nürburgring", country: "Germany" },
+    { name: "Eifel Grand Prix", location: "Nürburgring", country: "Germany" },
+    { name: "Malaysian Grand Prix", location: "Sepang International Circuit", country: "Malaysia" },
+    { name: "Indian Grand Prix", location: "Buddh International Circuit", country: "India" },
+    { name: "Korean Grand Prix", location: "Korea International Circuit", country: "South Korea" },
+    { name: "Russian Grand Prix", location: "Sochi Autodrom", country: "Russia" },
+    { name: "European Grand Prix", location: "Valencia Street Circuit", country: "Spain" },
+    { name: "European Grand Prix", location: "Baku City Circuit", country: "Azerbaijan" },
+    { name: "Pacific Grand Prix", location: "TI Circuit Aida", country: "Japan" },
+    { name: "San Marino Grand Prix", location: "Autodromo Enzo e Dino Ferrari", country: "Italy" },
+    { name: "Luxembourg Grand Prix", location: "Nürburgring", country: "Germany" },
+    { name: "Styrian Grand Prix", location: "Red Bull Ring", country: "Austria" },
+    { name: "70th Anniversary Grand Prix", location: "Silverstone Circuit", country: "United Kingdom" },
+    { name: "Tuscan Grand Prix", location: "Autodromo Internazionale del Mugello", country: "Italy" },
+    { name: "Sakhir Grand Prix", location: "Bahrain International Circuit", country: "Bahrain" },
+    { name: "Argentine Grand Prix", location: "Autódromo Oscar Alfredo Gálvez", country: "Argentina" },
+    { name: "South African Grand Prix", location: "Kyalami", country: "South Africa" },
+
+    // Classic Historic Circuits (pre-2000)
+    { name: "Mexican Grand Prix", location: "Autódromo Hermanos Rodríguez", country: "Mexico" },
+    { name: "United States Grand Prix", location: "Indianapolis Motor Speedway", country: "United States" },
+    { name: "United States Grand Prix", location: "Watkins Glen", country: "United States" },
+    { name: "United States Grand Prix West", location: "Long Beach", country: "United States" },
+    { name: "Detroit Grand Prix", location: "Detroit Street Circuit", country: "United States" },
+    { name: "Dallas Grand Prix", location: "Fair Park", country: "United States" },
+    { name: "Caesar's Palace Grand Prix", location: "Caesar's Palace", country: "United States" },
+    { name: "Phoenix Grand Prix", location: "Phoenix Street Circuit", country: "United States" },
   ];
+
+  // Fetch circuits for selected year from Firestore
+  useEffect(() => {
+    const fetchCircuitsForYear = async () => {
+      if (!raceYear) return;
+
+      // Reset circuit selection when year changes
+      setSelectedCircuitId("");
+      setRaceName("");
+      setRaceLocation("");
+
+      setLoadingCircuits(true);
+      try {
+        // Try Firestore first (more reliable)
+        const { getRacesBySeason: getFirestoreRaces } = await import('@/services/f1Calendar');
+        const firestoreRaces = await getFirestoreRaces(raceYear);
+
+        if (firestoreRaces && firestoreRaces.length > 0) {
+          console.log(`[LogRaceDialog] Loaded ${firestoreRaces.length} races from Firestore for ${raceYear}`);
+          // Convert Firestore F1Race format to the format we need
+          setHistoricalRaces(firestoreRaces.map(race => ({
+            meeting_name: race.raceName,
+            circuit_short_name: race.circuitName,
+            country_name: race.countryName,
+            country_code: race.countryCode,
+            round: race.round,
+            year: race.year,
+            location: race.location
+          })));
+        } else {
+          // Fallback to API if Firestore has no data
+          console.log(`[LogRaceDialog] No Firestore data for ${raceYear}, trying API...`);
+          const { getRacesBySeason: getApiRaces } = await import('@/services/f1Api');
+          const apiRaces = await getApiRaces(raceYear);
+          setHistoricalRaces(apiRaces);
+        }
+      } catch (error) {
+        console.error('Error fetching circuits for year:', error);
+        // Fallback to default circuits if both fail
+        setHistoricalRaces([]);
+      } finally {
+        setLoadingCircuits(false);
+      }
+    };
+
+    fetchCircuitsForYear();
+  }, [raceYear]);
 
   // Sort circuits with default circuit at the top
   const circuits = useMemo(() => {
-    const sorted = [...allCircuits].sort((a, b) => a.name.localeCompare(b.name));
+    let circuitsList;
+
+    // If we have historical races for this year, use them
+    if (historicalRaces.length > 0) {
+      circuitsList = historicalRaces.map(race => ({
+        name: race.meeting_name,
+        location: race.circuit_short_name,
+        country: race.country_name,
+        uniqueId: `${race.meeting_name}-${race.circuit_short_name}` // Unique key for races at same circuit
+      }));
+    } else {
+      // Otherwise, show all possible circuits (comprehensive list)
+      // This ensures users can log races even when API fails or data is missing
+      circuitsList = allCircuits.map((circuit, idx) => ({
+        ...circuit,
+        uniqueId: `${circuit.name}-${circuit.location}-${idx}`
+      }));
+    }
+
+    const sorted = [...circuitsList].sort((a, b) => a.name.localeCompare(b.name));
     if (defaultCircuit || defaultRaceName) {
       const defaultIndex = sorted.findIndex(c =>
         c.location === defaultCircuit || c.name === defaultRaceName
@@ -196,7 +309,7 @@ export const LogRaceDialog = ({
       }
     }
     return sorted;
-  }, [defaultCircuit, defaultRaceName]);
+  }, [historicalRaces, defaultCircuit, defaultRaceName]);
 
   const addCompanion = (name: string) => {
     if (name && companions.length < 2 && !companions.includes(name)) {
@@ -374,10 +487,12 @@ export const LogRaceDialog = ({
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-gray-300 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Select Circuit *</Label>
                 <Select
-                  value={raceLocation}
+                  value={selectedCircuitId}
+                  disabled={loadingCircuits}
                   onValueChange={async (value) => {
-                    const circuit = circuits.find(c => c.location === value);
+                    const circuit = circuits.find(c => c.uniqueId === value);
                     if (circuit) {
+                      setSelectedCircuitId(value);
                       setRaceLocation(circuit.location);
                       setRaceName(circuit.name);
                       setCountryCode(getCountryCodeFromName(circuit.country));
@@ -387,9 +502,7 @@ export const LogRaceDialog = ({
                         setLoadingWinner(true);
                         try {
                           // Find the round number for this race
-                          const { getRacesBySeason } = await import('@/services/f1Api');
-                          const races = await getRacesBySeason(raceYear);
-                          const raceData = races.find(r => r.meeting_name === circuit.name);
+                          const raceData = historicalRaces.find(r => r.meeting_name === circuit.name);
 
                           if (raceData && raceData.round) {
                             const winner = await getRaceWinner(raceYear, raceData.round);
@@ -407,17 +520,28 @@ export const LogRaceDialog = ({
                   }}
                 >
                   <SelectTrigger className="border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white">
-                    <SelectValue placeholder="Choose a circuit..." />
+                    <SelectValue placeholder={loadingCircuits ? "Loading circuits..." : "Choose a circuit..."} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px] bg-black/95 border-2 border-red-900/40">
-                    {circuits.map((circuit) => (
-                      <SelectItem key={circuit.location} value={circuit.location} className="text-white hover:bg-racing-red/20">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-white">{circuit.name}</span>
-                          <span className="text-xs text-gray-400">{circuit.location}</span>
-                        </div>
+                    {loadingCircuits ? (
+                      <SelectItem value="loading" disabled className="text-gray-400">
+                        Loading circuits for {raceYear}...
                       </SelectItem>
-                    ))}
+                    ) : circuits.length === 0 ? (
+                      <SelectItem value="no-data" disabled className="text-gray-400">
+                        No races found for {raceYear}
+                      </SelectItem>
+                    ) :
+                      circuits.map((circuit) => (
+                        <SelectItem
+                          key={circuit.uniqueId}
+                          value={circuit.uniqueId}
+                          className="text-white hover:bg-racing-red/20 cursor-pointer"
+                        >
+                          {circuit.name}
+                        </SelectItem>
+                      ))
+                    }
                   </SelectContent>
                 </Select>
               </div>
@@ -452,8 +576,11 @@ export const LogRaceDialog = ({
                 </SelectTrigger>
                 <SelectContent className="bg-black/95 border-2 border-red-900/40">
                   {(() => {
+                    // Only show years 2020-2025 (years with seeded data)
                     const currentYear = new Date().getFullYear();
-                    const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
+                    const minYear = 2020;
+                    const maxYear = Math.max(2025, currentYear);
+                    const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => maxYear - i);
 
                     // Put default year at the top if it exists and is different from current year
                     if (defaultYear && defaultYear !== currentYear && !years.includes(defaultYear)) {

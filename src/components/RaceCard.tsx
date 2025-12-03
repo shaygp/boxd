@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { useState, useEffect, memo } from "react";
 import { AddToListDialog } from "@/components/AddToListDialog";
+import { LogRaceDialog } from "@/components/LogRaceDialog";
 
 interface RaceCardProps {
   season: number;
@@ -224,11 +225,11 @@ const RaceCardComponent = ({
         {/* Action buttons */}
         {showWatchlistButton && !watched && (
           <div className="absolute top-1 right-1 sm:top-2 sm:right-2 flex gap-1">
-            <AddToListDialog
-              raceYear={season}
-              raceName={gpName}
-              raceLocation={circuit}
-              countryCode={country}
+            <LogRaceDialog
+              defaultCircuit={circuit}
+              defaultRaceName={gpName}
+              defaultYear={season}
+              defaultCountryCode={country}
               trigger={
                 <Button
                   size="icon"
