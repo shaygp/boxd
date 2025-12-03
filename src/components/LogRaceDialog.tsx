@@ -250,13 +250,12 @@ export const LogRaceDialog = ({
         console.warn('[LogRaceDialog] Could not fetch round number:', error);
       }
 
-      const logData = {
+      const logData: any = {
         userId: user.uid,
         username: username,
         raceYear,
         raceName,
         raceLocation,
-        round,
         countryCode,
         dateWatched: date,
         sessionType,
@@ -270,6 +269,11 @@ export const LogRaceDialog = ({
         spoilerWarning: spoiler,
         visibility,
       };
+
+      // Only add round if it's defined (Firestore doesn't accept undefined values)
+      if (round !== undefined) {
+        logData.round = round;
+      }
 
       let logId: string;
 
@@ -288,17 +292,27 @@ export const LogRaceDialog = ({
         // Only create activity for new public logs
         if (visibility === 'public') {
           try {
-            await createActivity({
+            const activityData: any = {
               type: review && review.length > 0 ? 'review' : 'log',
               targetId: logId,
               targetType: 'raceLog',
-              content: review && review.length > 0 ? review.substring(0, 200) : undefined,
               raceName,
               raceYear,
               raceLocation,
               rating,
-              round,
-            });
+            };
+
+            // Only add content if review exists (Firestore doesn't allow undefined values)
+            if (review && review.length > 0) {
+              activityData.content = review.substring(0, 200);
+            }
+
+            // Only add round if it exists (Firestore doesn't allow undefined values)
+            if (round !== undefined) {
+              activityData.round = round;
+            }
+
+            await createActivity(activityData);
             console.log('[LogRaceDialog] Activity created successfully');
           } catch (activityError) {
             console.error('Failed to create activity:', activityError);

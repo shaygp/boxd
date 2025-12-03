@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserRaceLogs, calculateTotalHoursWatched } from "@/services/raceLogs";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, X, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
 
 interface RaceLog {
   id?: string;
@@ -27,6 +28,8 @@ export const FormulaWrapped = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [logs, setLogs] = useState<RaceLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const slideContainerRef = useRef<HTMLDivElement>(null);
   const [stats, setStats] = useState({
     totalHours: 0,
     totalRaces: 0,
@@ -55,6 +58,7 @@ export const FormulaWrapped = () => {
       console.log("Loading wrapped data for user:", user.uid);
       const userLogs = await getUserRaceLogs(user.uid);
       console.log("Fetched logs:", userLogs.length);
+      console.log('[FormulaWrapped] All user logs:', userLogs.map(l => ({ year: l.raceYear, name: l.raceName, rating: l.rating })));
       setLogs(userLogs);
 
       if (userLogs.length === 0) {
@@ -93,7 +97,8 @@ export const FormulaWrapped = () => {
         countryCode: mostWatched[1].countryCode
       } : { name: "None", location: "", count: 0, countryCode: "" };
 
-      // Top 5 races by rating - ensure unique races (same GP can be logged multiple times)
+      // Top 5 races by rating - each year+race combination is treated as unique
+      // So Monaco 2023 and Monaco 2024 are different races
       const uniqueRaces = new Map<string, RaceLog>();
 
       [...userLogs]
@@ -101,7 +106,7 @@ export const FormulaWrapped = () => {
         .sort((a, b) => b.rating - a.rating)
         .forEach(log => {
           const raceKey = `${log.raceYear}-${log.raceName}`;
-          // Only keep the highest rated entry for each unique race
+          // Only keep the highest rated entry for each unique year+race combination
           if (!uniqueRaces.has(raceKey) || (uniqueRaces.get(raceKey)?.rating || 0) < log.rating) {
             uniqueRaces.set(raceKey, log);
           }
@@ -110,6 +115,8 @@ export const FormulaWrapped = () => {
       const topRaces = Array.from(uniqueRaces.values())
         .sort((a, b) => b.rating - a.rating)
         .slice(0, 5);
+
+      console.log('[FormulaWrapped] Top races calculated:', topRaces.length, topRaces.map(r => `${r.raceYear} ${r.raceName} (${r.rating}★)`));
 
       // Top driver
       const driverCounts: { [key: string]: number } = {};
@@ -213,41 +220,117 @@ export const FormulaWrapped = () => {
   };
 
   const handleShare = async () => {
-    const shareText = `🏁 My 2025 Formula Wrapped 🏁\n\n⏱️ ${stats.totalHours} hours watching F1\n🏆 Top Race: ${stats.topRaces[0]?.raceName || 'N/A'}\n🏎️ Ride or Die: ${stats.topDriver}\n💭 "${stats.roast}"\n\n#FormulaWrapped #F1 #BoxBoxd`;
-    const shareUrl = window.location.origin + '/wrapped';
+    if (!slideContainerRef.current) return;
 
-    if (navigator.share) {
-      // Use native share if available (mobile)
-      try {
-        await navigator.share({
-          title: 'My 2025 Formula Wrapped',
-          text: shareText,
-          url: shareUrl,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
+    setIsCapturing(true);
+
+    try {
+      // Get the current slide element
+      const slideElement = slideContainerRef.current.querySelector(`[data-slide="${currentSlide}"]`) as HTMLElement;
+
+      if (!slideElement) {
+        throw new Error('Could not find slide element');
       }
-    } else {
-      // Fallback: copy to clipboard
-      try {
-        await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+
+      // Capture the current slide as an image with better options
+      const canvas = await html2canvas(slideElement, {
+        backgroundColor: '#000000',
+        scale: 2, // Higher quality
+        logging: true, // Enable logging to debug
+        useCORS: true,
+        allowTaint: true,
+        width: slideElement.offsetWidth,
+        height: slideElement.offsetHeight,
+        windowWidth: slideElement.offsetWidth,
+        windowHeight: slideElement.offsetHeight,
+      });
+
+      // Create a new canvas with branding
+      const brandedCanvas = document.createElement('canvas');
+      const ctx = brandedCanvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      // Set canvas size with extra space at bottom for branding
+      const brandingHeight = 60;
+      brandedCanvas.width = canvas.width;
+      brandedCanvas.height = canvas.height + brandingHeight;
+
+      // Fill with black background
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, brandedCanvas.width, brandedCanvas.height);
+
+      // Draw the captured slide
+      ctx.drawImage(canvas, 0, 0);
+
+      // Add branding at the bottom
+      ctx.fillStyle = '#dc2626'; // racing-red
+      ctx.fillRect(0, canvas.height, brandedCanvas.width, brandingHeight);
+
+      // Add BoxBoxd text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 32px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('BoxBoxd', brandedCanvas.width / 2, canvas.height + 40);
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        brandedCanvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create blob'));
+          }
+        }, 'image/png', 1.0);
+      });
+
+      const file = new File([blob], 'boxboxd-formula-wrapped.png', { type: 'image/png' });
+
+      // Try to share with native share API (works on mobile)
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: 'My 2025 Formula Wrapped - BoxBoxd',
+          text: '🏁 My 2025 Formula Wrapped 🏁\n\n#FormulaWrapped #F1 #BoxBoxd',
+          files: [file],
+        });
+
         toast({
-          title: "Copied to clipboard!",
+          title: "Shared successfully!",
+          description: "Your Formula Wrapped has been shared",
+        });
+      } else {
+        // Fallback: Download the image
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `boxboxd-formula-wrapped-${currentSlide + 1}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        toast({
+          title: "Image downloaded!",
           description: "Share your Formula Wrapped on social media",
         });
-      } catch (error) {
-        toast({
-          title: "Could not copy",
-          description: "Please try again",
-          variant: "destructive",
-        });
       }
+    } catch (error) {
+      console.error('Error capturing/sharing image:', error);
+      toast({
+        title: "Could not share",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCapturing(false);
     }
   };
 
   const slides = [
     // Slide 0: Opening
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden">
       {/* Animated racing stripes */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-0 w-full h-2 bg-racing-red animate-pulse" />
@@ -256,34 +339,34 @@ export const FormulaWrapped = () => {
         <div className="absolute bottom-1/4 -right-full w-full h-24 bg-gradient-to-r from-transparent via-white to-transparent skew-y-12 animate-[slide_4s_ease-in-out_infinite_reverse]" />
       </div>
 
-      {/* Checkered flag pattern */}
-      <div className="absolute top-4 right-4 w-16 h-16 opacity-30" style={{
+      {/* Checkered flag pattern - positioned to avoid text overlap */}
+      <div className="absolute top-16 right-4 sm:top-4 sm:right-4 w-12 h-12 sm:w-16 sm:h-16 opacity-30" style={{
         backgroundImage: 'repeating-conic-gradient(#000 0% 25%, #fff 0% 50%)',
         backgroundPosition: '0 0, 8px 8px',
         backgroundSize: '16px 16px'
       }} />
-      <div className="absolute bottom-4 left-4 w-16 h-16 opacity-30" style={{
+      <div className="absolute bottom-16 left-4 sm:bottom-4 sm:left-4 w-12 h-12 sm:w-16 sm:h-16 opacity-30" style={{
         backgroundImage: 'repeating-conic-gradient(#000 0% 25%, #fff 0% 50%)',
         backgroundPosition: '0 0, 8px 8px',
         backgroundSize: '16px 16px'
       }} />
 
-      <div className="relative space-y-8 animate-fade-in z-10">
+      <div className="relative space-y-6 sm:space-y-8 animate-fade-in z-10 max-w-full">
         <div className="inline-block relative">
           <div className="absolute -inset-8 bg-racing-red/30 blur-3xl animate-pulse" />
-          <h1 className="relative text-5xl sm:text-7xl md:text-9xl font-black text-white tracking-tighter uppercase" style={{
+          <h1 className="relative text-4xl sm:text-6xl md:text-8xl font-black text-white tracking-tighter uppercase px-2" style={{
             textShadow: '0 0 40px rgba(220,38,38,0.8), 0 0 80px rgba(220,38,38,0.4)'
           }}>
             YOUR 2025
           </h1>
-          <div className="flex gap-2 mt-4 justify-center">
-            <div className="h-2 w-20 bg-racing-red" />
-            <div className="h-2 w-20 bg-white" />
-            <div className="h-2 w-20 bg-racing-red" />
+          <div className="flex gap-2 mt-3 sm:mt-4 justify-center">
+            <div className="h-1.5 sm:h-2 w-12 sm:w-20 bg-racing-red" />
+            <div className="h-1.5 sm:h-2 w-12 sm:w-20 bg-white" />
+            <div className="h-1.5 sm:h-2 w-12 sm:w-20 bg-racing-red" />
           </div>
         </div>
-        <div className="relative">
-          <h2 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase tracking-tight animate-pulse" style={{
+        <div className="relative px-2 pb-10 sm:pb-12">
+          <h2 className="text-3xl sm:text-5xl md:text-7xl font-black uppercase tracking-tight animate-pulse" style={{
             background: 'linear-gradient(90deg, #dc2626 0%, #ffffff 50%, #dc2626 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -292,18 +375,18 @@ export const FormulaWrapped = () => {
           }}>
             FORMULA WRAPPED
           </h2>
-          <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-6xl">🏁</div>
+          <div className="absolute -bottom-2 sm:-bottom-4 left-1/2 transform -translate-x-1/2 text-3xl sm:text-5xl md:text-6xl">🏁</div>
         </div>
-        <div className="flex items-center justify-center gap-4 mt-12">
-          <div className="h-px w-16 bg-racing-red" />
-          <p className="text-sm text-racing-red font-bold uppercase tracking-[0.3em] animate-pulse">TAP TO START</p>
-          <div className="h-px w-16 bg-racing-red" />
+        <div className="flex items-center justify-center gap-3 sm:gap-4 mt-8 sm:mt-12">
+          <div className="h-px w-12 sm:w-16 bg-racing-red" />
+          <p className="text-xs sm:text-sm text-racing-red font-bold uppercase tracking-[0.2em] sm:tracking-[0.3em] animate-pulse">TAP TO START</p>
+          <div className="h-px w-12 sm:w-16 bg-racing-red" />
         </div>
       </div>
     </div>,
 
     // Slide 1: Total Hours
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden">
       {/* Dramatic speed lines */}
       <div className="absolute inset-0 opacity-20">
         {[...Array(12)].map((_, i) => (
@@ -321,49 +404,49 @@ export const FormulaWrapped = () => {
         ))}
       </div>
 
-      <div className="relative space-y-8 animate-fade-in z-10 max-w-2xl">
-        <p className="text-xs text-gray-500 uppercase tracking-[0.5em] font-bold">This year you spent</p>
+      <div className="relative space-y-6 sm:space-y-8 animate-fade-in z-10 max-w-full w-full">
+        <p className="text-xs text-gray-500 uppercase tracking-[0.3em] sm:tracking-[0.5em] font-bold px-2">This year you spent</p>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <div className="relative inline-block">
             <div className="absolute -inset-8 bg-racing-red/30 blur-3xl animate-pulse" />
-            <div className="relative space-y-2">
-              <div className="flex items-baseline justify-center gap-2 sm:gap-3">
-                <h1 className="text-5xl sm:text-7xl md:text-9xl font-black text-racing-red drop-shadow-[0_0_60px_rgba(220,38,38,0.8)]">
+            <div className="relative space-y-1 sm:space-y-2">
+              <div className="flex items-baseline justify-center gap-2">
+                <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-racing-red drop-shadow-[0_0_60px_rgba(220,38,38,0.8)]">
                   {Math.floor(stats.totalHours / 24)}
                 </h1>
-                <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase">days</span>
+                <span className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase">days</span>
               </div>
-              <div className="flex items-baseline justify-center gap-2 sm:gap-3">
-                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-[0_0_40px_rgba(220,38,38,0.6)]">
+              <div className="flex items-baseline justify-center gap-2">
+                <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-[0_0_40px_rgba(220,38,38,0.6)]">
                   {stats.totalHours % 24}
                 </h2>
-                <span className="text-xl sm:text-2xl md:text-3xl font-black text-gray-400 uppercase">hours</span>
+                <span className="text-lg sm:text-2xl md:text-3xl font-black text-gray-400 uppercase">hours</span>
               </div>
-              <div className="flex items-baseline justify-center gap-2 sm:gap-3">
-                <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-300 drop-shadow-[0_0_30px_rgba(220,38,38,0.4)]">
+              <div className="flex items-baseline justify-center gap-2">
+                <h3 className="text-2xl sm:text-4xl md:text-5xl font-black text-gray-300 drop-shadow-[0_0_30px_rgba(220,38,38,0.4)]">
                   {((stats.totalHours % 1) * 60).toFixed(0)}
                 </h3>
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-gray-500 uppercase">minutes</span>
+                <span className="text-base sm:text-xl md:text-2xl font-black text-gray-500 uppercase">minutes</span>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-1 justify-center my-6">
+          <div className="flex gap-0.5 sm:gap-1 justify-center my-4 sm:my-6">
             {[...Array(15)].map((_, i) => (
-              <div key={i} className={`h-1 w-3 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
+              <div key={i} className={`h-0.5 sm:h-1 w-2 sm:w-3 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
             ))}
           </div>
 
-          <p className="text-xl sm:text-2xl md:text-3xl text-white font-black uppercase tracking-tight">
+          <p className="text-lg sm:text-2xl md:text-3xl text-white font-black uppercase tracking-tight px-2">
             Watching Formula 1
           </p>
         </div>
 
-        <div className="mt-8 space-y-4">
+        <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4 px-2">
           {stats.totalHours > 100 && (
-            <div className="p-6 bg-gradient-to-br from-racing-red/20 to-black border-2 border-racing-red/40 rounded-xl">
-              <p className="text-lg text-gray-300 leading-relaxed">
+            <div className="p-4 sm:p-6 bg-gradient-to-br from-racing-red/20 to-black border-2 border-racing-red/40 rounded-xl">
+              <p className="text-sm sm:text-base md:text-lg text-gray-300 leading-relaxed">
                 That's enough time to drive from{' '}
                 <span className="text-racing-red font-black">Monaco to Monza</span>{' '}
                 {Math.floor(stats.totalHours / 6)} times
@@ -371,16 +454,16 @@ export const FormulaWrapped = () => {
             </div>
           )}
           {stats.totalHours > 50 && stats.totalHours <= 100 && (
-            <div className="p-6 bg-gradient-to-br from-racing-red/20 to-black border-2 border-racing-red/40 rounded-xl">
-              <p className="text-lg text-gray-300 leading-relaxed">
+            <div className="p-4 sm:p-6 bg-gradient-to-br from-racing-red/20 to-black border-2 border-racing-red/40 rounded-xl">
+              <p className="text-sm sm:text-base md:text-lg text-gray-300 leading-relaxed">
                 You could've learned{' '}
                 <span className="text-racing-red font-black">Italian, changed your tires</span>, and still had time left over
               </p>
             </div>
           )}
           {stats.totalHours < 50 && stats.totalHours > 0 && (
-            <div className="p-6 bg-gradient-to-br from-racing-red/20 to-black border-2 border-racing-red/40 rounded-xl">
-              <p className="text-lg text-gray-300 leading-relaxed">
+            <div className="p-4 sm:p-6 bg-gradient-to-br from-racing-red/20 to-black border-2 border-racing-red/40 rounded-xl">
+              <p className="text-sm sm:text-base md:text-lg text-gray-300 leading-relaxed">
                 That's{' '}
                 <span className="text-racing-red font-black">{Math.floor(stats.totalHours / 2)} full race weekends</span>{' '}
                 of pure adrenaline
@@ -392,46 +475,46 @@ export const FormulaWrapped = () => {
     </div>,
 
     // Slide 2: Most Watched Circuit
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden">
       {/* Racing tire marks */}
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-20 left-10 w-64 h-2 bg-white transform -rotate-12" />
-        <div className="absolute top-24 left-12 w-64 h-2 bg-white transform -rotate-12" />
-        <div className="absolute bottom-32 right-10 w-64 h-2 bg-racing-red transform rotate-12" />
-        <div className="absolute bottom-36 right-12 w-64 h-2 bg-racing-red transform rotate-12" />
+        <div className="absolute top-20 left-5 sm:left-10 w-48 sm:w-64 h-1.5 sm:h-2 bg-white transform -rotate-12" />
+        <div className="absolute top-24 left-7 sm:left-12 w-48 sm:w-64 h-1.5 sm:h-2 bg-white transform -rotate-12" />
+        <div className="absolute bottom-32 right-5 sm:right-10 w-48 sm:w-64 h-1.5 sm:h-2 bg-racing-red transform rotate-12" />
+        <div className="absolute bottom-36 right-7 sm:right-12 w-48 sm:w-64 h-1.5 sm:h-2 bg-racing-red transform rotate-12" />
       </div>
 
-      <div className="relative space-y-8 animate-fade-in z-10">
-        <div className="flex items-center justify-center gap-3">
-          <span className="text-3xl">🏁</span>
-          <p className="text-sm text-racing-red uppercase tracking-[0.3em] font-black">Your Most Watched</p>
-          <span className="text-3xl">🏁</span>
+      <div className="relative space-y-6 sm:space-y-8 animate-fade-in z-10 max-w-full">
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
+          <span className="text-2xl sm:text-3xl">🏁</span>
+          <p className="text-xs sm:text-sm text-racing-red uppercase tracking-[0.2em] sm:tracking-[0.3em] font-black">Your Most Watched</p>
+          <span className="text-2xl sm:text-3xl">🏁</span>
         </div>
 
-        <div className="space-y-3 mt-8">
-          <div className="flex gap-2 justify-center">
+        <div className="space-y-2 sm:space-y-3 mt-6 sm:mt-8 px-2">
+          <div className="flex gap-1 sm:gap-2 justify-center">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className={`h-1 w-12 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
+              <div key={i} className={`h-0.5 sm:h-1 w-8 sm:w-12 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
             ))}
           </div>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tight leading-tight" style={{
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white uppercase tracking-tight leading-tight px-2" style={{
             textShadow: '0 0 30px rgba(220,38,38,0.6)'
           }}>
             {stats.mostWatchedCircuit.name}
           </h1>
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-1 sm:gap-2 justify-center">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className={`h-1 w-12 ${i % 2 === 0 ? 'bg-white' : 'bg-racing-red'}`} />
+              <div key={i} className={`h-0.5 sm:h-1 w-8 sm:w-12 ${i % 2 === 0 ? 'bg-white' : 'bg-racing-red'}`} />
             ))}
           </div>
         </div>
 
-        <p className="text-xl text-gray-400">{stats.mostWatchedCircuit.location}</p>
+        <p className="text-base sm:text-lg md:text-xl text-gray-400 px-2">{stats.mostWatchedCircuit.location}</p>
 
-        <div className="inline-flex items-center gap-3 px-8 py-3 bg-racing-red border-4 border-white rounded-lg shadow-xl">
-          <span className="text-4xl">🏎️</span>
+        <div className="inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-2.5 sm:py-3 bg-racing-red border-2 sm:border-4 border-white rounded-lg shadow-xl">
+          <span className="text-3xl sm:text-4xl">🏎️</span>
           <div className="text-left">
-            <p className="text-white font-black text-2xl">{stats.mostWatchedCircuit.count}x</p>
+            <p className="text-white font-black text-xl sm:text-2xl">{stats.mostWatchedCircuit.count}x</p>
             <p className="text-white/80 text-xs uppercase tracking-wider">Laps Watched</p>
           </div>
         </div>
@@ -439,56 +522,56 @@ export const FormulaWrapped = () => {
     </div>,
 
     // Slide 4: Top Races
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden py-12">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden py-8 sm:py-12">
       {/* Podium steps background */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-48 bg-racing-red" />
-        <div className="absolute bottom-0 left-1/4 w-32 h-32 bg-white" />
-        <div className="absolute bottom-0 right-1/4 w-32 h-24 bg-gray-600" />
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 sm:w-32 h-32 sm:h-48 bg-racing-red" />
+        <div className="absolute bottom-0 left-1/4 w-24 sm:w-32 h-20 sm:h-32 bg-white" />
+        <div className="absolute bottom-0 right-1/4 w-24 sm:w-32 h-16 sm:h-24 bg-gray-600" />
       </div>
 
-      <div className="relative space-y-8 animate-fade-in max-w-2xl w-full z-10 overflow-y-auto max-h-full">
-        <div className="space-y-3 sticky top-0 bg-black/80 backdrop-blur-sm pb-4 pt-2">
-          <p className="text-xs text-gray-500 uppercase tracking-[0.5em] font-bold">The races that made you</p>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-racing-red uppercase tracking-tight">
+      <div className="relative space-y-6 sm:space-y-8 animate-fade-in max-w-full w-full z-10 overflow-y-auto max-h-full">
+        <div className="space-y-2 sm:space-y-3 sticky top-0 bg-black/80 backdrop-blur-sm pb-3 sm:pb-4 pt-2 px-2">
+          <p className="text-xs text-gray-500 uppercase tracking-[0.3em] sm:tracking-[0.5em] font-bold">The races that made you</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-racing-red uppercase tracking-tight">
             Jump off your seat
           </h1>
-          <div className="flex gap-1 justify-center">
+          <div className="flex gap-0.5 sm:gap-1 justify-center">
             {[...Array(10)].map((_, i) => (
-              <div key={i} className={`h-0.5 w-4 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
+              <div key={i} className={`h-0.5 w-3 sm:w-4 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
             ))}
           </div>
         </div>
 
-        <div className="space-y-4 mt-6 pb-8">
+        <div className="space-y-3 sm:space-y-4 mt-4 sm:mt-6 pb-6 sm:pb-8">
           {stats.topRaces.map((race, idx) => (
             <div key={idx} className="relative group">
               <div className="absolute inset-0 bg-racing-red/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative bg-gradient-to-r from-black via-racing-red/10 to-black border-2 border-racing-red/40 rounded-lg p-5 hover:border-racing-red/80 transition-all">
-                <div className="flex items-center gap-5">
-                  <div className="relative">
+              <div className="relative bg-gradient-to-r from-black via-racing-red/10 to-black border-2 border-racing-red/40 rounded-lg p-3 sm:p-5 hover:border-racing-red/80 transition-all">
+                <div className="flex items-center gap-3 sm:gap-5">
+                  <div className="relative flex-shrink-0">
                     <div className="absolute inset-0 bg-racing-red/30 blur-xl" />
-                    <div className="relative w-14 h-14 flex items-center justify-center">
-                      <span className="text-4xl font-black text-racing-red drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]">
+                    <div className="relative w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center">
+                      <span className="text-2xl sm:text-4xl font-black text-racing-red drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]">
                         {idx + 1}
                       </span>
                     </div>
                   </div>
-                  <div className="flex-1 text-left space-y-1">
-                    <p className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight leading-tight">
+                  <div className="flex-1 text-left space-y-0.5 sm:space-y-1 min-w-0">
+                    <p className="text-sm sm:text-base md:text-lg font-black text-white uppercase tracking-tight leading-tight truncate">
                       {race.raceName}
                     </p>
-                    <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wider">{race.raceYear}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">{race.raceYear}</p>
                   </div>
-                  <div className="flex flex-col items-center gap-1 px-4">
-                    <div className="flex items-center gap-1.5">
+                  <div className="flex flex-col items-center gap-0.5 sm:gap-1 flex-shrink-0">
+                    <div className="flex items-center gap-0.5 sm:gap-1">
                       {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`text-lg ${i < race.rating ? 'text-yellow-500' : 'text-gray-700'}`}>
+                        <span key={i} className={`text-sm sm:text-lg ${i < race.rating ? 'text-yellow-500' : 'text-gray-700'}`}>
                           ⭐
                         </span>
                       ))}
                     </div>
-                    <span className="text-xs text-gray-600 uppercase tracking-wider">Unforgettable</span>
+                    <span className="text-[10px] sm:text-xs text-gray-600 uppercase tracking-wider hidden sm:inline">Unforgettable</span>
                   </div>
                 </div>
               </div>
@@ -497,58 +580,58 @@ export const FormulaWrapped = () => {
         </div>
 
         {stats.topRaces.length === 0 && (
-          <div className="p-8 bg-racing-red/10 border-2 border-racing-red/30 rounded-xl">
-            <p className="text-lg text-gray-400">Start rating races to see your favorites!</p>
+          <div className="p-6 sm:p-8 bg-racing-red/10 border-2 border-racing-red/30 rounded-xl">
+            <p className="text-base sm:text-lg text-gray-400">Start rating races to see your favorites!</p>
           </div>
         )}
       </div>
     </div>,
 
     // Slide 5: Driver of the Year
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden">
       {/* Racing background effects */}
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-full h-1 bg-racing-red" />
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-racing-red" />
+        <div className="absolute top-0 left-0 w-full h-0.5 sm:h-1 bg-racing-red" />
+        <div className="absolute bottom-0 left-0 w-full h-0.5 sm:h-1 bg-racing-red" />
         <div className="absolute left-0 top-1/2 w-full h-px bg-white transform -translate-y-1/2" />
       </div>
 
-      <div className="relative space-y-8 animate-fade-in max-w-2xl px-4 z-10">
-        <div className="space-y-3">
-          <p className="text-xs text-gray-500 uppercase tracking-[0.4em] font-bold">The driver who</p>
-          <p className="text-xl text-racing-red uppercase tracking-[0.2em] font-black">
+      <div className="relative space-y-6 sm:space-y-8 animate-fade-in max-w-full w-full z-10">
+        <div className="space-y-2 sm:space-y-3 px-2">
+          <p className="text-xs text-gray-500 uppercase tracking-[0.3em] sm:tracking-[0.4em] font-bold">The driver who</p>
+          <p className="text-base sm:text-lg md:text-xl text-racing-red uppercase tracking-[0.15em] sm:tracking-[0.2em] font-black">
             could do no wrong in your eyes
           </p>
         </div>
 
         <div className="relative inline-block">
           <div className="absolute -inset-8 bg-racing-red/30 blur-3xl animate-pulse" />
-          <div className="relative space-y-4">
-            <div className="flex gap-2 justify-center">
+          <div className="relative space-y-3 sm:space-y-4 px-2">
+            <div className="flex gap-1 sm:gap-2 justify-center">
               {[...Array(7)].map((_, i) => (
-                <div key={i} className={`h-1 w-8 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
+                <div key={i} className={`h-0.5 sm:h-1 w-6 sm:w-8 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
               ))}
             </div>
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white uppercase tracking-tight" style={{
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white uppercase tracking-tight" style={{
               textShadow: '0 0 40px rgba(220,38,38,0.6)'
             }}>
               {stats.topDriver}
             </h1>
-            <div className="flex gap-2 justify-center">
+            <div className="flex gap-1 sm:gap-2 justify-center">
               {[...Array(7)].map((_, i) => (
-                <div key={i} className={`h-1 w-8 ${i % 2 === 0 ? 'bg-white' : 'bg-racing-red'}`} />
+                <div key={i} className={`h-0.5 sm:h-1 w-6 sm:w-8 ${i % 2 === 0 ? 'bg-white' : 'bg-racing-red'}`} />
               ))}
             </div>
           </div>
         </div>
 
-        <div className="space-y-4 mt-8">
-          <p className="text-lg text-gray-400 leading-relaxed">
+        <div className="space-y-3 sm:space-y-4 mt-6 sm:mt-8 px-2">
+          <p className="text-sm sm:text-base md:text-lg text-gray-400 leading-relaxed">
             Rain or shine, P1 or DNF,<br />you'd defend them in the group chat
           </p>
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-racing-red/20 border-2 border-racing-red/40 rounded-lg">
-            <span className="text-3xl">🏆</span>
-            <p className="text-white text-sm uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 sm:gap-3 px-5 sm:px-6 py-2.5 sm:py-3 bg-racing-red/20 border-2 border-racing-red/40 rounded-lg">
+            <span className="text-2xl sm:text-3xl">🏆</span>
+            <p className="text-white text-xs sm:text-sm uppercase tracking-wider">
               Your ride or die
             </p>
           </div>
@@ -557,7 +640,7 @@ export const FormulaWrapped = () => {
     </div>,
 
     // Slide 7: The Roast
-    <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 bg-black overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-full text-center px-6 bg-black overflow-hidden">
       {/* Checkered flag everywhere */}
       <div className="absolute inset-0 opacity-5" style={{
         backgroundImage: 'repeating-conic-gradient(#000 0% 25%, #fff 0% 50%)',
@@ -582,42 +665,48 @@ export const FormulaWrapped = () => {
         ))}
       </div>
 
-      <div className="relative space-y-8 animate-fade-in max-w-2xl px-4 z-10">
-        <div className="flex items-center justify-center gap-4">
-          <span className="text-4xl animate-bounce">🏁</span>
-          <p className="text-sm text-racing-red uppercase tracking-[0.4em] font-black">Your F1 DNA</p>
-          <span className="text-4xl animate-bounce" style={{ animationDelay: '0.2s' }}>🏁</span>
+      <div className="relative space-y-4 sm:space-y-6 md:space-y-8 animate-fade-in max-w-full w-full z-10 px-4">
+        <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4">
+          <span className="text-2xl sm:text-3xl md:text-4xl animate-bounce">🏁</span>
+          <p className="text-[10px] sm:text-xs md:text-sm text-racing-red uppercase tracking-[0.2em] sm:tracking-[0.3em] md:tracking-[0.4em] font-black whitespace-nowrap">Your F1 DNA</p>
+          <span className="text-2xl sm:text-3xl md:text-4xl animate-bounce" style={{ animationDelay: '0.2s' }}>🏁</span>
         </div>
 
-        <div className="relative inline-block">
-          <div className="absolute -inset-6 bg-racing-red/30 blur-3xl animate-pulse" />
-          <h1 className="relative text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tight leading-tight" style={{
-            textShadow: '0 0 40px rgba(220,38,38,0.8)'
+        <div className="relative w-full">
+          <div className="absolute -inset-4 sm:-inset-6 bg-racing-red/30 blur-3xl animate-pulse" />
+          <h1 className="relative text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-white uppercase tracking-tight leading-tight break-words text-center px-2" style={{
+            textShadow: '0 0 40px rgba(220,38,38,0.8)',
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word'
           }}>
             {stats.personality}
           </h1>
         </div>
 
         {/* Racing stripes */}
-        <div className="flex gap-1 justify-center my-6">
-          {[...Array(20)].map((_, i) => (
-            <div key={i} className={`h-1 w-2 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
+        <div className="flex gap-0.5 justify-center my-3 sm:my-4 md:my-6">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className={`h-0.5 sm:h-1 w-2 sm:w-2.5 md:w-3 ${i % 2 === 0 ? 'bg-racing-red' : 'bg-white'}`} />
           ))}
         </div>
 
-        <div className="relative p-8 bg-gradient-to-br from-racing-red/20 to-black border-4 border-racing-red rounded-xl shadow-2xl shadow-racing-red/50">
-          <div className="absolute top-2 right-2 text-2xl">🏆</div>
-          <div className="absolute bottom-2 left-2 text-2xl">🏎️</div>
-          <p className="text-xs text-racing-red uppercase tracking-[0.4em] mb-4 font-black">THE VERDICT</p>
-          <p className="text-lg sm:text-2xl md:text-3xl font-black text-white leading-relaxed">
+        <div className="relative p-3 sm:p-4 md:p-5 bg-gradient-to-br from-racing-red/20 to-black border-2 sm:border-3 border-racing-red rounded-lg shadow-2xl shadow-racing-red/50 max-w-full">
+          <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 text-sm sm:text-base md:text-lg">🏆</div>
+          <div className="absolute bottom-1 left-1 sm:bottom-1.5 sm:left-1.5 text-sm sm:text-base md:text-lg">🏎️</div>
+          <p className="text-[8px] sm:text-[9px] md:text-[10px] text-racing-red uppercase tracking-[0.1em] sm:tracking-[0.15em] mb-1.5 sm:mb-2 font-black">THE VERDICT</p>
+          <p className="text-[10px] sm:text-xs md:text-sm font-bold text-white leading-snug sm:leading-normal break-words hyphens-auto" style={{
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
+            hyphens: 'auto'
+          }}>
             {stats.roast}
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-4 mt-8">
-          <div className="h-px w-20 bg-gradient-to-r from-transparent via-racing-red to-transparent" />
-          <span className="text-4xl">🔥</span>
-          <div className="h-px w-20 bg-gradient-to-r from-transparent via-racing-red to-transparent" />
+        <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4 mt-4 sm:mt-6 md:mt-8">
+          <div className="h-px w-12 sm:w-16 md:w-20 bg-gradient-to-r from-transparent via-racing-red to-transparent" />
+          <span className="text-2xl sm:text-3xl md:text-4xl">🔥</span>
+          <div className="h-px w-12 sm:w-16 md:w-20 bg-gradient-to-r from-transparent via-racing-red to-transparent" />
         </div>
       </div>
     </div>,
@@ -653,7 +742,7 @@ export const FormulaWrapped = () => {
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-      <div className="w-full h-full max-w-md bg-black overflow-hidden relative" style={{
+      <div className="w-full h-full bg-black overflow-hidden relative" style={{
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft: 'env(safe-area-inset-left)',
@@ -665,9 +754,14 @@ export const FormulaWrapped = () => {
       }}>
         <button
           onClick={handleShare}
-          className="p-2 bg-black/60 border border-racing-red/40 rounded-full text-white hover:bg-racing-red/20 transition-colors"
+          disabled={isCapturing}
+          className="p-2 bg-black/60 border border-racing-red/40 rounded-full text-white hover:bg-racing-red/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Share2 className="w-6 h-6" />
+          {isCapturing ? (
+            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Share2 className="w-6 h-6" />
+          )}
         </button>
         <button
           onClick={() => navigate('/')}
@@ -699,11 +793,12 @@ export const FormulaWrapped = () => {
       {/* Slides */}
       <div className="h-full w-full relative">
         <div
+          ref={slideContainerRef}
           className="flex h-full transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
           {slides.map((slide, idx) => (
-            <div key={idx} className="min-w-full h-full flex-shrink-0">
+            <div key={idx} className="min-w-full h-full flex-shrink-0" data-slide={idx}>
               {slide}
             </div>
           ))}

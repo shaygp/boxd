@@ -268,6 +268,48 @@ export const getCountryCodeFromName = (country: string): string => {
   return countryMap[country] || 'XXX';
 };
 
+// Helper to derive country code from GP name (e.g., "Australian Grand Prix" -> "AUS")
+export const getCountryCodeFromGPName = (gpName: string): string | undefined => {
+  const raceToCountry: { [key: string]: string } = {
+    'australian': 'AUS',
+    'austrian': 'AUT',
+    'azerbaijan': 'AZE',
+    'bahrain': 'BRN',
+    'belgian': 'BEL',
+    'brazil': 'BRA',
+    'canadian': 'CAN',
+    'chinese': 'CHN',
+    'french': 'FRA',
+    'german': 'DEU',
+    'hungarian': 'HUN',
+    'italian': 'ITA',
+    'japanese': 'JPN',
+    'mexican': 'MEX',
+    'monaco': 'MCO',
+    'dutch': 'NLD',
+    'portuguese': 'PRT',
+    'qatar': 'QAT',
+    'russian': 'RUS',
+    'saudi': 'KSA',
+    'singapore': 'SGP',
+    'spanish': 'ESP',
+    'turkish': 'TUR',
+    'abu dhabi': 'ARE',
+    'british': 'GBR',
+    'miami': 'USA',
+    'las vegas': 'USA',
+    'united states': 'USA',
+  };
+
+  const lowerName = gpName.toLowerCase();
+  for (const [keyword, code] of Object.entries(raceToCountry)) {
+    if (lowerName.includes(keyword)) {
+      return code;
+    }
+  }
+  return undefined;
+};
+
 const countryCodeMap: { [key: string]: string } = {
   'AUS': 'au',
   'AUT': 'at',

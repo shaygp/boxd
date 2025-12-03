@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { LogRaceDialog } from "@/components/LogRaceDialog";
 import { StarRating } from "@/components/StarRating";
 import { AddToListDialog } from "@/components/AddToListDialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Heart, Bookmark, Share2, Eye, Star, MessageSquare, List, Edit, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -48,6 +49,7 @@ const RaceDetail = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reviewToDelete, setReviewToDelete] = useState<string | null>(null);
   const [editingReview, setEditingReview] = useState<any>(null);
+  const [reviewFilter, setReviewFilter] = useState<'recent' | 'liked'>('recent');
   const { toast } = useToast();
 
   const loadRaceData = async () => {
@@ -249,15 +251,38 @@ const RaceDetail = () => {
     }
   };
 
-  const reviews = allRaceLogs.filter(log => {
-    if (!raceLog && !raceInfo) return false;
-    const targetRaceName = raceLog?.raceName || raceInfo?.meeting_name;
-    const targetRaceYear = raceLog?.raceYear || raceInfo?.year;
-    return log.raceName === targetRaceName &&
-      log.raceYear === targetRaceYear &&
-      log.review &&
-      log.review.length > 0;
-  });
+  const reviews = allRaceLogs
+    .filter(log => {
+      if (!raceLog && !raceInfo) return false;
+      const targetRaceName = raceLog?.raceName || raceInfo?.meeting_name;
+      const targetRaceYear = raceLog?.raceYear || raceInfo?.year;
+      return log.raceName === targetRaceName &&
+        log.raceYear === targetRaceYear &&
+        log.review &&
+        log.review.length > 0;
+    })
+    .sort((a, b) => {
+      if (reviewFilter === 'liked') {
+        // Sort by likes count (descending)
+        const aLikes = a.likesCount || 0;
+        const bLikes = b.likesCount || 0;
+        console.log('[RaceDetail] Sorting by likes:', { aUser: a.username, aLikes, bUser: b.username, bLikes });
+        return bLikes - aLikes;
+      } else {
+        // Sort by most recent (descending)
+        const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+        console.log('[RaceDetail] Sorting by date:', { aUser: a.username, aDate, bUser: b.username, bDate });
+        return bDate.getTime() - aDate.getTime();
+      }
+    });
+
+  // Log the final sorted order
+  console.log('[RaceDetail] Reviews after sorting:', reviews.map(r => ({
+    username: r.username,
+    likesCount: r.likesCount || 0,
+    createdAt: r.createdAt
+  })));
 
   const handleLikeReview = async (reviewId: string) => {
     try {
@@ -353,9 +378,21 @@ const RaceDetail = () => {
           <div className="space-y-6">
             {/* Poster & Info */}
             <div className="flex flex-col md:flex-row gap-4 md:gap-6 md:items-start">
-              <div className="w-full md:w-auto bg-gradient-to-br from-racing-red/30 to-black/90 rounded-lg overflow-hidden relative border-2 border-red-900/40 flex-shrink-0">
-                <div className="flex flex-row items-center justify-start p-4 md:p-6 gap-4 md:gap-6 bg-gradient-to-b from-transparent via-black/30 to-black/90">
-                  <div className="w-24 h-16 md:w-32 md:h-20 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex-shrink-0">
+              <div className="w-full md:w-auto bg-black/95 overflow-hidden relative flex-shrink-0">
+                {/* Racing stripe accent at top */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-racing-red to-transparent"></div>
+                {/* Checkered flag pattern overlay */}
+                <div className="absolute top-0 right-0 w-16 h-16 opacity-10" style={{
+                  backgroundImage: 'repeating-conic-gradient(#000 0% 25%, #fff 0% 50%)',
+                  backgroundPosition: '0 0, 8px 8px',
+                  backgroundSize: '16px 16px'
+                }}></div>
+
+                <div className="flex flex-row items-center justify-start p-4 md:p-6 gap-4 md:gap-6 bg-gradient-to-br from-racing-red/5 via-transparent to-transparent relative">
+                  {/* Vertical racing red accent line */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent"></div>
+
+                  <div className="w-24 h-16 md:w-32 md:h-20 overflow-hidden border-2 border-racing-red shadow-xl shadow-racing-red/50 flex-shrink-0 ml-2">
                     <img
                       src={flagUrl}
                       alt={race.country}
@@ -363,10 +400,13 @@ const RaceDetail = () => {
                     />
                   </div>
                   <div className="flex flex-col items-start justify-center flex-1 space-y-1 min-w-0">
-                    <div className="text-2xl md:text-3xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{race.season}</div>
-                    <div className="text-sm md:text-base font-black uppercase tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)] leading-tight">{race.gpName}</div>
+                    <div className="text-2xl md:text-3xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)] tracking-tight uppercase">{race.season}</div>
+                    <div className="text-sm md:text-base font-black uppercase tracking-wider text-racing-red drop-shadow-[0_0_8px_rgba(220,38,38,0.8)] leading-tight">{race.gpName}</div>
                   </div>
                 </div>
+
+                {/* Bottom racing stripe */}
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-racing-red via-white to-racing-red"></div>
               </div>
 
               <div className="space-y-3 md:space-y-4">
@@ -459,17 +499,26 @@ const RaceDetail = () => {
 
             {/* Reviews */}
             <div>
-              <div className="mb-4 md:mb-6">
-                <div className="inline-block px-4 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
-                  <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">RACE REVIEWS ({reviews.length})</span>
-                </div>
+              <div className="mb-4 md:mb-6 flex items-center justify-between flex-wrap gap-3">
+                <span className="text-racing-red font-black text-xs tracking-widest">RACE REVIEWS ({reviews.length})</span>
+                {reviews.length > 0 && (
+                  <Select value={reviewFilter} onValueChange={(value: 'recent' | 'liked') => setReviewFilter(value)}>
+                    <SelectTrigger className="w-[140px] h-7 text-xs font-bold uppercase tracking-wider bg-black/60 border-gray-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black/95 border-gray-700">
+                      <SelectItem value="recent" className="text-xs font-bold uppercase text-white cursor-pointer">Most Recent</SelectItem>
+                      <SelectItem value="liked" className="text-xs font-bold uppercase text-white cursor-pointer">Most Liked</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
-              <div className="space-y-4 md:space-y-6">
+              <div className="space-y-4 md:space-y-6 max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-racing-red scrollbar-track-black/40">
                 {reviews.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12 text-gray-300">
-                    <MessageSquare className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 opacity-50" />
-                    <p className="text-sm sm:text-base font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">No reviews yet. Be the first to review this race!</p>
+                  <div className="text-center py-6 sm:py-8 text-gray-400">
+                    <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs sm:text-sm text-gray-500">No reviews yet. Be the first to review this race!</p>
                   </div>
                 ) : (
                   reviews.map((review) => (

@@ -70,37 +70,39 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
       <DialogTrigger asChild>
         {trigger || <Button>Create List</Button>}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full bg-black/95 border-2 border-racing-red backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>Create New List</DialogTitle>
+          <DialogTitle className="text-2xl font-black uppercase tracking-wider text-racing-red">Create New List</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="title" className="text-white font-bold uppercase tracking-wider text-sm">Title *</Label>
             <Input
               id="title"
               placeholder="Best Races of 2024"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              className="bg-black/60 border-2 border-red-900/50 text-white placeholder:text-gray-500 focus:border-racing-red"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-white font-bold uppercase tracking-wider text-sm">Description</Label>
             <Textarea
               id="description"
               placeholder="A collection of the most exciting races..."
               rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              className="bg-black/60 border-2 border-red-900/50 text-white placeholder:text-gray-500 focus:border-racing-red"
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-4 bg-black/40 border-2 border-red-900/40 rounded-lg">
             <div className="space-y-1">
-              <Label htmlFor="public">Public List</Label>
-              <p className="text-sm text-muted-foreground">
+              <Label htmlFor="public" className="text-white font-bold uppercase tracking-wider text-sm">Public List</Label>
+              <p className="text-xs text-gray-400 font-medium">
                 Allow others to see this list
               </p>
             </div>
@@ -112,10 +114,19 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
           </div>
 
           <div className="flex gap-3">
-            <Button onClick={handleSubmit} disabled={loading || !title} className="flex-1">
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || !title}
+              className="flex-1 bg-racing-red hover:bg-red-600 text-white font-black uppercase tracking-wider border-2 border-red-400 shadow-lg shadow-red-500/30"
+            >
               {loading ? "Creating..." : "Create List"}
             </Button>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={loading}
+              className="bg-black/60 border-2 border-gray-700 text-white hover:bg-black/80 hover:text-white font-bold uppercase tracking-wider"
+            >
               Cancel
             </Button>
           </div>

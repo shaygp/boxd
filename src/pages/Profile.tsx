@@ -5,12 +5,14 @@ import { RaceCard } from "@/components/RaceCard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
-import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye } from "lucide-react";
+import { CreateListDialog } from "@/components/CreateListDialog";
+import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { getUserProfile, getUserRaceLogs, calculateTotalHoursWatched } from "@/services/raceLogs";
 import { followUser, unfollowUser, isFollowing, getFollowers, getFollowing } from "@/services/follows";
 import { getUserLists } from "@/services/lists";
+import { getCountryCodeFromGPName } from "@/services/f1Api";
 import { getUserWatchlist } from "@/services/watchlist";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { doc, getDoc } from "firebase/firestore";
@@ -45,10 +47,12 @@ const Profile = () => {
   const [lists, setLists] = useState<any[]>([]);
   const [watchlist, setWatchlist] = useState<any[]>([]);
   const [likes, setLikes] = useState<any[]>([]);
+  const [fullLogs, setFullLogs] = useState<any[]>([]);
+
+  const targetUserId = userId || currentUser?.uid;
+  const isOwnProfile = !userId || userId === currentUser?.uid;
 
   const loadProfile = async () => {
-    const targetUserId = userId || currentUser?.uid;
-
     if (!targetUserId) {
       setLoading(false);
       return;
@@ -69,6 +73,9 @@ const Profile = () => {
       const userLogs = await getUserRaceLogs(targetUserId);
       const hoursWatched = calculateTotalHoursWatched(userLogs);
       const reviewsCount = userLogs.filter(log => log.review && log.review.length > 0).length;
+
+      // Store full logs with review content
+      setFullLogs(userLogs);
 
       const userStatsDoc = await getDoc(doc(db, 'userStats', targetUserId));
       setStatsDoc(userStatsDoc);
@@ -290,18 +297,6 @@ const Profile = () => {
                 })()}</span>{' '}
                 <span className="text-gray-400">watching GPs 🏎️</span>
               </div>
-              {stats.reviews > 0 && (
-                <div>
-                  <span className="font-semibold text-racing-red">{stats.reviews}</span>{' '}
-                  <span className="text-gray-400">reviews</span>
-                </div>
-              )}
-              {stats.lists > 0 && (
-                <div>
-                  <span className="font-semibold text-racing-red">{stats.lists}</span>{' '}
-                  <span className="text-gray-400">lists</span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -352,22 +347,10 @@ const Profile = () => {
                 Reviews
               </TabsTrigger>
               <TabsTrigger
-                value="lists"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
-              >
-                Lists
-              </TabsTrigger>
-              <TabsTrigger
                 value="watchlist"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
               >
                 Watchlist
-              </TabsTrigger>
-              <TabsTrigger
-                value="likes"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
-              >
-                Likes
               </TabsTrigger>
               <TabsTrigger
                 value="followers"
@@ -405,94 +388,92 @@ const Profile = () => {
           <TabsContent value="reviews" className="space-y-4">
             {loading ? (
               <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
-            ) : logs.filter(log => logs.find(l => l.id === log.id && l.rating > 0)).length > 0 ? (
-              logs
-                .filter(log => {
-                  const fullLog = logs.find(l => l.id === log.id);
-                  return fullLog && fullLog.rating > 0;
-                })
-                .map((race) => (
-                  <Card key={race.id} className="p-6 border-2 border-red-900/40 bg-black/90 backdrop-blur hover:ring-2 hover:ring-racing-red transition-all">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-black/60 border-2 border-racing-red/40 flex items-center justify-center">
-                        {profile?.photoURL ? (
-                          <img src={profile.photoURL} alt={profile.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="text-lg font-bold text-white">
-                            {(profile?.name || profile?.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span className="font-bold text-white">{profile?.name || profile?.email?.split('@')[0]}</span>
-                          <span className="text-gray-300 text-sm font-bold">reviewed</span>
-                          <span
-                            className="font-bold text-white hover:text-racing-red cursor-pointer"
-                            onClick={() => navigate(`/race/${race.id}`)}
-                          >
-                            {race.season} {race.gpName}
-                          </span>
-                          {race.rating && (
-                            <div className="flex items-center gap-1 ml-auto">
-                              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                              <span className="text-sm font-bold text-white">{race.rating.toFixed(1)}</span>
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-300 mb-2 font-bold">
-                          Watched at {race.circuit} on {new Date(race.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                ))
-            ) : (
-              <EmptyState
-                icon={Star}
-                title="No reviews yet"
-                description="Rate and review the races you've watched to share your thoughts"
-              />
-            )}
-          </TabsContent>
+            ) : (() => {
+                // Get reviews (logs with review text)
+                const reviews = fullLogs.filter(log => log.review && log.review.trim().length > 0);
 
-          <TabsContent value="lists">
-            {loading ? (
-              <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
-            ) : lists.length > 0 ? (
-              <div className="grid md:grid-cols-2 gap-4">
-                {lists.map((list) => (
-                  <Card
-                    key={list.id}
-                    className="p-6 hover:ring-2 hover:ring-racing-red border-2 border-red-900/40 bg-black/90 backdrop-blur transition-all cursor-pointer"
-                    onClick={() => navigate(`/list/${list.id}`)}
-                  >
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-racing-red/20 to-racing-red/5 rounded-xl flex items-center justify-center border-2 border-racing-red/40">
-                        <List className="w-6 h-6 text-racing-red" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-lg text-white">{list.title}</h3>
-                        <p className="text-sm text-gray-300 line-clamp-2 font-bold">{list.description}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-300 pt-3 border-t border-red-900/40 font-bold">
-                      <span>{list.races?.length || 0} races</span>
-                      <div className="flex items-center gap-1">
-                        <Heart className="w-4 h-4" />
-                        {list.likesCount || 0}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={List}
-                title="No lists yet"
-                description="Create custom lists to organize your favorite races"
-              />
-            )}
+                if (reviews.length === 0) {
+                  return (
+                    <EmptyState
+                      icon={MessageCircle}
+                      title="No reviews yet"
+                      description="Write reviews for races you've watched to share your thoughts"
+                    />
+                  );
+                }
+
+                return (
+                  <div className="space-y-3 sm:space-y-4 max-w-3xl mx-auto">
+                    {reviews.map((log) => (
+                      <Card
+                        key={log.id}
+                        onClick={() => navigate(log.id ? `/race/${log.id}` : `/race/${log.raceYear}/${log.round}`)}
+                        className="group cursor-pointer bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30"
+                      >
+                        {/* Racing accent line */}
+                        <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+
+                        <div className="p-4 sm:p-5">
+                          <div className="space-y-3">
+                            {/* Race info header */}
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-black text-base sm:text-lg text-white uppercase tracking-wider line-clamp-1 group-hover:text-racing-red transition-colors">
+                                  {log.raceName}
+                                </h3>
+                                <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                                  <span>{log.raceYear}</span>
+                                  <span className="text-gray-700">•</span>
+                                  <span>R{log.round || 1}</span>
+                                  {log.raceLocation && (
+                                    <>
+                                      <span className="text-gray-700">•</span>
+                                      <span className="line-clamp-1">{log.raceLocation}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Rating stars */}
+                              {log.rating && (
+                                <div className="flex items-center gap-0.5 flex-shrink-0">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-4 h-4 ${
+                                        i < log.rating!
+                                          ? 'fill-yellow-400 text-yellow-400'
+                                          : 'text-gray-600 fill-gray-800'
+                                      }`}
+                                      strokeWidth={1.5}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Review content */}
+                            {log.review && (
+                              <div className="bg-black/40 rounded-lg p-3 border border-gray-800/50">
+                                <p className="text-sm text-gray-300 leading-relaxed line-clamp-4">
+                                  {log.review}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Read more link */}
+                            <div className="flex items-center gap-1 text-xs text-gray-400 hover:text-racing-red transition-colors">
+                              <span>View full review</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                );
+              })()
+            }
           </TabsContent>
 
           <TabsContent value="watchlist">
@@ -500,17 +481,22 @@ const Profile = () => {
               <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
             ) : watchlist.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-                {watchlist.map((item, idx) => (
-                  <RaceCard
-                    key={idx}
-                    season={item.raceYear}
-                    round={idx + 1}
-                    gpName={item.raceName}
-                    circuit={item.raceLocation}
-                    date={item.raceDate?.toDate?.()?.toISOString() || new Date().toISOString()}
-                    country={item.countryCode}
-                  />
-                ))}
+                {watchlist.map((item, idx) => {
+                  // Try to derive country code from GP name if not present
+                  const countryCode = item.countryCode || getCountryCodeFromGPName(item.raceName);
+
+                  return (
+                    <RaceCard
+                      key={idx}
+                      season={item.raceYear}
+                      round={idx + 1}
+                      gpName={item.raceName}
+                      circuit={item.raceLocation}
+                      date={item.raceDate?.toDate?.()?.toISOString() || new Date().toISOString()}
+                      country={countryCode}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <EmptyState
@@ -521,65 +507,32 @@ const Profile = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="likes">
-            {loading ? (
-              <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
-            ) : likes.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-                {likes.map((log) => (
-                  <RaceCard
-                    key={log.id}
-                    id={log.id}
-                    season={log.raceYear}
-                    round={log.round || 1}
-                    gpName={log.raceName}
-                    circuit={log.raceLocation}
-                    date={log.dateWatched?.toDate?.()?.toISOString() || new Date().toISOString()}
-                    rating={log.rating}
-                    watched={true}
-                    country={log.countryCode}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={Heart}
-                title="No likes yet"
-                description="Like reviews and lists to show your appreciation"
-              />
-            )}
-          </TabsContent>
-
           <TabsContent value="followers">
             {loading ? (
               <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
             ) : followers.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {followers.map((follower) => (
-                  <Card key={follower.id} className="p-4 border-2 border-red-900/40 bg-black/90 backdrop-blur">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-black/60 border-2 border-racing-red/40 flex items-center justify-center overflow-hidden">
+                  <Card
+                    key={follower.id}
+                    onClick={() => navigate(`/user/${follower.id}`)}
+                    className="p-3 border-2 border-red-900/40 bg-black/90 backdrop-blur cursor-pointer hover:border-racing-red transition-all group"
+                  >
+                    <div className="flex flex-col items-center gap-2 text-center">
+                      <div className="w-16 h-16 rounded-full bg-black/60 border-2 border-racing-red/40 flex items-center justify-center overflow-hidden group-hover:border-racing-red transition-colors">
                         {follower.photoURL ? (
                           <img src={follower.photoURL} alt={follower.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="text-lg font-bold text-white">
+                          <div className="text-xl font-bold text-white">
                             {(follower.name || follower.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold truncate text-white">{follower.name || follower.email?.split('@')[0]}</p>
-                        <p className="text-sm text-gray-300 truncate font-bold">@{follower.email?.split('@')[0]}</p>
+                      <div className="w-full min-w-0">
+                        <p className="font-bold truncate text-white text-sm group-hover:text-racing-red transition-colors">{follower.name || follower.email?.split('@')[0]}</p>
+                        <p className="text-xs text-gray-400 truncate font-medium">@{follower.email?.split('@')[0]}</p>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full mt-3 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]"
-                      onClick={() => navigate(`/user/${follower.id}`)}
-                    >
-                      View Profile
-                    </Button>
                   </Card>
                 ))}
               </div>
@@ -596,32 +549,28 @@ const Profile = () => {
             {loading ? (
               <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
             ) : following.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {following.map((followedUser) => (
-                  <Card key={followedUser.id} className="p-4 border-2 border-red-900/40 bg-black/90 backdrop-blur">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-black/60 border-2 border-racing-red/40 flex items-center justify-center overflow-hidden">
+                  <Card
+                    key={followedUser.id}
+                    onClick={() => navigate(`/user/${followedUser.id}`)}
+                    className="p-3 border-2 border-red-900/40 bg-black/90 backdrop-blur cursor-pointer hover:border-racing-red transition-all group"
+                  >
+                    <div className="flex flex-col items-center gap-2 text-center">
+                      <div className="w-16 h-16 rounded-full bg-black/60 border-2 border-racing-red/40 flex items-center justify-center overflow-hidden group-hover:border-racing-red transition-colors">
                         {followedUser.photoURL ? (
                           <img src={followedUser.photoURL} alt={followedUser.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="text-lg font-bold text-white">
+                          <div className="text-xl font-bold text-white">
                             {(followedUser.name || followedUser.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold truncate text-white">{followedUser.name || followedUser.email?.split('@')[0]}</p>
-                        <p className="text-sm text-gray-300 truncate font-bold">@{followedUser.email?.split('@')[0]}</p>
+                      <div className="w-full min-w-0">
+                        <p className="font-bold truncate text-white text-sm group-hover:text-racing-red transition-colors">{followedUser.name || followedUser.email?.split('@')[0]}</p>
+                        <p className="text-xs text-gray-400 truncate font-medium">@{followedUser.email?.split('@')[0]}</p>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full mt-3 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]"
-                      onClick={() => navigate(`/user/${followedUser.id}`)}
-                    >
-                      View Profile
-                    </Button>
                   </Card>
                 ))}
               </div>

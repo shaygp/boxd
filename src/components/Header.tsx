@@ -139,7 +139,7 @@ export const Header = () => {
             <Input
               type="search"
               placeholder="Search races, users..."
-              className="pl-9 lg:pl-11 w-48 xl:w-64 bg-black/60 border-2 border-red-900/50 text-white placeholder:text-gray-400 focus:border-racing-red lg:h-11"
+              className="pl-9 lg:pl-11 w-48 xl:w-64 bg-black/60 border-2 border-red-900/50 !text-white placeholder:text-gray-400 focus:border-racing-red lg:h-11"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -148,10 +148,10 @@ export const Header = () => {
           <Button
             size="icon"
             variant="ghost"
-            className="lg:hidden"
+            className="lg:hidden text-white hover:text-white"
             onClick={() => navigate('/search')}
           >
-            <Search className="w-5 h-5" />
+            <Search className="w-5 h-5 !text-white" />
           </Button>
 
           <LogRaceDialog
@@ -176,17 +176,17 @@ export const Header = () => {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <div className="flex items-center justify-between px-2 py-2 border-b">
-                <span className="font-semibold">Notifications</span>
+            <DropdownMenuContent align="end" className="w-80 bg-black/95 border-2 border-red-900/40 backdrop-blur-xl">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-red-900/40">
+                <span className="font-black text-white uppercase tracking-wider text-sm">Notifications</span>
                 {unreadCount > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs"
+                    className="text-xs text-racing-red hover:text-white hover:bg-racing-red/20 font-bold uppercase"
                     onClick={handleMarkAllAsRead}
                   >
-                    Mark all as read
+                    Mark all read
                   </Button>
                 )}
               </div>
@@ -195,35 +195,35 @@ export const Header = () => {
                   notifications.map((notification) => (
                     <DropdownMenuItem
                       key={notification.id}
-                      className="flex items-start gap-3 p-3 cursor-pointer"
+                      className="flex items-start gap-3 p-4 cursor-pointer hover:bg-racing-red/10 border-b border-red-900/20 focus:bg-racing-red/10"
                       onClick={() => handleNotificationClick(notification)}
                     >
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                         {notification.actorPhotoURL ? (
                           <img src={notification.actorPhotoURL} alt={notification.actorName} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="text-sm font-bold">
+                          <div className="text-sm font-black text-white uppercase">
                             {notification.actorName.charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm">
-                          <span className="font-semibold">{notification.actorName}</span>
+                        <p className="text-sm leading-relaxed">
+                          <span className="font-bold text-white">{notification.actorName}</span>
                           {' '}
-                          <span className="text-muted-foreground">{notification.content}</span>
+                          <span className="text-gray-400">{notification.content}</span>
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : ''}
+                        <p className="text-xs text-gray-500 mt-1 font-medium">
+                          {notification.createdAt ? new Date(notification.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
                         </p>
                       </div>
                       {!notification.isRead && (
-                        <div className="w-2 h-2 bg-racing-red rounded-full flex-shrink-0 mt-2" />
+                        <div className="w-2 h-2 bg-racing-red rounded-full flex-shrink-0 mt-2 shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
                       )}
                     </DropdownMenuItem>
                   ))
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground text-sm">
+                  <div className="text-center py-12 text-gray-400 text-sm font-bold uppercase tracking-wider">
                     No notifications yet
                   </div>
                 )}
@@ -252,32 +252,32 @@ export const Header = () => {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="touch-manipulation min-w-[200px]" sideOffset={5}>
+            <DropdownMenuContent align="end" className="touch-manipulation min-w-[220px] bg-black/95 border-2 border-red-900/40 backdrop-blur-xl" sideOffset={5}>
               <DropdownMenuItem
                 onClick={() => navigate('/profile')}
-                className="cursor-pointer py-3 px-4 text-base"
+                className="cursor-pointer py-3 px-4 text-base font-bold text-white hover:bg-racing-red/10 hover:text-racing-red focus:bg-racing-red/10 focus:text-racing-red uppercase tracking-wider"
               >
                 <User className="w-5 h-5 mr-3" />
                 Profile
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigate('/wrapped')}
-                className="cursor-pointer py-3 px-4 text-base bg-gradient-to-r from-racing-red/10 to-transparent"
+                className="cursor-pointer py-3 px-4 text-base bg-gradient-to-r from-racing-red/20 to-transparent hover:from-racing-red/30 focus:from-racing-red/30 border-l-2 border-racing-red"
               >
                 <Sparkles className="w-5 h-5 mr-3 text-racing-red" />
-                <span className="font-black text-racing-red">Formula Wrapped</span>
+                <span className="font-black text-racing-red uppercase tracking-wider">Formula Wrapped</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigate('/settings')}
-                className="cursor-pointer py-3 px-4 text-base"
+                className="cursor-pointer py-3 px-4 text-base font-bold text-white hover:bg-racing-red/10 hover:text-racing-red focus:bg-racing-red/10 focus:text-racing-red uppercase tracking-wider"
               >
                 <Settings className="w-5 h-5 mr-3" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="bg-red-900/40" />
               <DropdownMenuItem
                 onClick={handleSignOut}
-                className="cursor-pointer py-3 px-4 text-base"
+                className="cursor-pointer py-3 px-4 text-base font-bold text-gray-400 hover:bg-red-900/20 hover:text-white focus:bg-red-900/20 focus:text-white uppercase tracking-wider"
               >
                 <LogOut className="w-5 h-5 mr-3" />
                 Sign Out

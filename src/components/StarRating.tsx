@@ -60,29 +60,36 @@ export const StarRating = ({
     lg: 22,
   };
 
-  const getRatingColor = (position: number) => {
-    if (displayRating >= position) {
-      return "bg-yellow-500";  // Star color
-    }
-    return "bg-muted";
-  };
-
   return (
     <div className="space-y-2">
+      {/* Label */}
+      {readonly && (
+        <div className="text-center sm:text-left">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            {`Average Rating ${totalRatings > 0 ? `(${totalRatings.toLocaleString()} ${totalRatings === 1 ? 'rating' : 'ratings'})` : '(No ratings yet)'}`}
+          </span>
+        </div>
+      )}
+
+      {/* Rating Display */}
+      {readonly && (
+        <div className="flex items-baseline justify-center sm:justify-start gap-1.5">
+          <span className="text-3xl sm:text-4xl font-bold text-yellow-400">{displayRating.toFixed(1)}</span>
+          <span className="text-lg sm:text-xl font-medium text-muted-foreground">/ 5.0</span>
+        </div>
+      )}
+
       {/* Stars */}
       {!hideStars && (
-      <div className="flex items-center gap-2 sm:gap-2.5">
+      <div className="flex items-center justify-center sm:justify-start gap-1">
         {[1, 2, 3, 4, 5].map((position) => {
           const isActive = displayRating >= position;
           const isPartial = displayRating > position - 1 && displayRating < position;
-          const fillPercentage = isPartial ? ((displayRating - (position - 1)) * 100) : (isActive ? 100 : 0);
 
           return (
             <div
               key={position}
-              className={`relative flex-1 ${sizeClasses[size]} rounded-lg overflow-hidden border-2 ${
-                isActive || isPartial ? 'border-white/20' : 'border-border/50'
-              } ${
+              className={`relative flex items-center justify-center ${
                 (readonly && onClickWhenReadonly) || !readonly ? 'cursor-pointer' : ''
               }`}
               onClick={(e) => handleClick(position, e)}
@@ -93,47 +100,21 @@ export const StarRating = ({
                 handleClick(position, e as any);
               }}
             >
-              {/* Background */}
-              <div className="absolute inset-0 bg-muted/60 pointer-events-none" />
-
-              {/* Fill */}
-              <div
-                className={`absolute inset-0 ${getRatingColor(position)} pointer-events-none`}
-                style={{ width: `${fillPercentage}%` }}
-              />
-
               {/* Star icon */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <Star
-                  size={starSizes[size]}
-                  className={isActive || isPartial ? 'text-black' : 'text-muted-foreground'}
-                  fill={isActive || isPartial ? 'currentColor' : 'none'}
-                  strokeWidth={2.5}
-                />
-              </div>
+              <Star
+                size={size === "sm" ? 20 : size === "md" ? 24 : 28}
+                className={`${
+                  isActive ? 'text-yellow-400 fill-yellow-400' :
+                  isPartial ? 'text-yellow-400 fill-yellow-400' :
+                  'text-gray-600 fill-gray-800'
+                }`}
+                strokeWidth={1.5}
+              />
             </div>
           );
         })}
       </div>
       )}
-
-      {/* Rating Display */}
-      {(readonly || displayRating > 0) && (
-        <div className="flex items-baseline justify-center sm:justify-start gap-1.5">
-          <span className="text-3xl sm:text-4xl font-bold text-yellow-500">{displayRating.toFixed(1)}</span>
-          <span className="text-lg sm:text-xl font-medium text-muted-foreground">/ 5.0</span>
-        </div>
-      )}
-
-      {/* Label */}
-      <div className="pt-0.5 text-center sm:text-left">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          {readonly
-            ? `Average Rating ${totalRatings > 0 ? `(${totalRatings.toLocaleString()} ${totalRatings === 1 ? 'rating' : 'ratings'})` : '(No ratings yet)'}`
-            : 'Rate this race'
-          }
-        </span>
-      </div>
     </div>
   );
 };

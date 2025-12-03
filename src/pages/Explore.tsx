@@ -3,9 +3,10 @@ import { RaceCard } from "@/components/RaceCard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
+import { CreateListDialog } from "@/components/CreateListDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Star, List, Calendar, History } from "lucide-react";
+import { TrendingUp, Star, List, Calendar, History, MessageCircle, Heart, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPublicRaceLogs } from "@/services/raceLogs";
@@ -264,7 +265,12 @@ const Explore = () => {
               <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider mb-6">Most liked race reviews</p>
 
               {loading ? (
-                <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
+                <div className="text-center py-12">
+                  <div className="inline-flex items-center gap-2 text-gray-400">
+                    <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse" />
+                    <span className="text-sm">Loading reviews...</span>
+                  </div>
+                </div>
               ) : topReviews.length === 0 ? (
                 <EmptyState
                   icon={Star}
@@ -272,44 +278,114 @@ const Explore = () => {
                   description="Be the first to write a review and share your thoughts on F1 races"
                 />
               ) : (
-                topReviews.map((review) => (
-                  <Card
-                    key={review.id}
-                    className="p-6 space-y-4 hover:ring-2 hover:ring-racing-red border-2 border-red-900/40 bg-black/90 backdrop-blur transition-all cursor-pointer"
-                    onClick={() => navigate(`/race/${review.id}`)}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-black/80 border-2 border-racing-red/40 flex items-center justify-center font-bold overflow-hidden shadow-lg">
-                        {review.userAvatar ? (
-                          <img
-                            src={review.userAvatar}
-                            alt={review.username}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-white font-black drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{review.username?.[0]?.toUpperCase() || 'U'}</span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span className="font-black text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{review.username}</span>
-                          <span className="text-gray-200 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">reviewed</span>
-                          <span className="font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{review.raceName} {review.raceYear}</span>
-                          <div className="flex items-center gap-1 ml-auto">
-                            <Star className="w-4 h-4 fill-racing-red text-racing-red" />
-                            <span className="text-sm font-black text-racing-red drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{review.rating}</span>
+                <div className="space-y-3 sm:space-y-4 md:space-y-5 max-w-3xl mx-auto">
+                  {topReviews.map((review) => (
+                    <Card key={review.id} className="group bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30 cursor-pointer"
+                      onClick={() => navigate(`/race/${review.id}`)}>
+                      {/* Racing accent line */}
+                      <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+
+                      <div className="p-3 sm:p-4 md:p-5 lg:p-6">
+                        <div className="flex gap-2.5 sm:gap-3 md:gap-4">
+                          {/* Avatar Section */}
+                          <div className="flex-shrink-0">
+                            <div className="relative">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center border-2 border-gray-700 group-hover:border-racing-red transition-all duration-300 overflow-hidden ring-2 ring-black/50">
+                                {review.userAvatar ? (
+                                  <img
+                                    src={review.userAvatar}
+                                    alt={review.username}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-base sm:text-lg md:text-xl font-black text-white drop-shadow-lg uppercase">
+                                    {review.username?.charAt(0)?.toUpperCase() || 'U'}
+                                  </span>
+                                )}
+                              </div>
+                              {/* Review badge */}
+                              <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full bg-racing-red border-2 border-black flex items-center justify-center shadow-lg">
+                                <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-white" />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex-1 min-w-0 space-y-2 sm:space-y-2.5 md:space-y-3">
+                            {/* Header */}
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs sm:text-sm md:text-base leading-snug">
+                                <span className="font-bold text-white">{review.username}</span>
+                                <span className="text-gray-400">reviewed</span>
+                                <span className="font-semibold text-racing-red">
+                                  {review.raceName}
+                                </span>
+                                {review.rating && review.rating > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-3.5 h-3.5 ${
+                                          i < review.rating
+                                            ? 'fill-racing-red text-racing-red'
+                                            : 'text-gray-600'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Timestamp and metadata */}
+                              <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                                <span>
+                                  {new Date(review.dateWatched || review.createdAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                                {review.raceYear && (
+                                  <>
+                                    <span className="text-gray-700">•</span>
+                                    <span>{review.raceYear}</span>
+                                  </>
+                                )}
+                                {review.raceLocation && (
+                                  <>
+                                    <span className="text-gray-700">•</span>
+                                    <span>{review.raceLocation}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Review Content */}
+                            {review.review && (
+                              <div className="space-y-1.5 sm:space-y-2">
+                                <div className="bg-black/40 rounded-lg p-2.5 sm:p-3 md:p-4 border border-gray-800/50">
+                                  <p className="text-xs sm:text-sm md:text-base leading-relaxed text-gray-200 line-clamp-3 sm:line-clamp-4">
+                                    {review.review}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Interaction bar */}
+                            <div className="flex items-center gap-4 pt-2 border-t border-gray-800/50">
+                              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-400">
+                                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-racing-red text-racing-red" />
+                                <span>{review.likesCount || 0}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-400">
+                                <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <span className="hidden sm:inline">Comment</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-200 font-medium mb-3 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                          {review.review.substring(0, 200)}...
-                        </p>
-                        <div className="flex items-center gap-4 text-sm text-gray-300 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                          <span>❤️ {review.likesCount || 0} likes</span>
-                        </div>
                       </div>
-                    </div>
-                  </Card>
-                ))
+                    </Card>
+                  ))}
+                </div>
               )}
             </div>
           </TabsContent>
@@ -319,7 +395,27 @@ const Explore = () => {
               <div className="inline-block px-4 py-1 bg-racing-red/20 border border-racing-red rounded-full mb-2">
                 <span className="text-racing-red font-black text-xs tracking-widest">COLLECTIONS</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-2">POPULAR LISTS</h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">POPULAR LISTS</h2>
+                <CreateListDialog
+                  trigger={
+                    <Button className="bg-racing-red hover:bg-red-600 text-white font-black uppercase tracking-wider border-2 border-red-400 shadow-lg shadow-red-500/30">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create List
+                    </Button>
+                  }
+                  onSuccess={() => {
+                    // Reload lists
+                    getPublicLists().then(lists => {
+                      const sortedLists = lists
+                        .filter(list => list.public)
+                        .sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0))
+                        .slice(0, 6);
+                      setPopularLists(sortedLists);
+                    });
+                  }}
+                />
+              </div>
               <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider mb-6">Top rated race collections</p>
 
               {loading ? (
