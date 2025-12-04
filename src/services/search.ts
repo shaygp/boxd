@@ -81,8 +81,8 @@ export const searchUsers = async (searchTerm: string, limitCount: number = 10): 
     return users.map(user => ({
       id: user.id,
       type: 'user' as const,
-      title: user.name || user.email?.split('@')[0] || 'User',
-      subtitle: `@${user.email?.split('@')[0] || 'user'}`,
+      title: user.name || user.username || 'User',
+      subtitle: `@${user.username || 'user'}`,
       metadata: user
     }));
   } catch (error) {

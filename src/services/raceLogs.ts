@@ -80,14 +80,14 @@ export const createRaceLog = async (raceLog: Omit<RaceLog, 'id' | 'createdAt' | 
 
     // Fetch user's profile from Firestore to get the latest photoURL and username
     let userAvatar = user.photoURL || '';
-    let username = raceLog.username || user.displayName || user.email?.split('@')[0] || 'User';
+    let username = raceLog.username || user.displayName || 'User';
 
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
         userAvatar = userData.photoURL || user.photoURL || '';
-        username = userData.name || username;
+        username = userData.username || userData.name || username;
       }
     } catch (error) {
       console.error('Error fetching user profile for race log:', error);

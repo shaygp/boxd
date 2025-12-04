@@ -113,7 +113,7 @@ const Onboarding = () => {
       const favoriteTeamName = teams.find(t => t.id === selectedTeams[0])?.name || '';
 
       await setDoc(doc(db, 'users', user.uid), {
-        name: user.displayName || user.email?.split('@')[0] || 'User',
+        name: user.displayName || 'User',
         email: user.email,
         photoURL: user.photoURL || '',
         description: 'F1 fan',

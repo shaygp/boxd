@@ -8,7 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth as firebaseAuth } from '@/lib/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { Flag, ArrowLeft, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { Flag, ArrowLeft, Mail, Lock, User as UserIcon, AtSign } from 'lucide-react';
+import { validateUsername, checkUsernameAvailability } from '@/services/auth';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,8 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [usernameError, setUsernameError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -30,6 +33,29 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const handleUsernameChange = async (value: string) => {
+    setUsername(value);
+    setUsernameError('');
+
+    if (value.length === 0) {
+      return;
+    }
+
+    const cleanUsername = value.replace(/^@/, '').toLowerCase();
+    const validation = validateUsername(cleanUsername);
+
+    if (!validation.valid) {
+      setUsernameError(validation.error || 'Invalid username');
+      return;
+    }
+
+    // Check availability
+    const isAvailable = await checkUsernameAvailability(cleanUsername);
+    if (!isAvailable) {
+      setUsernameError('Username is already taken');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -37,7 +63,18 @@ const Login = () => {
 
     try {
       if (isSignUp) {
-        const userCredential = await signUp(email, password, name);
+        // Validate username before submitting
+        if (usernameError) {
+          toast({
+            title: 'Invalid username',
+            description: usernameError,
+            variant: 'destructive',
+          });
+          setLoading(false);
+          return;
+        }
+
+        const userCredential = await signUp(email, password, name, username);
         toast({
           title: 'Account created successfully!',
           description: 'Please check your email to verify your account.',
@@ -169,20 +206,47 @@ const Login = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {isSignUp && (
-              <div className="space-y-2">
-                <label className="text-xs font-black tracking-wider text-gray-400 uppercase">Driver Name</label>
-                <div className="relative">
-                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                  <Input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    placeholder="Your name"
-                    className="pl-11 h-12 bg-black/50 border-2 border-red-900/50 focus:border-racing-red text-white placeholder:text-gray-600 font-medium"
-                  />
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-black tracking-wider text-gray-400 uppercase">Driver Name</label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <Input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      placeholder="Your name"
+                      className="pl-11 h-12 bg-black/50 border-2 border-red-900/50 focus:border-racing-red text-white placeholder:text-gray-600 font-medium"
+                    />
+                  </div>
                 </div>
-              </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black tracking-wider text-gray-400 uppercase">Username</label>
+                  <div className="relative">
+                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <Input
+                      type="text"
+                      value={username}
+                      onChange={(e) => handleUsernameChange(e.target.value)}
+                      required
+                      placeholder="your_username"
+                      className={`pl-11 h-12 bg-black/50 border-2 ${
+                        usernameError
+                          ? 'border-red-500 focus:border-red-500'
+                          : 'border-red-900/50 focus:border-racing-red'
+                      } text-white placeholder:text-gray-600 font-medium`}
+                    />
+                  </div>
+                  {usernameError && (
+                    <p className="text-xs text-red-500 font-medium mt-1">{usernameError}</p>
+                  )}
+                  {username && !usernameError && (
+                    <p className="text-xs text-green-500 font-medium mt-1">Username is available!</p>
+                  )}
+                </div>
+              </>
             )}
 
             <div className="space-y-2">

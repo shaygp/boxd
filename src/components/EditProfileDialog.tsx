@@ -12,8 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { updateUserProfile, uploadProfilePicture } from "@/services/auth";
-import { Edit, Camera, X, Trash2 } from "lucide-react";
+import { updateUserProfile, uploadProfilePicture, validateUsername, checkUsernameAvailability } from "@/services/auth";
+import { Edit, Camera, X, Trash2, AtSign } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +33,9 @@ interface EditProfileDialogProps {
 export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [originalUsername, setOriginalUsername] = useState("");
   const [description, setDescription] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -45,6 +48,8 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
   useEffect(() => {
     if (profile) {
       setName(profile.name || "");
+      setUsername(profile.username || "");
+      setOriginalUsername(profile.username || "");
       setDescription(profile.description || "");
       setPhotoPreview(profile.photoURL || null);
     }
@@ -79,6 +84,35 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
     }
   };
 
+  const handleUsernameChange = async (value: string) => {
+    setUsername(value);
+    setUsernameError('');
+
+    if (value.length === 0) {
+      setUsernameError('Username is required');
+      return;
+    }
+
+    // If username hasn't changed, no need to validate
+    if (value === originalUsername) {
+      return;
+    }
+
+    const cleanUsername = value.replace(/^@/, '').toLowerCase();
+    const validation = validateUsername(cleanUsername);
+
+    if (!validation.valid) {
+      setUsernameError(validation.error || 'Invalid username');
+      return;
+    }
+
+    // Check availability
+    const isAvailable = await checkUsernameAvailability(cleanUsername);
+    if (!isAvailable) {
+      setUsernameError('Username is already taken');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -95,6 +129,24 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
       toast({
         title: "Error",
         description: "Name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!username.trim()) {
+      toast({
+        title: "Error",
+        description: "Username is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (usernameError) {
+      toast({
+        title: "Error",
+        description: usernameError,
         variant: "destructive",
       });
       return;
@@ -126,8 +178,11 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
         }
       }
 
-      const updates = {
+      const cleanUsername = username.replace(/^@/, '').toLowerCase();
+
+      const updates: any = {
         name: name.trim(),
+        username: cleanUsername,
         description: description.trim(),
       };
 
@@ -202,7 +257,7 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
           Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md w-[95vw] sm:w-full bg-black border-2 border-racing-red/40">
+      <DialogContent className="max-w-md w-[95vw] sm:w-full bg-black border-2 border-racing-red/40 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white">Edit Profile</DialogTitle>
         </DialogHeader>
@@ -270,6 +325,35 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
             />
             <p className="text-xs text-gray-500">
               {name.length}/50 characters
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="username" className="text-gray-300">Username *</Label>
+            <div className="relative">
+              <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => handleUsernameChange(e.target.value)}
+                placeholder="your_username"
+                maxLength={20}
+                required
+                className={`pl-10 bg-black/60 border ${
+                  usernameError
+                    ? 'border-red-500 focus-visible:ring-red-500'
+                    : 'border-racing-red/40'
+                } text-white placeholder:text-gray-500`}
+              />
+            </div>
+            {usernameError && (
+              <p className="text-xs text-red-500">{usernameError}</p>
+            )}
+            {username && !usernameError && username !== originalUsername && (
+              <p className="text-xs text-green-500">Username is available!</p>
+            )}
+            <p className="text-xs text-gray-500">
+              3-20 characters, letters, numbers, underscores, and hyphens only
             </p>
           </div>
 

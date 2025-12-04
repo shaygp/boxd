@@ -74,7 +74,7 @@ export const followUser = async (userIdToFollow: string) => {
   try {
     const followerDoc = await getDoc(doc(db, 'users', user.uid));
     const followerData = followerDoc.exists() ? followerDoc.data() : {};
-    const followerName = followerData.name || user.displayName || user.email?.split('@')[0] || 'Someone';
+    const followerName = followerData.username || followerData.name || user.displayName || 'Someone';
     const followerPhoto = followerData.photoURL || user.photoURL;
 
     await createNotification({

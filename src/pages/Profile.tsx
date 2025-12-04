@@ -48,6 +48,7 @@ const Profile = () => {
   const [watchlist, setWatchlist] = useState<any[]>([]);
   const [likes, setLikes] = useState<any[]>([]);
   const [fullLogs, setFullLogs] = useState<any[]>([]);
+  const [reviewsToShow, setReviewsToShow] = useState(8);
 
   const targetUserId = userId || currentUser?.uid;
   const isOwnProfile = !userId || userId === currentUser?.uid;
@@ -64,8 +65,9 @@ const Profile = () => {
         setProfile({ id: profileDoc.id, ...profileDoc.data() });
       } else {
         setProfile({
-          name: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User',
+          name: currentUser?.displayName || 'User',
           email: currentUser?.email,
+          username: 'user',
           description: 'F1 fan',
         });
       }
@@ -203,7 +205,7 @@ const Profile = () => {
                   />
                 ) : (
                   <div className="text-4xl sm:text-5xl md:text-6xl font-bold text-white">
-                    {(profile?.name || profile?.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
+                    {(profile?.name || profile?.username || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
@@ -217,7 +219,7 @@ const Profile = () => {
                   {profile?.name || 'Loading...'}
                 </h1>
                 <p className="text-sm sm:text-base text-gray-400">
-                  @{profile?.email?.split('@')[0] || 'user'}
+                  @{profile?.username || 'user'}
                 </p>
               </div>
 
@@ -402,9 +404,12 @@ const Profile = () => {
                   );
                 }
 
+                const displayedReviews = reviews.slice(0, reviewsToShow);
+                const hasMore = reviews.length > reviewsToShow;
+
                 return (
                   <div className="space-y-0 max-w-2xl mx-auto">
-                    {reviews.map((log) => (
+                    {displayedReviews.map((log) => (
                       <div
                         key={log.id}
                         onClick={() => navigate(log.id ? `/race/${log.id}` : `/race/${log.raceYear}/${log.round}`)}
@@ -422,7 +427,7 @@ const Profile = () => {
                                 />
                               ) : (
                                 <span className="text-sm font-bold text-white">
-                                  {(profile?.name || profile?.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
+                                  {(profile?.name || profile?.username || 'U').charAt(0).toUpperCase()}
                                 </span>
                               )}
                             </div>
@@ -436,7 +441,7 @@ const Profile = () => {
                                 {profile?.name || 'User'}
                               </span>
                               <span className="text-gray-500 text-sm">
-                                @{profile?.email?.split('@')[0] || 'user'}
+                                @{profile?.username || 'user'}
                               </span>
                               <span className="text-gray-500 text-sm">·</span>
                               <span className="text-gray-500 text-sm">
@@ -508,6 +513,20 @@ const Profile = () => {
                         </div>
                       </div>
                     ))}
+
+                    {/* View More Button */}
+                    {hasMore && (
+                      <div className="flex justify-center py-6">
+                        <Button
+                          onClick={() => setReviewsToShow(prev => prev + 8)}
+                          variant="outline"
+                          className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-bold uppercase tracking-wider"
+                        >
+                          <ArrowRight className="w-4 h-4 mr-2" />
+                          View More Reviews ({reviews.length - reviewsToShow} remaining)
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 );
               })()
@@ -562,13 +581,13 @@ const Profile = () => {
                           <img src={follower.photoURL} alt={follower.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="text-xl font-bold text-white">
-                            {(follower.name || follower.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
+                            {(follower.name || follower.username || 'U').charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
                       <div className="w-full min-w-0">
-                        <p className="font-bold truncate text-white text-sm group-hover:text-racing-red transition-colors">{follower.name || follower.email?.split('@')[0]}</p>
-                        <p className="text-xs text-gray-400 truncate font-medium">@{follower.email?.split('@')[0]}</p>
+                        <p className="font-bold truncate text-white text-sm group-hover:text-racing-red transition-colors">{follower.name || follower.username}</p>
+                        <p className="text-xs text-gray-400 truncate font-medium">@{follower.username || 'user'}</p>
                       </div>
                     </div>
                   </Card>
@@ -600,13 +619,13 @@ const Profile = () => {
                           <img src={followedUser.photoURL} alt={followedUser.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="text-xl font-bold text-white">
-                            {(followedUser.name || followedUser.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
+                            {(followedUser.name || followedUser.username || 'U').charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
                       <div className="w-full min-w-0">
-                        <p className="font-bold truncate text-white text-sm group-hover:text-racing-red transition-colors">{followedUser.name || followedUser.email?.split('@')[0]}</p>
-                        <p className="text-xs text-gray-400 truncate font-medium">@{followedUser.email?.split('@')[0]}</p>
+                        <p className="font-bold truncate text-white text-sm group-hover:text-racing-red transition-colors">{followedUser.name || followedUser.username}</p>
+                        <p className="text-xs text-gray-400 truncate font-medium">@{followedUser.username || 'user'}</p>
                       </div>
                     </div>
                   </Card>

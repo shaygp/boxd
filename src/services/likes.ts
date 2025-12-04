@@ -86,7 +86,7 @@ export const toggleLike = async (raceLogId: string) => {
         if (raceLogOwnerId && raceLogOwnerId !== user.uid) {
           const likerDoc = await getDoc(doc(db, 'users', user.uid));
           const likerData = likerDoc.exists() ? likerDoc.data() : {};
-          const likerName = likerData.name || user.displayName || user.email?.split('@')[0] || 'Someone';
+          const likerName = likerData.username || likerData.name || user.displayName || 'Someone';
           const likerPhoto = likerData.photoURL || user.photoURL;
 
           await createNotification({

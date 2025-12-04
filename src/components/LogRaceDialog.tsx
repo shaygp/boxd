@@ -81,10 +81,10 @@ export const LogRaceDialog = ({
       if (user) {
         try {
           const profile = await getUserProfile(user.uid);
-          setUsername(profile?.username || profile?.name || user.email?.split('@')[0] || 'user');
+          setUsername(profile?.username || profile?.name || 'user');
         } catch (error) {
           console.error('Error loading profile:', error);
-          setUsername(user.email?.split('@')[0] || 'user');
+          setUsername('user');
         }
       }
     };

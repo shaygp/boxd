@@ -70,14 +70,14 @@ export const createActivity = async (activity: Omit<Activity, 'id' | 'createdAt'
 
   // Fetch user's profile from Firestore to get the latest photoURL
   let userAvatar = user.photoURL || '';
-  let username = user.displayName || user.email?.split('@')[0] || 'User';
+  let username = user.displayName || 'User';
 
   try {
     const userDoc = await getDoc(doc(db, 'users', user.uid));
     if (userDoc.exists()) {
       const userData = userDoc.data();
       userAvatar = userData.photoURL || user.photoURL || '';
-      username = userData.name || username;
+      username = userData.username || userData.name || user.displayName || 'User';
     }
   } catch (error) {
     console.error('Error fetching user profile for activity:', error);

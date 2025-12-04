@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { createList } from "@/services/lists";
+import { getUserProfile } from "@/services/auth";
 import { useToast } from "@/hooks/use-toast";
 
 interface CreateListDialogProps {
@@ -36,10 +37,15 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
 
     setLoading(true);
     try {
+      // Fetch user profile to get username
+      const profile = await getUserProfile(user.uid);
+      const username = profile?.username || profile?.name || user.displayName || 'User';
+      const userProfileImageUrl = profile?.photoURL || user.photoURL || '';
+
       await createList({
         userId: user.uid,
-        username: user.displayName || user.email?.split('@')[0] || 'User',
-        userProfileImageUrl: user.photoURL || '',
+        username,
+        userProfileImageUrl,
         title,
         description,
         races: [],
