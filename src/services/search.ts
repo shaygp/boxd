@@ -57,15 +57,17 @@ export const searchRaces = async (searchTerm: string, limitCount: number = 10): 
 };
 
 export const searchUsers = async (searchTerm: string, limitCount: number = 10): Promise<SearchResult[]> => {
-  const term = searchTerm.toLowerCase();
+  // Remove @ symbol if present and convert to lowercase
+  const term = searchTerm.replace(/^@/, '').toLowerCase().trim();
 
   try {
     console.log('[searchUsers] Searching for:', term);
     const usersCollection = collection(db, 'users');
-    const q = query(usersCollection, limit(100));
+    // Get ALL users - no limit to ensure we search through everyone
+    const q = query(usersCollection);
     const snapshot = await getDocs(q);
 
-    console.log('[searchUsers] Found', snapshot.docs.length, 'total users');
+    console.log('[searchUsers] Found', snapshot.docs.length, 'total users in database');
 
     const users = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -73,7 +75,21 @@ export const searchUsers = async (searchTerm: string, limitCount: number = 10): 
         const nameMatch = user.name?.toLowerCase().includes(term);
         const usernameMatch = user.username?.toLowerCase().includes(term);
         const emailMatch = user.email?.toLowerCase().includes(term);
-        return nameMatch || usernameMatch || emailMatch;
+
+        const matches = nameMatch || usernameMatch || emailMatch;
+
+        // Log users that match for debugging
+        if (matches) {
+          console.log('[searchUsers] Match found:', {
+            username: user.username,
+            name: user.name,
+            nameMatch,
+            usernameMatch,
+            emailMatch
+          });
+        }
+
+        return matches;
       })
       .slice(0, limitCount);
 
