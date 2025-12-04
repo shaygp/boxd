@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +71,7 @@ export const LogRaceDialog = ({
   const [loadingWinner, setLoadingWinner] = useState(false);
   const [historicalRaces, setHistoricalRaces] = useState<any[]>([]);
   const [loadingCircuits, setLoadingCircuits] = useState(false);
+  const hasPrefilledRef = useRef(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -120,7 +121,7 @@ export const LogRaceDialog = ({
 
   // Pre-fill with default values when dialog opens and circuits are loaded
   useEffect(() => {
-    if (open && !editMode && historicalRaces.length > 0 && defaultRaceName && !selectedCircuitId) {
+    if (open && !editMode && historicalRaces.length > 0 && defaultRaceName && !hasPrefilledRef.current) {
       // Build circuits list from historical races
       const circuitsList = historicalRaces.map(race => ({
         name: race.meeting_name,
@@ -139,11 +140,17 @@ export const LogRaceDialog = ({
         setRaceName(matchingCircuit.name);
         setRaceLocation(matchingCircuit.location);
         setCountryCode(getCountryCodeFromName(matchingCircuit.country));
+        hasPrefilledRef.current = true; // Mark as prefilled
       }
 
       if (defaultYear) setRaceYear(defaultYear);
     }
-  }, [open, defaultRaceName, defaultCircuit, defaultYear, defaultCountryCode, editMode, historicalRaces, selectedCircuitId]);
+
+    // Reset the ref when dialog closes
+    if (!open) {
+      hasPrefilledRef.current = false;
+    }
+  }, [open, defaultRaceName, defaultCircuit, defaultYear, editMode, historicalRaces]);
 
   const drivers2025 = [
     { id: "verstappen", name: "Max Verstappen", team: "Red Bull Racing" },
@@ -232,13 +239,10 @@ export const LogRaceDialog = ({
 
   // Fetch circuits for selected year from Firestore
   useEffect(() => {
+    if (!open) return; // Don't fetch if dialog is closed
+
     const fetchCircuitsForYear = async () => {
       if (!raceYear) return;
-
-      // Reset circuit selection when year changes
-      setSelectedCircuitId("");
-      setRaceName("");
-      setRaceLocation("");
 
       setLoadingCircuits(true);
       try {
@@ -275,7 +279,7 @@ export const LogRaceDialog = ({
     };
 
     fetchCircuitsForYear();
-  }, [raceYear]);
+  }, [raceYear, open]);
 
   // Sort circuits with default circuit at the top
   const circuits = useMemo(() => {

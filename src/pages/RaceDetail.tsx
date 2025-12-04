@@ -50,6 +50,7 @@ const RaceDetail = () => {
   const [reviewToDelete, setReviewToDelete] = useState<string | null>(null);
   const [editingReview, setEditingReview] = useState<any>(null);
   const [reviewFilter, setReviewFilter] = useState<'recent' | 'liked'>('recent');
+  const [showAllReviews, setShowAllReviews] = useState(false);
   const { toast } = useToast();
 
   const loadRaceData = async () => {
@@ -462,6 +463,7 @@ const RaceDetail = () => {
                     defaultYear={race.season}
                     defaultCountryCode={race.countryCode}
                     existingLog={editingReview}
+                    editMode={!!editingReview}
                   />
                   <AddToListDialog
                     raceYear={race.season}
@@ -514,14 +516,15 @@ const RaceDetail = () => {
                 )}
               </div>
 
-              <div className="space-y-4 md:space-y-6 max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-racing-red scrollbar-track-black/40">
+              <div className="space-y-4 md:space-y-6">
                 {reviews.length === 0 ? (
                   <div className="text-center py-6 sm:py-8 text-gray-400">
                     <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-40" />
                     <p className="text-xs sm:text-sm text-gray-500">No reviews yet. Be the first to review this race!</p>
                   </div>
                 ) : (
-                  reviews.map((review) => (
+                  <>
+                  {(showAllReviews ? reviews : reviews.slice(0, 10)).map((review) => (
                     <Card key={review.id} className="p-4 sm:p-5 border border-gray-800 bg-black/60 backdrop-blur-sm hover:bg-black/80 transition-all">
                       {/* Header with avatar and name */}
                       <div className="flex items-start gap-3 mb-3">
@@ -538,7 +541,10 @@ const RaceDetail = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-sm sm:text-base hover:text-racing-red transition-colors cursor-pointer text-white">
+                            <span
+                              className="font-bold text-sm sm:text-base hover:text-racing-red transition-colors cursor-pointer text-white"
+                              onClick={() => navigate(`/user/${review.userId}`)}
+                            >
                               {review.username}
                             </span>
                             <span className="text-xs text-gray-500">•</span>
@@ -648,7 +654,21 @@ const RaceDetail = () => {
                         )}
                       </div>
                     </Card>
-                  ))
+                  ))}
+
+                  {/* View More Button */}
+                  {reviews.length > 10 && !showAllReviews && (
+                    <div className="text-center pt-4">
+                      <Button
+                        onClick={() => setShowAllReviews(true)}
+                        variant="outline"
+                        className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-bold uppercase tracking-wider"
+                      >
+                        View More Reviews ({reviews.length - 10} more)
+                      </Button>
+                    </div>
+                  )}
+                  </>
                 )}
               </div>
             </div>
@@ -659,16 +679,21 @@ const RaceDetail = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0a0a0a] border-2 border-racing-red/40">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Review?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-white font-black uppercase tracking-wider">Delete Review?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
               This will permanently delete your review. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteReview} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="border-2 border-gray-700 bg-black/60 text-white hover:bg-gray-800 font-bold uppercase tracking-wider">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteReview}
+              className="bg-racing-red hover:bg-red-600 text-white border-2 border-red-400 shadow-lg shadow-red-500/30 font-bold uppercase tracking-wider"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

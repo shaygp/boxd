@@ -331,26 +331,14 @@ const Profile = () => {
         </div>
 
         {/* Tabs - Letterboxd Style */}
-        <Tabs defaultValue="logs" className="space-y-6">
+        <Tabs defaultValue="reviews" className="space-y-6">
           <div className="border-b border-gray-800">
             <TabsList className="w-full justify-start bg-transparent h-auto p-0 space-x-0">
-              <TabsTrigger
-                value="logs"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
-              >
-                Logs
-              </TabsTrigger>
               <TabsTrigger
                 value="reviews"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
               >
                 Reviews
-              </TabsTrigger>
-              <TabsTrigger
-                value="watchlist"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
-              >
-                Watchlist
               </TabsTrigger>
               <TabsTrigger
                 value="followers"
@@ -363,6 +351,18 @@ const Profile = () => {
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
               >
                 Following
+              </TabsTrigger>
+              <TabsTrigger
+                value="logs"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
+              >
+                Rated
+              </TabsTrigger>
+              <TabsTrigger
+                value="watchlist"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
+              >
+                Watchlist
               </TabsTrigger>
             </TabsList>
           </div>
@@ -403,72 +403,110 @@ const Profile = () => {
                 }
 
                 return (
-                  <div className="space-y-3 sm:space-y-4 max-w-3xl mx-auto">
+                  <div className="space-y-0 max-w-2xl mx-auto">
                     {reviews.map((log) => (
-                      <Card
+                      <div
                         key={log.id}
                         onClick={() => navigate(log.id ? `/race/${log.id}` : `/race/${log.raceYear}/${log.round}`)}
-                        className="group cursor-pointer bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30"
+                        className="border-b border-gray-800 hover:bg-gray-900/30 transition-colors cursor-pointer p-4"
                       >
-                        {/* Racing accent line */}
-                        <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+                        <div className="flex gap-3">
+                          {/* Avatar */}
+                          <div className="flex-shrink-0">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center overflow-hidden">
+                              {profile?.photoURL ? (
+                                <img
+                                  src={profile.photoURL}
+                                  alt={profile?.name || 'User'}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-sm font-bold text-white">
+                                  {(profile?.name || profile?.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
 
-                        <div className="p-4 sm:p-5">
-                          <div className="space-y-3">
-                            {/* Race info header */}
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-black text-base sm:text-lg text-white uppercase tracking-wider line-clamp-1 group-hover:text-racing-red transition-colors">
-                                  {log.raceName}
-                                </h3>
-                                <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
-                                  <span>{log.raceYear}</span>
-                                  <span className="text-gray-700">•</span>
-                                  <span>R{log.round || 1}</span>
-                                  {log.raceLocation && (
-                                    <>
-                                      <span className="text-gray-700">•</span>
-                                      <span className="line-clamp-1">{log.raceLocation}</span>
-                                    </>
-                                  )}
-                                </div>
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            {/* Header */}
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <span className="font-bold text-white text-sm hover:underline">
+                                {profile?.name || 'User'}
+                              </span>
+                              <span className="text-gray-500 text-sm">
+                                @{profile?.email?.split('@')[0] || 'user'}
+                              </span>
+                              <span className="text-gray-500 text-sm">·</span>
+                              <span className="text-gray-500 text-sm">
+                                {log.dateWatched instanceof Date
+                                  ? log.dateWatched.toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric'
+                                    })
+                                  : log.createdAt instanceof Date
+                                    ? log.createdAt.toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric'
+                                      })
+                                    : 'Recently'}
+                              </span>
+                            </div>
+
+                            {/* Race info */}
+                            <div className="mb-2">
+                              <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
+                                <span className="font-bold text-racing-red">{log.raceName}</span>
+                                <span>·</span>
+                                <span>{log.raceYear}</span>
+                                {log.rating && (
+                                  <>
+                                    <span>·</span>
+                                    <div className="flex items-center gap-0.5">
+                                      {[...Array(5)].map((_, i) => (
+                                        <Star
+                                          key={i}
+                                          className={`w-3 h-3 ${
+                                            i < log.rating!
+                                              ? 'fill-yellow-400 text-yellow-400'
+                                              : 'text-gray-600 fill-gray-600'
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
                               </div>
 
-                              {/* Rating stars */}
-                              {log.rating && (
-                                <div className="flex items-center gap-0.5 flex-shrink-0">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`w-4 h-4 ${
-                                        i < log.rating!
-                                          ? 'fill-yellow-400 text-yellow-400'
-                                          : 'text-gray-600 fill-gray-800'
-                                      }`}
-                                      strokeWidth={1.5}
-                                    />
-                                  ))}
+                              {/* Driver of the Day */}
+                              {log.driverOfTheDay && (
+                                <div className="text-sm text-gray-400">
+                                  <span>🏆 Driver of the Day: </span>
+                                  <span className="text-white font-medium">{log.driverOfTheDay}</span>
                                 </div>
                               )}
                             </div>
 
-                            {/* Review content */}
-                            {log.review && (
-                              <div className="bg-black/40 rounded-lg p-3 border border-gray-800/50">
-                                <p className="text-sm text-gray-300 leading-relaxed line-clamp-4">
-                                  {log.review}
-                                </p>
-                              </div>
-                            )}
+                            {/* Review text */}
+                            <p className="text-white text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">
+                              {log.review}
+                            </p>
 
-                            {/* Read more link */}
-                            <div className="flex items-center gap-1 text-xs text-gray-400 hover:text-racing-red transition-colors">
-                              <span>View full review</span>
-                              <ArrowRight className="w-3 h-3" />
+                            {/* Engagement stats */}
+                            <div className="flex items-center gap-6 mt-3 text-gray-500">
+                              <button className="flex items-center gap-1.5 hover:text-racing-red transition-colors group">
+                                <Heart className={`w-4 h-4 ${log.likedBy?.includes(currentUser?.uid || '') ? 'fill-racing-red text-racing-red' : 'group-hover:fill-racing-red'}`} />
+                                <span className="text-xs">{log.likesCount || 0}</span>
+                              </button>
+                              <button className="flex items-center gap-1.5 hover:text-blue-400 transition-colors">
+                                <MessageCircle className="w-4 h-4" />
+                                <span className="text-xs">{log.commentsCount || 0}</span>
+                              </button>
                             </div>
                           </div>
                         </div>
-                      </Card>
+                      </div>
                     ))}
                   </div>
                 );
