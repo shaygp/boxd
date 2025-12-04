@@ -71,8 +71,9 @@ export const searchUsers = async (searchTerm: string, limitCount: number = 10): 
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(user => {
         const nameMatch = user.name?.toLowerCase().includes(term);
+        const usernameMatch = user.username?.toLowerCase().includes(term);
         const emailMatch = user.email?.toLowerCase().includes(term);
-        return nameMatch || emailMatch;
+        return nameMatch || usernameMatch || emailMatch;
       })
       .slice(0, limitCount);
 

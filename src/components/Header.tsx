@@ -105,16 +105,16 @@ export const Header = () => {
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b-2 border-racing-red/20 bg-black/90 backdrop-blur-xl shadow-lg shadow-red-900/10">
-        <div className="container flex h-16 md:h-18 items-center px-4 md:px-6 lg:px-8">
-          <div className="flex items-center gap-4 sm:gap-6 md:gap-8 flex-1">
-            <a href="/home" className="flex items-center">
-              <div className="text-xl sm:text-2xl font-black tracking-tighter">
+        <div className="container flex h-28 md:h-32 items-end pb-2 px-4 md:px-6 lg:px-8">
+          <div className="flex items-end gap-4 sm:gap-6 md:gap-8 flex-1 pb-2">
+            <a href="/home" className="flex items-center pb-1">
+              <div className="text-3xl sm:text-4xl font-black tracking-tighter">
                 <span className="text-white">BOX</span>
                 <span className="text-racing-red">BOXD</span>
               </div>
             </a>
 
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-black uppercase tracking-wider ml-4 lg:ml-6">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-black uppercase tracking-wider ml-4 lg:ml-6 pb-1">
             <a href="/home" className="text-white hover:text-racing-red transition-colors">
               Home
             </a>
@@ -133,13 +133,13 @@ export const Header = () => {
           </nav>
         </div>
 
-        <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
+        <div className="flex items-end gap-3 md:gap-4 flex-shrink-0 pb-2">
           <form onSubmit={handleSearch} className="relative hidden lg:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 text-white" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 lg:w-6 lg:h-6 text-white" />
             <Input
               type="search"
               placeholder="Search races, users..."
-              className="pl-9 lg:pl-11 w-48 xl:w-64 bg-black/60 border-2 border-red-900/50 !text-white placeholder:text-gray-400 focus:border-racing-red lg:h-11"
+              className="pl-10 lg:pl-12 w-48 xl:w-64 bg-black/60 border-2 border-red-900/50 !text-white placeholder:text-gray-400 focus:border-racing-red h-12 lg:h-14 text-base"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -148,10 +148,10 @@ export const Header = () => {
           <Button
             size="icon"
             variant="ghost"
-            className="lg:hidden text-white hover:text-white"
+            className="lg:hidden text-white hover:text-white w-12 h-12"
             onClick={() => navigate('/search')}
           >
-            <Search className="w-5 h-5 !text-white" />
+            <Search className="w-6 h-6 !text-white" />
           </Button>
 
           <LogRaceDialog
@@ -167,16 +167,16 @@ export const Header = () => {
 
           <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="relative md:w-11 md:h-11">
-                <Bell className="w-5 h-5 md:w-6 md:h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />
+              <Button size="icon" variant="ghost" className="relative w-12 h-12 md:w-14 md:h-14">
+                <Bell className="w-6 h-6 md:w-7 md:h-7 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-racing-red text-white text-xs rounded-full flex items-center justify-center font-black shadow-lg shadow-red-500/50">
+                  <span className="absolute -top-1 -right-1 w-6 h-6 bg-racing-red text-white text-xs rounded-full flex items-center justify-center font-black shadow-lg shadow-red-500/50">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={12} className="w-80 max-w-[calc(100vw-2rem)] bg-black/95 border-2 border-red-900/40 backdrop-blur-xl mt-2">
+            <DropdownMenuContent align="end" sideOffset={20} className="w-[90vw] sm:w-96 bg-black/95 border-2 border-red-900/40 backdrop-blur-xl">
               <div className="flex items-center justify-between px-4 py-3 border-b border-red-900/40">
                 <span className="font-black text-white uppercase tracking-wider text-sm">Notifications</span>
                 {unreadCount > 0 && (
@@ -190,7 +190,7 @@ export const Header = () => {
                   </Button>
                 )}
               </div>
-              <ScrollArea className="h-[400px]">
+              <ScrollArea className="h-[60vh] sm:h-[500px]">
                 {notifications.length > 0 ? (
                   notifications.map((notification) => (
                     <DropdownMenuItem
@@ -236,23 +236,23 @@ export const Header = () => {
               <Button
                 size="icon"
                 variant="ghost"
-                className="relative rounded-full md:w-11 md:h-11 touch-manipulation cursor-pointer"
+                className="relative rounded-full w-12 h-12 md:w-14 md:h-14 touch-manipulation cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {userPhotoURL ? (
                   <img
                     src={userPhotoURL}
                     alt="Profile"
-                    className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover pointer-events-none"
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover pointer-events-none"
                   />
                 ) : (
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-racing-red/20 flex items-center justify-center text-racing-red font-bold md:text-lg pointer-events-none">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-racing-red/20 flex items-center justify-center text-racing-red font-bold text-lg md:text-xl pointer-events-none">
                     {(user?.displayName || user?.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="touch-manipulation min-w-[220px] bg-black/95 border-2 border-red-900/40 backdrop-blur-xl mt-2" sideOffset={12}>
+            <DropdownMenuContent align="end" className="touch-manipulation min-w-[220px] bg-black/95 border-2 border-red-900/40 backdrop-blur-xl" sideOffset={20}>
               <DropdownMenuItem
                 onClick={() => navigate('/profile')}
                 className="cursor-pointer py-3 px-4 text-base font-bold text-white hover:bg-racing-red/10 hover:text-racing-red focus:bg-racing-red/10 focus:text-racing-red uppercase tracking-wider"
