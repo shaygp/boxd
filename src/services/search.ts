@@ -69,9 +69,33 @@ export const searchUsers = async (searchTerm: string, limitCount: number = 10): 
 
     console.log('[searchUsers] Found', snapshot.docs.length, 'total users in database');
 
+    // Map and deduplicate by user ID
+    const seenUserIds = new Set();
+    const seenUsernames = new Set();
+
     const users = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(user => {
+        // Skip if no username (old/incomplete profiles)
+        if (!user.username) {
+          return false;
+        }
+
+        // Skip duplicates by user ID
+        if (seenUserIds.has(user.id)) {
+          console.log('[searchUsers] Skipping duplicate user ID:', user.id);
+          return false;
+        }
+
+        // Skip if we already have this username (in case of old data)
+        if (seenUsernames.has(user.username)) {
+          console.log('[searchUsers] Skipping duplicate username:', user.username);
+          return false;
+        }
+
+        seenUserIds.add(user.id);
+        seenUsernames.add(user.username);
+
         const nameMatch = user.name?.toLowerCase().includes(term);
         const usernameMatch = user.username?.toLowerCase().includes(term);
         const emailMatch = user.email?.toLowerCase().includes(term);
@@ -81,6 +105,7 @@ export const searchUsers = async (searchTerm: string, limitCount: number = 10): 
         // Log users that match for debugging
         if (matches) {
           console.log('[searchUsers] Match found:', {
+            id: user.id,
             username: user.username,
             name: user.name,
             nameMatch,
