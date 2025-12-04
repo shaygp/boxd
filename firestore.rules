@@ -26,6 +26,13 @@ service cloud.firestore {
         && resource.data.userId == request.auth.uid; // Users can delete their own username mappings
     }
 
+    // Race logs - allow all authenticated users to read, only owners to write
+    match /raceLogs/{logId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
     // Default: require authentication for all other operations
     match /{document=**} {
       allow read, write: if request.auth != null;

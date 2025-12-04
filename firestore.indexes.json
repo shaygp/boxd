@@ -5,6 +5,24 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "raceName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "raceYear",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "raceLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "userId",
           "order": "ASCENDING"
         },

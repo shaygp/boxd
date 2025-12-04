@@ -52,18 +52,32 @@ export const Header = () => {
     }
   };
 
-  const handleNotificationClick = async (notification: any) => {
+  const handleNotificationClick = async (notification: any, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Close dropdown immediately to prevent reopening
+    setNotificationsOpen(false);
+
     if (!notification.isRead) {
       await markNotificationAsRead(notification.id);
       setUnreadCount(prev => Math.max(0, prev - 1));
+      // Update the notification in the local state
+      setNotifications(prev =>
+        prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
+      );
     }
+
     if (notification.linkTo) {
-      navigate(notification.linkTo);
+      // Small delay to ensure dropdown closes before navigation
+      setTimeout(() => navigate(notification.linkTo), 100);
     }
-    setNotificationsOpen(false);
   };
 
-  const handleMarkAllAsRead = async () => {
+  const handleMarkAllAsRead = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
     if (!user) return;
     try {
       await markAllNotificationsAsRead(user.uid);
@@ -196,7 +210,8 @@ export const Header = () => {
                     <DropdownMenuItem
                       key={notification.id}
                       className="flex items-start gap-3 p-4 cursor-pointer hover:bg-racing-red/10 border-b border-red-900/20 focus:bg-racing-red/10"
-                      onClick={() => handleNotificationClick(notification)}
+                      onClick={(e) => handleNotificationClick(notification, e)}
+                      onSelect={(e) => e.preventDefault()}
                     >
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                         {notification.actorPhotoURL ? (

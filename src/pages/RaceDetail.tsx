@@ -14,7 +14,7 @@ import { addToWatchlist, removeFromWatchlist } from "@/services/watchlist";
 import { toggleLike } from "@/services/likes";
 import { getCountryFlag } from "@/services/f1Api";
 import { getRaceByYearAndRound as getFirestoreRaceByYearAndRound } from "@/services/f1Calendar";
-import { getRaceLogById, getPublicRaceLogs, deleteRaceLog } from "@/services/raceLogs";
+import { getRaceLogById, getPublicRaceLogs, getRaceLogsByRace, deleteRaceLog } from "@/services/raceLogs";
 import { auth } from "@/lib/firebase";
 import {
   AlertDialog,
@@ -56,16 +56,6 @@ const RaceDetail = () => {
   const loadRaceData = async () => {
     console.log('[RaceDetail] Starting data load...');
 
-    // Try to load public race logs, but don't let it block the rest
-    try {
-      const logs = await getPublicRaceLogs(100);
-      console.log('[RaceDetail] Loaded', logs.length, 'public race logs');
-      setAllRaceLogs(logs);
-    } catch (error) {
-      console.warn('[RaceDetail] Failed to load public logs (probably missing index):', error);
-      setAllRaceLogs([]);
-    }
-
     try {
       if (id) {
         console.log('[RaceDetail] Loading by ID:', id);
@@ -78,6 +68,16 @@ const RaceDetail = () => {
           const user = auth.currentUser;
           if (user) {
             setIsLiked(log.likedBy?.includes(user.uid) || false);
+          }
+
+          // Load race-specific logs
+          try {
+            const raceLogs = await getRaceLogsByRace(log.raceName, log.raceYear);
+            console.log('[RaceDetail] Loaded', raceLogs.length, 'race-specific logs');
+            setAllRaceLogs(raceLogs);
+          } catch (error) {
+            console.warn('[RaceDetail] Failed to load race-specific logs:', error);
+            setAllRaceLogs([]);
           }
 
           // Try to load the race info from Firestore using the log's race details
@@ -127,6 +127,16 @@ const RaceDetail = () => {
           };
 
           setRaceInfo(raceData);
+
+          // Load race-specific logs
+          try {
+            const raceLogs = await getRaceLogsByRace(firestoreRace.raceName, firestoreRace.year);
+            console.log('[RaceDetail] Loaded', raceLogs.length, 'race-specific logs for year/round');
+            setAllRaceLogs(raceLogs);
+          } catch (error) {
+            console.warn('[RaceDetail] Failed to load race-specific logs:', error);
+            setAllRaceLogs([]);
+          }
 
           // Winner will be stored in Firestore in the future
           // For now, we don't fetch from external APIs
@@ -252,31 +262,47 @@ const RaceDetail = () => {
     }
   };
 
+  console.log('[RaceDetail] allRaceLogs count:', allRaceLogs.length);
+  console.log('[RaceDetail] raceLog:', raceLog);
+  console.log('[RaceDetail] raceInfo:', raceInfo);
+
   const reviews = allRaceLogs
     .filter(log => {
       if (!raceLog && !raceInfo) return false;
       const targetRaceName = raceLog?.raceName || raceInfo?.meeting_name;
       const targetRaceYear = raceLog?.raceYear || raceInfo?.year;
-      return log.raceName === targetRaceName &&
+      const matches = log.raceName === targetRaceName &&
         log.raceYear === targetRaceYear &&
         log.review &&
         log.review.length > 0;
+
+      if (!matches) {
+        console.log('[RaceDetail] Filtered out:', {
+          logRaceName: log.raceName,
+          targetRaceName,
+          logYear: log.raceYear,
+          targetYear: targetRaceYear,
+          hasReview: !!log.review
+        });
+      }
+
+      return matches;
     })
     .sort((a, b) => {
       if (reviewFilter === 'liked') {
         // Sort by likes count (descending)
         const aLikes = a.likesCount || 0;
         const bLikes = b.likesCount || 0;
-        console.log('[RaceDetail] Sorting by likes:', { aUser: a.username, aLikes, bUser: b.username, bLikes });
         return bLikes - aLikes;
       } else {
         // Sort by most recent (descending)
         const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
         const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-        console.log('[RaceDetail] Sorting by date:', { aUser: a.username, aDate, bUser: b.username, bDate });
         return bDate.getTime() - aDate.getTime();
       }
     });
+
+  console.log('[RaceDetail] Final reviews count:', reviews.length);
 
   // Log the final sorted order
   console.log('[RaceDetail] Reviews after sorting:', reviews.map(r => ({
@@ -288,8 +314,15 @@ const RaceDetail = () => {
   const handleLikeReview = async (reviewId: string) => {
     try {
       const liked = await toggleLike(reviewId);
-      const logs = await getPublicRaceLogs(100);
-      setAllRaceLogs(logs);
+
+      // Reload race-specific logs to update like counts
+      const targetRaceName = raceLog?.raceName || raceInfo?.meeting_name;
+      const targetRaceYear = raceLog?.raceYear || raceInfo?.year;
+
+      if (targetRaceName && targetRaceYear) {
+        const logs = await getRaceLogsByRace(targetRaceName, targetRaceYear);
+        setAllRaceLogs(logs);
+      }
     } catch (error: any) {
       toast({
         title: "Error",

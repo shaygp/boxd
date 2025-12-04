@@ -177,6 +177,50 @@ export const getPublicRaceLogs = async (limitCount: number = 20) => {
   }
 };
 
+export const getRaceLogsByRace = async (raceName: string, raceYear: number) => {
+  try {
+    console.log('[getRaceLogsByRace] Querying for:', { raceName, raceYear });
+
+    const q = query(
+      raceLogsCollection,
+      where('raceName', '==', raceName),
+      where('raceYear', '==', raceYear),
+      orderBy('createdAt', 'desc')
+    );
+
+    console.log('[getRaceLogsByRace] Executing query...');
+    const snapshot = await getDocs(q);
+    console.log('[getRaceLogsByRace] Query returned', snapshot.docs.length, 'documents');
+
+    const results = snapshot.docs.map(doc => {
+      const data = doc.data();
+      // Convert Firestore Timestamps to Date objects
+      return {
+        id: doc.id,
+        ...data,
+        dateWatched: data.dateWatched?.toDate ? data.dateWatched.toDate() : new Date(data.dateWatched),
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt),
+        // Default visibility to public if not set (for old reviews)
+        visibility: data.visibility || 'public'
+      } as RaceLog;
+    });
+
+    console.log('[getRaceLogsByRace] Returning', results.length, 'race logs');
+    return results;
+  } catch (error) {
+    console.error('[getRaceLogsByRace] ERROR:', error);
+    console.error('[getRaceLogsByRace] Query params:', { raceName, raceYear });
+
+    // If the error is about missing index, log it clearly
+    if (error instanceof Error && error.message.includes('index')) {
+      console.error('[getRaceLogsByRace] INDEX ERROR - Index may still be building');
+    }
+
+    throw new Error('Failed to fetch race logs: ' + (error instanceof Error ? error.message : 'Unknown error'));
+  }
+};
+
 export const getRaceLogById = async (logId: string) => {
   try {
     const docRef = doc(db, 'raceLogs', logId);
