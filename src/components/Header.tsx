@@ -176,7 +176,7 @@ export const Header = () => {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 bg-black/95 border-2 border-red-900/40 backdrop-blur-xl">
+            <DropdownMenuContent align="end" sideOffset={12} className="w-80 max-w-[calc(100vw-2rem)] bg-black/95 border-2 border-red-900/40 backdrop-blur-xl mt-2">
               <div className="flex items-center justify-between px-4 py-3 border-b border-red-900/40">
                 <span className="font-black text-white uppercase tracking-wider text-sm">Notifications</span>
                 {unreadCount > 0 && (
@@ -252,7 +252,7 @@ export const Header = () => {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="touch-manipulation min-w-[220px] bg-black/95 border-2 border-red-900/40 backdrop-blur-xl" sideOffset={5}>
+            <DropdownMenuContent align="end" className="touch-manipulation min-w-[220px] bg-black/95 border-2 border-red-900/40 backdrop-blur-xl mt-2" sideOffset={12}>
               <DropdownMenuItem
                 onClick={() => navigate('/profile')}
                 className="cursor-pointer py-3 px-4 text-base font-bold text-white hover:bg-racing-red/10 hover:text-racing-red focus:bg-racing-red/10 focus:text-racing-red uppercase tracking-wider"
