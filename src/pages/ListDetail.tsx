@@ -7,7 +7,7 @@ import { AddRaceToListDialog } from "@/components/AddRaceToListDialog";
 import { Heart, MessageSquare, Share2, Edit, Trash2, Lock, Globe, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getListById, deleteList, removeRaceFromList } from "@/services/lists";
+import { getListById, deleteList, removeRaceFromList, likeList, unlikeList, isListLiked } from "@/services/lists";
 import { getRacesBySeason as getFirestoreRacesBySeason } from "@/services/f1Calendar";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +29,8 @@ const ListDetail = () => {
   const { toast } = useToast();
   const [list, setList] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [liked, setLiked] = useState(false);
+  const [liking, setLiking] = useState(false);
 
   const loadList = async () => {
     if (!listId) {
@@ -164,6 +166,50 @@ const ListDetail = () => {
     loadList();
   }, [listId]);
 
+  useEffect(() => {
+    const checkLiked = async () => {
+      if (listId && auth.currentUser) {
+        const isLiked = await isListLiked(listId);
+        setLiked(isLiked);
+      }
+    };
+    checkLiked();
+  }, [listId]);
+
+  const handleLikeToggle = async () => {
+    if (!listId || !auth.currentUser) {
+      toast({
+        title: 'Sign in required',
+        description: 'Please sign in to like lists',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLiking(true);
+    try {
+      if (liked) {
+        await unlikeList(listId);
+        setLiked(false);
+        setList((prev: any) => ({ ...prev, likesCount: (prev.likesCount || 1) - 1 }));
+        toast({ title: 'Removed from likes' });
+      } else {
+        await likeList(listId);
+        setLiked(true);
+        setList((prev: any) => ({ ...prev, likesCount: (prev.likesCount || 0) + 1 }));
+        toast({ title: 'Added to likes' });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLiking(false);
+    }
+  };
+
   const isOwner = auth.currentUser?.uid === list?.userId;
 
   if (loading) {
@@ -194,117 +240,166 @@ const ListDetail = () => {
 
       <main className="container px-4 sm:px-6 py-6 sm:py-8 max-w-7xl mx-auto">
         {/* List Header */}
-        <Card className="p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 bg-black/90 border-2 border-red-900/40 backdrop-blur-sm">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 sm:gap-6 mb-6">
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-wider text-white">{list.title}</h1>
-                {list.isPublic ? (
-                  <Badge variant="secondary" className="gap-1 bg-black/60 border-2 border-racing-red/40 text-white font-bold uppercase tracking-wider">
-                    <Globe className="w-3 h-3" />
-                    Public
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="gap-1 bg-black/60 border-2 border-gray-700 text-white font-bold uppercase tracking-wider">
-                    <Lock className="w-3 h-3" />
-                    Private
-                  </Badge>
+        <Card className="relative overflow-hidden mb-6 sm:mb-8 bg-black/90 border-2 border-red-900/40 backdrop-blur-sm shadow-lg">
+          {/* Racing accent line */}
+          <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+
+          <div className="p-4 sm:p-5 md:p-6">
+            {/* Header Section */}
+            <div className="flex flex-col gap-4 mb-4">
+              {/* Creator Info */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 flex items-center justify-center overflow-hidden cursor-pointer hover:border-racing-red transition-colors"
+                  onClick={() => navigate(`/user/${list.userId}`)}
+                >
+                  {list.userAvatar ? (
+                    <img
+                      src={list.userAvatar}
+                      alt={list.username}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xl font-black text-white uppercase">
+                      {list.username?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="font-bold text-white hover:text-racing-red cursor-pointer transition-colors text-sm"
+                      onClick={() => navigate(`/user/${list.userId}`)}
+                    >
+                      {list.username}
+                    </span>
+                    <span className="text-gray-500 text-xs">•</span>
+                    <span className="text-gray-400 text-xs">
+                      {list.races?.length || 0} {list.races?.length === 1 ? 'race' : 'races'}
+                    </span>
+                    {list.isPublic ? (
+                      <>
+                        <span className="text-gray-500 text-xs">•</span>
+                        <Badge variant="secondary" className="gap-1 bg-black/60 border border-racing-red/40 text-white text-[10px] px-1.5 py-0">
+                          <Globe className="w-2.5 h-2.5" />
+                          Public
+                        </Badge>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-gray-500 text-xs">•</span>
+                        <Badge variant="secondary" className="gap-1 bg-black/60 border border-gray-700 text-white text-[10px] px-1.5 py-0">
+                          <Lock className="w-2.5 h-2.5" />
+                          Private
+                        </Badge>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {new Date(list.createdAt || Date.now()).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Title and Description */}
+              <div>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">
+                  {list.title}
+                </h1>
+                {list.description && (
+                  <p className="text-sm text-gray-300 leading-relaxed">{list.description}</p>
                 )}
               </div>
-              {list.description && (
-                <p className="text-sm sm:text-base text-gray-300 mb-4 leading-relaxed">{list.description}</p>
-              )}
 
               {/* Tags */}
               {list.tags && list.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-1.5">
                   {list.tags.map((tag: string, idx: number) => (
-                    <Badge key={idx} variant="outline" className="bg-black/40 border-racing-red/40 text-gray-300 font-bold uppercase tracking-wider text-xs">
+                    <Badge key={idx} variant="outline" className="bg-black/40 border-racing-red/40 text-gray-300 text-[10px] px-2 py-0">
                       {tag}
                     </Badge>
                   ))}
                 </div>
               )}
+            </div>
 
-              {/* Author */}
-              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                <span className="text-gray-400 font-medium">Created by</span>
-                <span
-                  className="font-bold text-white hover:text-racing-red cursor-pointer transition-colors"
-                  onClick={() => navigate(`/user/${list.userId}`)}
+            {/* Actions and Stats */}
+            <div className="flex items-center justify-between pt-4 border-t border-gray-800">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleLikeToggle}
+                  disabled={liking}
+                  className={`flex items-center gap-1.5 transition-colors ${
+                    liked
+                      ? 'text-racing-red'
+                      : 'text-gray-400 hover:text-racing-red'
+                  }`}
                 >
-                  {list.username}
-                </span>
-                <span className="text-gray-600">•</span>
-                <span className="text-gray-400 font-medium">
-                  {list.races?.length || 0} {list.races?.length === 1 ? 'race' : 'races'}
-                </span>
+                  <Heart className={`w-4 h-4 ${liked ? 'fill-racing-red' : ''}`} />
+                  <span className="text-xs font-medium">{list.likesCount || 0}</span>
+                </button>
+                <button className="flex items-center gap-1.5 text-gray-400 hover:text-racing-red transition-colors">
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="text-xs font-medium">{list.commentsCount || 0}</span>
+                </button>
+              </div>
+
+              <div className="flex gap-1.5">
+                {isOwner && listId && (
+                  <AddRaceToListDialog
+                    listId={listId}
+                    onSuccess={loadList}
+                    trigger={
+                      <Button size="sm" className="gap-1.5 bg-racing-red hover:bg-red-600 text-white text-xs h-8">
+                        <Plus className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Add Race</span>
+                      </Button>
+                    }
+                  />
+                )}
+
+                <Button variant="outline" size="sm" onClick={handleShare} className="bg-black/60 border border-gray-700 text-white hover:bg-black/80 hover:text-racing-red hover:border-racing-red h-8 w-8 p-0">
+                  <Share2 className="w-3.5 h-3.5" />
+                </Button>
+
+                {isOwner && (
+                  <>
+                    <Button variant="outline" size="sm" className="bg-black/60 border border-gray-700 text-white hover:bg-black/80 hover:text-racing-red hover:border-racing-red h-8 w-8 p-0">
+                      <Edit className="w-3.5 h-3.5" />
+                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="bg-black/60 border border-gray-700 text-white hover:bg-black/80 hover:text-red-600 hover:border-red-600 h-8 w-8 p-0">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-black/95 border-2 border-racing-red backdrop-blur-xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-lg font-bold text-white">Delete this list?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-sm text-gray-400">
+                            This action cannot be undone. This will permanently delete your list.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="bg-black/60 border border-gray-700 text-white hover:bg-black/80 text-sm">Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-red-600 hover:bg-red-700 text-white text-sm"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
               </div>
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              {isOwner && listId && (
-                <AddRaceToListDialog
-                  listId={listId}
-                  onSuccess={loadList}
-                  trigger={
-                    <Button className="gap-2 bg-racing-red hover:bg-red-600 text-white font-black uppercase tracking-wider border-2 border-red-400 shadow-lg shadow-red-500/30">
-                      <Plus className="w-4 h-4" />
-                      <span className="hidden sm:inline">Add Race</span>
-                    </Button>
-                  }
-                />
-              )}
-
-              <Button variant="outline" size="icon" onClick={handleShare} className="bg-black/60 border-2 border-gray-700 text-white hover:bg-black/80 hover:text-racing-red hover:border-racing-red">
-                <Share2 className="w-4 h-4" />
-              </Button>
-
-              {isOwner && (
-                <>
-                  <Button variant="outline" size="icon" className="bg-black/60 border-2 border-gray-700 text-white hover:bg-black/80 hover:text-racing-red hover:border-racing-red">
-                    <Edit className="w-4 h-4" />
-                  </Button>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="icon" className="bg-black/60 border-2 border-gray-700 text-white hover:bg-black/80 hover:text-red-600 hover:border-red-600">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-black/95 border-2 border-racing-red backdrop-blur-xl">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-black uppercase tracking-wider text-racing-red">Delete this list?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-300">
-                          This action cannot be undone. This will permanently delete your list.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-black/60 border-2 border-gray-700 text-white hover:bg-black/80 hover:text-white font-bold uppercase tracking-wider">Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDelete}
-                          className="bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-wider border-2 border-red-400"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="flex items-center gap-4 sm:gap-6 pt-4 sm:pt-6 border-t-2 border-gray-800">
-            <button className="flex items-center gap-1.5 sm:gap-2 text-gray-400 hover:text-racing-red transition-colors">
-              <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="font-bold text-sm sm:text-base">{list.likesCount || 0}</span>
-            </button>
-            <button className="flex items-center gap-1.5 sm:gap-2 text-gray-400 hover:text-racing-red transition-colors">
-              <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="font-bold text-sm sm:text-base">{list.commentsCount || 0}</span>
-            </button>
           </div>
         </Card>
 

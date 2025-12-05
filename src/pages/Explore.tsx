@@ -427,23 +427,76 @@ const Explore = () => {
                   description="Create the first list and share your favorite race collections"
                 />
               ) : (
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {popularLists.map((list) => (
-                    <Card key={list.id} className="p-6 space-y-4 hover:ring-2 hover:ring-racing-red border-2 border-red-900/40 bg-black/90 backdrop-blur transition-all cursor-pointer">
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 bg-racing-red/20 rounded-lg flex items-center justify-center border-2 border-racing-red/40 shadow-lg shadow-red-500/30">
-                          <List className="w-6 h-6 text-racing-red drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]" />
+                    <Card
+                      key={list.id}
+                      onClick={() => navigate(`/list/${list.id}`)}
+                      className="group bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30 cursor-pointer"
+                    >
+                      {/* Racing accent line */}
+                      <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+
+                      <div className="p-3 sm:p-4">
+                        <div className="flex gap-3">
+                          {/* Avatar */}
+                          <div className="flex-shrink-0">
+                            <div className="relative">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center border-2 border-gray-700 group-hover:border-racing-red transition-all duration-300 overflow-hidden ring-2 ring-black/50">
+                                {list.userAvatar ? (
+                                  <img
+                                    src={list.userAvatar}
+                                    alt={list.username}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-base font-black text-white drop-shadow-lg uppercase">
+                                    {list.username?.charAt(0)?.toUpperCase() || 'U'}
+                                  </span>
+                                )}
+                              </div>
+                              {/* List badge */}
+                              <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-racing-red border-2 border-black flex items-center justify-center shadow-lg">
+                                <List className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="space-y-1.5">
+                              {/* Title */}
+                              <h3 className="font-bold text-white text-sm sm:text-base leading-tight line-clamp-2">
+                                {list.title}
+                              </h3>
+
+                              {/* Creator */}
+                              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                                <span>by</span>
+                                <span className="font-medium text-gray-300">{list.username}</span>
+                              </div>
+
+                              {/* Description if exists */}
+                              {list.description && (
+                                <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
+                                  {list.description}
+                                </p>
+                              )}
+
+                              {/* Stats */}
+                              <div className="flex items-center gap-3 text-xs text-gray-500 pt-1">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {list.races?.length || 0} races
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Heart className="w-3 h-3 fill-racing-red text-racing-red" />
+                                  {list.likesCount || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-black text-white text-lg mb-1 uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{list.title}</h3>
-                          <p className="text-sm text-gray-200 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                            by {list.username}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-300 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                        <span>{list.races?.length || 0} races</span>
-                        <span>❤️ {list.likesCount || 0} likes</span>
                       </div>
                     </Card>
                   ))}

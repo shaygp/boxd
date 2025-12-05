@@ -157,3 +157,61 @@ export const removeRaceFromList = async (listId: string, raceIndex: number) => {
   const updatedRaces = listDoc.races?.filter((_, idx) => idx !== raceIndex) || [];
   await updateList(listId, { races: updatedRaces });
 };
+
+export const likeList = async (listId: string) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+
+  const likeRef = doc(db, 'listLikes', `${user.uid}_${listId}`);
+  const likeSnap = await getDoc(likeRef);
+
+  if (likeSnap.exists()) {
+    throw new Error('Already liked');
+  }
+
+  await addDoc(collection(db, 'listLikes'), {
+    userId: user.uid,
+    listId,
+    createdAt: Timestamp.now()
+  });
+
+  await updateDoc(doc(db, 'lists', listId), {
+    likesCount: increment(1)
+  });
+};
+
+export const unlikeList = async (listId: string) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+
+  const q = query(
+    collection(db, 'listLikes'),
+    where('userId', '==', user.uid),
+    where('listId', '==', listId)
+  );
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    throw new Error('Not liked');
+  }
+
+  await deleteDoc(snapshot.docs[0].ref);
+
+  await updateDoc(doc(db, 'lists', listId), {
+    likesCount: increment(-1)
+  });
+};
+
+export const isListLiked = async (listId: string): Promise<boolean> => {
+  const user = auth.currentUser;
+  if (!user) return false;
+
+  const q = query(
+    collection(db, 'listLikes'),
+    where('userId', '==', user.uid),
+    where('listId', '==', listId)
+  );
+  const snapshot = await getDocs(q);
+
+  return !snapshot.empty;
+};

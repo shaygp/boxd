@@ -205,6 +205,8 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
         return <List className="w-4 h-4" />;
       case 'follow':
         return <UserPlus className="w-4 h-4" />;
+      case 'prediction':
+        return <span className="text-sm">🏎️</span>;
     }
   };
 
@@ -220,6 +222,21 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
         return 'added to a list';
       case 'follow':
         return 'followed';
+      case 'prediction':
+        // Keep the prediction text but remove the race name at the end
+        if (activity.content) {
+          // Match patterns like "will win [raceName]" or "for [raceName]"
+          // Keep everything up to and including "will win" or "to"
+          if (activity.content.includes(' will win ')) {
+            const parts = activity.content.split(' will win ');
+            return parts[0] + ' will win';
+          } else if (activity.content.includes(' for ')) {
+            const parts = activity.content.split(' for ');
+            return parts[0];
+          }
+          return activity.content;
+        }
+        return 'made a prediction';
     }
   };
 
@@ -239,6 +256,12 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
         return `/list/${activity.targetId}`;
       case 'user':
         return `/user/${activity.targetId}`;
+      case 'prediction':
+        // Link to race detail page for prediction
+        if (activity.raceYear && activity.round) {
+          return `/race/${activity.raceYear}/${activity.round}`;
+        }
+        return '#';
       default:
         return '#';
     }
@@ -350,6 +373,14 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                         className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"
                       >
                         {activity.content || 'a user'}
+                      </Link>
+                    )}
+                    {activity.targetType === 'prediction' && activity.raceName && (
+                      <Link
+                        to={getActivityLink(activity)}
+                        className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"
+                      >
+                        {activity.raceName}
                       </Link>
                     )}
                     {activity.rating && activity.rating > 0 && (

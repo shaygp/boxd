@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LogRaceDialog } from "@/components/LogRaceDialog";
+import { PredictionBox } from "@/components/PredictionBox";
 import { StarRating } from "@/components/StarRating";
 import { AddToListDialog } from "@/components/AddToListDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Heart, Bookmark, Share2, Eye, Star, MessageSquare, List, Edit, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { addToWatchlist, removeFromWatchlist } from "@/services/watchlist";
 import { toggleLike } from "@/services/likes";
@@ -30,10 +31,13 @@ import {
 const RaceDetail = () => {
   const { id, season, round } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const highlightReviewId = searchParams.get('highlight');
   const year = season;
+  const reviewRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Only log on mount to avoid spam
-  console.log('[RaceDetail] URL Params:', { id, season, year, round });
+  console.log('[RaceDetail] URL Params:', { id, season, year, round, highlightReviewId });
 
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [watchlistId, setWatchlistId] = useState<string | null>(null);
@@ -161,6 +165,18 @@ const RaceDetail = () => {
     setLoading(true);
     loadRaceData();
   }, [id, season, round]); // Use 'season' instead of 'year' to avoid stale closure
+
+  // Scroll to highlighted review when page loads
+  useEffect(() => {
+    if (highlightReviewId && !loading && reviewRefs.current[highlightReviewId]) {
+      setTimeout(() => {
+        reviewRefs.current[highlightReviewId]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 500); // Wait for page to finish loading
+    }
+  }, [highlightReviewId, loading]);
 
   if (loading) {
     return (
@@ -507,6 +523,17 @@ const RaceDetail = () => {
               </div>
             </div>
 
+            {/* Prediction Box - Only for Abu Dhabi GP */}
+            {race.gpName?.toLowerCase().includes('abu dhabi') && (
+              <div className="mb-6">
+                <PredictionBox
+                  raceName={race.gpName}
+                  raceYear={race.season}
+                  round={race.round}
+                />
+              </div>
+            )}
+
             {/* Reviews */}
             <div>
               <div className="mb-4 md:mb-6 flex items-center justify-between flex-wrap gap-3">
@@ -533,7 +560,15 @@ const RaceDetail = () => {
                 ) : (
                   <>
                   {(showAllReviews ? reviews : reviews.slice(0, 10)).map((review) => (
-                    <Card key={review.id} className="p-4 sm:p-5 border border-gray-800 bg-black/60 backdrop-blur-sm hover:bg-black/80 transition-all">
+                    <Card
+                      key={review.id}
+                      ref={(el) => { reviewRefs.current[review.id] = el; }}
+                      className={`p-4 sm:p-5 border backdrop-blur-sm hover:bg-black/80 transition-all ${
+                        highlightReviewId === review.id
+                          ? 'border-racing-red border-2 bg-racing-red/10 shadow-[0_0_20px_rgba(220,38,38,0.3)]'
+                          : 'border-gray-800 bg-black/60'
+                      }`}
+                    >
                       {/* Header with avatar and name */}
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center font-bold text-sm overflow-hidden text-white flex-shrink-0">

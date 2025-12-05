@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateUserProfile, uploadProfilePicture, validateUsername, checkUsernameAvailability } from "@/services/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { Edit, Camera, X, Trash2, AtSign } from "lucide-react";
 import {
   AlertDialog,
@@ -41,19 +43,41 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [favoriteDriver, setFavoriteDriver] = useState("");
+  const [favoriteCircuit, setFavoriteCircuit] = useState("");
+  const [favoriteTeam, setFavoriteTeam] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (profile) {
-      setName(profile.name || "");
-      setUsername(profile.username || "");
-      setOriginalUsername(profile.username || "");
-      setDescription(profile.description || "");
-      setPhotoPreview(profile.photoURL || null);
-    }
-  }, [profile]);
+    const loadProfileData = async () => {
+      if (profile) {
+        setName(profile.name || "");
+        setUsername(profile.username || "");
+        setOriginalUsername(profile.username || "");
+        setDescription(profile.description || "");
+        setPhotoPreview(profile.photoURL || null);
+
+        // Load favorites from userStats
+        if (user) {
+          try {
+            const statsDoc = await getDoc(doc(db, 'userStats', user.uid));
+            if (statsDoc.exists()) {
+              const statsData = statsDoc.data();
+              setFavoriteDriver(statsData.favoriteDriver || "");
+              setFavoriteCircuit(statsData.favoriteCircuit || "");
+              setFavoriteTeam(statsData.favoriteTeam || "");
+            }
+          } catch (error) {
+            console.error('Error loading userStats:', error);
+          }
+        }
+      }
+    };
+
+    loadProfileData();
+  }, [profile, user]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -193,6 +217,19 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
       console.log('[EditProfileDialog] Updating profile with:', updates);
       await updateUserProfile(user.uid, updates);
 
+      // Update favorites in userStats
+      try {
+        const statsRef = doc(db, 'userStats', user.uid);
+        await setDoc(statsRef, {
+          favoriteDriver: favoriteDriver.trim(),
+          favoriteCircuit: favoriteCircuit.trim(),
+          favoriteTeam: favoriteTeam.trim(),
+        }, { merge: true });
+        console.log('[EditProfileDialog] Favorites updated successfully!');
+      } catch (error) {
+        console.error('[EditProfileDialog] Error updating favorites:', error);
+      }
+
       console.log('[EditProfileDialog] Profile updated successfully!');
 
       toast({
@@ -252,12 +289,12 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20">
-          <Edit className="w-4 h-4" />
+        <Button variant="outline" size="sm" className="gap-1.5 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 text-xs">
+          <Edit className="w-3.5 h-3.5" />
           Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md w-[95vw] sm:w-full bg-black border-2 border-racing-red/40 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-sm w-[90vw] sm:w-full bg-black border-2 border-racing-red/40 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white">Edit Profile</DialogTitle>
         </DialogHeader>
@@ -370,6 +407,47 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
             <p className="text-xs text-gray-500">
               {description.length}/500 characters
             </p>
+          </div>
+
+          {/* Favorites Section */}
+          <div className="pt-4 space-y-4 border-t border-gray-800">
+            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Favorites</h3>
+
+            <div className="space-y-2">
+              <Label htmlFor="favoriteDriver" className="text-gray-300">Favorite Driver</Label>
+              <Input
+                id="favoriteDriver"
+                value={favoriteDriver}
+                onChange={(e) => setFavoriteDriver(e.target.value)}
+                placeholder="e.g., Max Verstappen"
+                maxLength={50}
+                className="bg-black/60 border-racing-red/40 text-white placeholder:text-gray-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="favoriteCircuit" className="text-gray-300">Favorite Circuit</Label>
+              <Input
+                id="favoriteCircuit"
+                value={favoriteCircuit}
+                onChange={(e) => setFavoriteCircuit(e.target.value)}
+                placeholder="e.g., Spa-Francorchamps"
+                maxLength={50}
+                className="bg-black/60 border-racing-red/40 text-white placeholder:text-gray-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="favoriteTeam" className="text-gray-300">Favorite Team</Label>
+              <Input
+                id="favoriteTeam"
+                value={favoriteTeam}
+                onChange={(e) => setFavoriteTeam(e.target.value)}
+                placeholder="e.g., Red Bull Racing"
+                maxLength={50}
+                className="bg-black/60 border-racing-red/40 text-white placeholder:text-gray-500"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
