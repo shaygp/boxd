@@ -245,6 +245,10 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
       case 'raceLog':
         // Link to race detail page by year/round if available
         if (activity.raceYear && activity.round) {
+          // Include highlight parameter for reviews to scroll to the specific review
+          if (activity.type === 'review' && activity.targetId) {
+            return `/race/${activity.raceYear}/${activity.round}?highlight=${activity.targetId}`;
+          }
           return `/race/${activity.raceYear}/${activity.round}`;
         }
         // Fallback to race log ID if no year/round

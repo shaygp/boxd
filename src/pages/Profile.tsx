@@ -412,7 +412,7 @@ const Profile = () => {
                     {displayedReviews.map((log) => (
                       <div
                         key={log.id}
-                        onClick={() => navigate(log.id ? `/race/${log.id}` : `/race/${log.raceYear}/${log.round}`)}
+                        onClick={() => navigate(`/race/${log.raceYear}/${log.round}?highlight=${log.id}`)}
                         className="border-b border-gray-800 hover:bg-gray-900/30 transition-colors cursor-pointer p-4"
                       >
                         <div className="flex gap-3">
