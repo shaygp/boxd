@@ -3,12 +3,15 @@ import { RaceCard } from "@/components/RaceCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, X, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getPublicRaceLogs } from "@/services/raceLogs";
 import { getPosterUrl, getRaceWinner } from "@/services/f1Api";
 import { getCurrentSeasonRaces as getFirestoreRaces } from "@/services/f1Calendar";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getGlobalActivity, Activity } from "@/services/activity";
+
+// Cache duration: 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000;
 
 const Index = () => {
   const navigate = useNavigate();
@@ -20,10 +23,19 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [winners, setWinners] = useState<{ [key: string]: string }>({});
+  const lastFetchTime = useRef<number>(0);
 
   useEffect(() => {
     const loadData = async () => {
+      // Check if we have fresh data (less than 5 minutes old)
+      const now = Date.now();
+      if (now - lastFetchTime.current < CACHE_DURATION && currentRaces.length > 0) {
+        console.log('[Index] Using cached data, skipping fetch');
+        return;
+      }
+
       try {
+        lastFetchTime.current = now;
         // Get races from Firestore instead of external APIs
         const f1Races = await getFirestoreRaces();
         console.log('[Index] getFirestoreRaces returned:', f1Races.length, 'races');
@@ -126,6 +138,23 @@ const Index = () => {
     };
 
     loadData();
+
+    // Listen for visibility change to prevent unnecessary refetches
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Only refetch if data is stale
+        const now = Date.now();
+        if (now - lastFetchTime.current >= CACHE_DURATION) {
+          console.log('[Index] Page became visible and data is stale, refetching...');
+          loadData();
+        } else {
+          console.log('[Index] Page became visible but data is fresh, skipping refetch');
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [tagFilter]);
 
   return (

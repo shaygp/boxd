@@ -90,8 +90,8 @@ export const Header = () => {
 
   useEffect(() => {
     loadNotifications();
-    // Refresh notifications every 30 seconds
-    const interval = setInterval(loadNotifications, 30000);
+    // Refresh notifications every 60 seconds
+    const interval = setInterval(loadNotifications, 60000);
     return () => clearInterval(interval);
   }, [user]);
 

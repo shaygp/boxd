@@ -262,31 +262,15 @@ const RaceDetail = () => {
     }
   };
 
-  console.log('[RaceDetail] allRaceLogs count:', allRaceLogs.length);
-  console.log('[RaceDetail] raceLog:', raceLog);
-  console.log('[RaceDetail] raceInfo:', raceInfo);
-
   const reviews = allRaceLogs
     .filter(log => {
       if (!raceLog && !raceInfo) return false;
       const targetRaceName = raceLog?.raceName || raceInfo?.meeting_name;
       const targetRaceYear = raceLog?.raceYear || raceInfo?.year;
-      const matches = log.raceName === targetRaceName &&
+      return log.raceName === targetRaceName &&
         log.raceYear === targetRaceYear &&
         log.review &&
         log.review.length > 0;
-
-      if (!matches) {
-        console.log('[RaceDetail] Filtered out:', {
-          logRaceName: log.raceName,
-          targetRaceName,
-          logYear: log.raceYear,
-          targetYear: targetRaceYear,
-          hasReview: !!log.review
-        });
-      }
-
-      return matches;
     })
     .sort((a, b) => {
       if (reviewFilter === 'liked') {
@@ -301,15 +285,6 @@ const RaceDetail = () => {
         return bDate.getTime() - aDate.getTime();
       }
     });
-
-  console.log('[RaceDetail] Final reviews count:', reviews.length);
-
-  // Log the final sorted order
-  console.log('[RaceDetail] Reviews after sorting:', reviews.map(r => ({
-    username: r.username,
-    likesCount: r.likesCount || 0,
-    createdAt: r.createdAt
-  })));
 
   const handleLikeReview = async (reviewId: string) => {
     try {
