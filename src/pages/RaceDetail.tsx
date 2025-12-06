@@ -56,6 +56,7 @@ const RaceDetail = () => {
   const [reviewToDelete, setReviewToDelete] = useState<string | null>(null);
   const [editingReview, setEditingReview] = useState<any>(null);
   const [reviewFilter, setReviewFilter] = useState<'recent' | 'liked'>('recent');
+  const [sessionFilter, setSessionFilter] = useState<'all' | 'race' | 'sprint' | 'qualifying' | 'sprintQualifying'>('all');
   const [showAllReviews, setShowAllReviews] = useState(false);
   const { toast } = useToast();
 
@@ -313,10 +314,16 @@ const RaceDetail = () => {
       if (!raceLog && !raceInfo) return false;
       const targetRaceName = raceLog?.raceName || raceInfo?.meeting_name;
       const targetRaceYear = raceLog?.raceYear || raceInfo?.year;
-      return log.raceName === targetRaceName &&
+      const matchesRace = log.raceName === targetRaceName &&
         log.raceYear === targetRaceYear &&
         log.review &&
         log.review.length > 0;
+
+      // Apply session filter
+      if (sessionFilter === 'all') {
+        return matchesRace;
+      }
+      return matchesRace && log.sessionType === sessionFilter;
     })
     .sort((a, b) => {
       if (reviewFilter === 'liked') {
@@ -617,15 +624,29 @@ const RaceDetail = () => {
               <div className="mb-4 md:mb-6 flex items-center justify-between flex-wrap gap-3">
                 <span className="text-racing-red font-black text-xs tracking-widest">RACE REVIEWS ({reviews.length})</span>
                 {reviews.length > 0 && (
-                  <Select value={reviewFilter} onValueChange={(value: 'recent' | 'liked') => setReviewFilter(value)}>
-                    <SelectTrigger className="w-[140px] h-7 text-xs font-bold uppercase tracking-wider bg-black/60 border-gray-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-black/95 border-gray-700">
-                      <SelectItem value="recent" className="text-xs font-bold uppercase text-white cursor-pointer">Most Recent</SelectItem>
-                      <SelectItem value="liked" className="text-xs font-bold uppercase text-white cursor-pointer">Most Liked</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select value={sessionFilter} onValueChange={(value: any) => setSessionFilter(value)}>
+                      <SelectTrigger className="w-[130px] h-7 text-xs font-bold uppercase tracking-wider bg-black/60 border-gray-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-black/95 border-gray-700">
+                        <SelectItem value="all" className="text-xs font-bold uppercase text-white cursor-pointer">All Sessions</SelectItem>
+                        <SelectItem value="race" className="text-xs font-bold uppercase text-white cursor-pointer">🏁 Race</SelectItem>
+                        <SelectItem value="sprint" className="text-xs font-bold uppercase text-white cursor-pointer">⚡ Sprint</SelectItem>
+                        <SelectItem value="qualifying" className="text-xs font-bold uppercase text-white cursor-pointer">🏎️ Qualifying</SelectItem>
+                        <SelectItem value="sprintQualifying" className="text-xs font-bold uppercase text-white cursor-pointer">⚡ Sprint Qual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={reviewFilter} onValueChange={(value: 'recent' | 'liked') => setReviewFilter(value)}>
+                      <SelectTrigger className="w-[120px] h-7 text-xs font-bold uppercase tracking-wider bg-black/60 border-gray-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-black/95 border-gray-700">
+                        <SelectItem value="recent" className="text-xs font-bold uppercase text-white cursor-pointer">Most Recent</SelectItem>
+                        <SelectItem value="liked" className="text-xs font-bold uppercase text-white cursor-pointer">Most Liked</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
               </div>
 
@@ -709,6 +730,25 @@ const RaceDetail = () => {
 
                       {/* Review content */}
                       <div className="space-y-2.5">
+                        {/* Session Type Badge */}
+                        {review.sessionType && (
+                          <div className="inline-block">
+                            <Badge variant="outline" className={`text-xs font-bold uppercase tracking-wider ${
+                              review.sessionType === 'race' ? 'border-racing-red/60 text-racing-red' :
+                              review.sessionType === 'sprint' ? 'border-orange-500/60 text-orange-500' :
+                              review.sessionType === 'qualifying' ? 'border-blue-500/60 text-blue-500' :
+                              review.sessionType === 'sprintQualifying' ? 'border-purple-500/60 text-purple-500' :
+                              'border-gray-500/60 text-gray-500'
+                            }`}>
+                              {review.sessionType === 'race' ? '🏁 Race' :
+                               review.sessionType === 'sprint' ? '⚡ Sprint' :
+                               review.sessionType === 'qualifying' ? '🏎️ Qualifying' :
+                               review.sessionType === 'sprintQualifying' ? '⚡ Sprint Qualifying' :
+                               review.sessionType}
+                            </Badge>
+                          </div>
+                        )}
+
                         {/* Driver of the Day */}
                         {review.driverOfTheDay && (
                           <div className="text-xs text-gray-400">

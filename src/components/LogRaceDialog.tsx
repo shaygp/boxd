@@ -449,10 +449,10 @@ export const LogRaceDialog = ({
   };
 
   const handleSubmit = async () => {
-    if (!user || !raceName || !raceLocation || !driverOfTheDay) {
+    if (!user || !raceName || !raceLocation) {
       toast({
         title: "Missing fields",
-        description: "Please fill in race name, location, and driver of the day",
+        description: "Please fill in race name and location",
         variant: "destructive"
       });
       return;
@@ -778,12 +778,11 @@ export const LogRaceDialog = ({
           <div className="bg-black/90 backdrop-blur-sm border-2 border-red-900/40 rounded-lg p-3 sm:p-6 space-y-3 sm:space-y-4">
             <h3 className="font-black text-sm uppercase tracking-wider text-racing-red flex items-center gap-2 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]">
               <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
-              Driver of the Day *
+              Driver of the Day
             </h3>
             <Select
               value={driverOfTheDay}
               onValueChange={setDriverOfTheDay}
-              required
             >
               <SelectTrigger className="border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white">
                 <SelectValue placeholder="Select a driver..." />

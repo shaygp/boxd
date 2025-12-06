@@ -225,6 +225,9 @@ export const Header = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm leading-relaxed">
                           <span className="font-bold text-white">{notification.actorName}</span>
+                          {notification.actorUsername && (
+                            <span className="text-gray-500 ml-1">@{notification.actorUsername}</span>
+                          )}
                           {' '}
                           <span className="text-gray-400">{notification.content}</span>
                         </p>
@@ -304,7 +307,7 @@ export const Header = () => {
     </header>
 
     {/* Mobile Bottom Navigation */}
-    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-black/95 backdrop-blur-xl border-t-2 border-racing-red/20 shadow-lg shadow-red-900/20">
+    <nav className="fixed bottom-0 left-0 right-0 z-[60] lg:hidden bg-black/95 backdrop-blur-xl border-t-2 border-racing-red/20 shadow-lg shadow-red-900/20">
       <div className="flex items-center justify-around h-16 px-2">
         <button
           onClick={() => navigate('/home')}

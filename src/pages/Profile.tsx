@@ -487,6 +487,25 @@ const Profile = () => {
                                 )}
                               </div>
 
+                              {/* Session Type Badge */}
+                              {log.sessionType && (
+                                <div className="inline-block mb-2">
+                                  <Badge variant="outline" className={`text-xs font-bold uppercase tracking-wider ${
+                                    log.sessionType === 'race' ? 'border-racing-red/60 text-racing-red' :
+                                    log.sessionType === 'sprint' ? 'border-orange-500/60 text-orange-500' :
+                                    log.sessionType === 'qualifying' ? 'border-blue-500/60 text-blue-500' :
+                                    log.sessionType === 'sprintQualifying' ? 'border-purple-500/60 text-purple-500' :
+                                    'border-gray-500/60 text-gray-500'
+                                  }`}>
+                                    {log.sessionType === 'race' ? '🏁 Race' :
+                                     log.sessionType === 'sprint' ? '⚡ Sprint' :
+                                     log.sessionType === 'qualifying' ? '🏎️ Qualifying' :
+                                     log.sessionType === 'sprintQualifying' ? '⚡ Sprint Qualifying' :
+                                     log.sessionType}
+                                  </Badge>
+                                </div>
+                              )}
+
                               {/* Driver of the Day */}
                               {log.driverOfTheDay && (
                                 <div className="text-sm text-gray-400">
