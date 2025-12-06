@@ -23,22 +23,20 @@ const Lists = () => {
         </div>
 
         <Tabs defaultValue="following" value={activeTab} onValueChange={(v) => setActiveTab(v as 'following' | 'global')} className="w-full">
-          <div className="flex justify-start mb-6">
-            <TabsList className="inline-flex bg-transparent">
-              <TabsTrigger
-                value="following"
-                className="data-[state=active]:bg-racing-red data-[state=active]:text-white font-bold uppercase tracking-wider text-xs px-4 py-2"
-              >
-                Following
-              </TabsTrigger>
-              <TabsTrigger
-                value="global"
-                className="data-[state=active]:bg-racing-red data-[state=active]:text-white font-bold uppercase tracking-wider text-xs px-4 py-2"
-              >
-                Global
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="inline-flex bg-transparent mb-6">
+            <TabsTrigger
+              value="following"
+              className="data-[state=active]:bg-racing-red data-[state=active]:text-white font-bold uppercase tracking-wider text-xs px-4 py-2"
+            >
+              Following
+            </TabsTrigger>
+            <TabsTrigger
+              value="global"
+              className="data-[state=active]:bg-racing-red data-[state=active]:text-white font-bold uppercase tracking-wider text-xs px-4 py-2"
+            >
+              Global
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="following">
             <ActivityFeed feedType="following" limit={50} />
