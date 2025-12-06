@@ -23,7 +23,7 @@ const Lists = () => {
         </div>
 
         <Tabs defaultValue="following" value={activeTab} onValueChange={(v) => setActiveTab(v as 'following' | 'global')} className="w-full">
-          <TabsList className="inline-flex bg-transparent mb-6">
+          <TabsList className="flex w-auto bg-transparent mb-6 justify-start">
             <TabsTrigger
               value="following"
               className="data-[state=active]:bg-racing-red data-[state=active]:text-white font-bold uppercase tracking-wider text-xs px-4 py-2"
