@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Download, Mail, Heart } from "lucide-react";
+import { Trash2, Download, Mail, Heart, Ban, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +26,7 @@ import { deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePass
 import { doc, deleteDoc, collection, query, where, getDocs, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { resendVerificationEmail } from "@/services/auth";
+import { getBlockedUsers, unblockUser } from "@/services/reports";
 
 const Settings = () => {
   const { user, signOut } = useAuth();
@@ -38,13 +39,19 @@ const Settings = () => {
   const [deletePassword, setDeletePassword] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
+  const [likesNotifications, setLikesNotifications] = useState(true);
+  const [followNotifications, setFollowNotifications] = useState(true);
+  const [privateAccount, setPrivateAccount] = useState(false);
+  const [showActivityStatus, setShowActivityStatus] = useState(true);
   const [loading, setLoading] = useState(false);
   const [favoriteDriver, setFavoriteDriver] = useState("");
   const [favoriteCircuit, setFavoriteCircuit] = useState("");
   const [favoriteTeam, setFavoriteTeam] = useState("");
+  const [blockedUsers, setBlockedUsers] = useState<Array<{ id: string; name: string; username: string; photoURL?: string }>>([]);
+  const [loadingBlocked, setLoadingBlocked] = useState(false);
 
   useEffect(() => {
-    const loadFavorites = async () => {
+    const loadSettings = async () => {
       if (!user) return;
 
       try {
@@ -54,14 +61,89 @@ const Settings = () => {
           setFavoriteDriver(data.favoriteDriver || "");
           setFavoriteCircuit(data.favoriteCircuit || "");
           setFavoriteTeam(data.favoriteTeam || "");
+
+          // Load notification settings
+          setEmailNotifications(data.emailNotifications ?? true);
+          setPushNotifications(data.pushNotifications ?? true);
+          setLikesNotifications(data.likesNotifications ?? true);
+          setFollowNotifications(data.followNotifications ?? true);
+
+          // Load privacy settings
+          setPrivateAccount(data.privateAccount ?? false);
+          setShowActivityStatus(data.showActivityStatus ?? true);
         }
       } catch (error) {
-        console.error("Error loading favorites:", error);
+        console.error("Error loading settings:", error);
       }
+
+      // Load blocked users
+      await loadBlockedUsers();
     };
 
-    loadFavorites();
+    loadSettings();
   }, [user]);
+
+  const loadBlockedUsers = async () => {
+    if (!user) return;
+
+    setLoadingBlocked(true);
+    try {
+      const blockedIds = await getBlockedUsers();
+
+      // Fetch user details for each blocked user
+      const blockedUsersDetails = await Promise.all(
+        blockedIds.map(async (userId) => {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              return {
+                id: userId,
+                name: userData.name || 'User',
+                username: userData.username || 'user',
+                photoURL: userData.photoURL
+              };
+            }
+            return {
+              id: userId,
+              name: 'User',
+              username: 'user'
+            };
+          } catch (error) {
+            console.error('Error fetching blocked user details:', error);
+            return {
+              id: userId,
+              name: 'User',
+              username: 'user'
+            };
+          }
+        })
+      );
+
+      setBlockedUsers(blockedUsersDetails);
+    } catch (error) {
+      console.error("Error loading blocked users:", error);
+    } finally {
+      setLoadingBlocked(false);
+    }
+  };
+
+  const handleUnblockUser = async (userId: string) => {
+    try {
+      await unblockUser(userId);
+      toast({
+        title: "User unblocked",
+        description: "User has been removed from your blocked list",
+      });
+      await loadBlockedUsers(); // Reload the list
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleChangePassword = async () => {
     if (!user || !currentPassword || !newPassword) {
@@ -236,6 +318,58 @@ const Settings = () => {
     }
   };
 
+  const handleSaveNotifications = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      await updateDoc(doc(db, "userStats", user.uid), {
+        emailNotifications,
+        pushNotifications,
+        likesNotifications,
+        followNotifications,
+      });
+
+      toast({
+        title: "Notifications saved",
+        description: "Your notification preferences have been updated",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSavePrivacy = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      await updateDoc(doc(db, "userStats", user.uid), {
+        privateAccount,
+        showActivityStatus,
+      });
+
+      toast({
+        title: "Privacy settings saved",
+        description: "Your privacy preferences have been updated",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -388,7 +522,10 @@ const Settings = () => {
                     Only approved followers can see your content
                   </p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={privateAccount}
+                  onCheckedChange={setPrivateAccount}
+                />
               </div>
 
               <div className="flex items-center justify-between">
@@ -398,8 +535,80 @@ const Settings = () => {
                     Let others see when you're active
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={showActivityStatus}
+                  onCheckedChange={setShowActivityStatus}
+                />
               </div>
+
+              <Button onClick={handleSavePrivacy} disabled={loading}>
+                Save Privacy Settings
+              </Button>
+            </div>
+          </Card>
+
+          {/* Blocked Users Section */}
+          <Card className="p-6 space-y-6">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold mb-1 flex items-center gap-2">
+                <Ban className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+                Blocked Users
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Manage users you've blocked from interacting with you
+              </p>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              {loadingBlocked ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  Loading blocked users...
+                </div>
+              ) : blockedUsers.length === 0 ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  You haven't blocked any users
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {blockedUsers.map((blockedUser) => (
+                    <div
+                      key={blockedUser.id}
+                      className="flex items-center justify-between p-3 border border-gray-700 rounded-lg bg-black/40"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center overflow-hidden">
+                          {blockedUser.photoURL ? (
+                            <img
+                              src={blockedUser.photoURL}
+                              alt={blockedUser.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-sm font-bold text-white">
+                              {blockedUser.name.charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-white">{blockedUser.name}</p>
+                          <p className="text-sm text-muted-foreground">@{blockedUser.username}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUnblockUser(blockedUser.id)}
+                        className="border-gray-600 hover:bg-gray-800"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Unblock
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
 
@@ -448,7 +657,10 @@ const Settings = () => {
                     When someone likes or comments on your content
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={likesNotifications}
+                  onCheckedChange={setLikesNotifications}
+                />
               </div>
 
               <div className="flex items-center justify-between">
@@ -458,8 +670,15 @@ const Settings = () => {
                     When someone follows you
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={followNotifications}
+                  onCheckedChange={setFollowNotifications}
+                />
               </div>
+
+              <Button onClick={handleSaveNotifications} disabled={loading}>
+                Save Notification Settings
+              </Button>
             </div>
           </Card>
 

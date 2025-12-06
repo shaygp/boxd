@@ -8,6 +8,7 @@ import { collection, query, orderBy, limit as firestoreLimit, onSnapshot, where,
 import { db, auth } from '@/lib/firebase';
 import { getFollowing } from '@/services/follows';
 import { StarRating } from './StarRating';
+import { getBlockedUsers } from '@/services/reports';
 
 interface ActivityFeedProps {
   feedType: 'following' | 'global';
@@ -41,6 +42,16 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCount, setShowCount] = useState(initialShow);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Load blocked users
+    const loadBlockedUsers = async () => {
+      const blocked = await getBlockedUsers();
+      setBlockedUsers(blocked);
+    };
+    loadBlockedUsers();
+  }, []);
 
   useEffect(() => {
     console.log('[ActivityFeed] Setting up real-time listener, feedType:', feedType, 'limit:', limit);
@@ -112,7 +123,7 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
 
         return unsubscribe;
       } else {
-        // Following feed - need to get following list first
+        // Following feed - fetch all activities then filter client-side
         const user = auth.currentUser;
         if (!user) {
           setLoading(false);
@@ -120,27 +131,30 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
         }
 
         const following = await getFollowing(user.uid);
-        const followingIds = following.map(f => f.followingId).filter(id => id !== undefined && id !== null);
+        console.log('[ActivityFeed] Following data:', following);
+
+        // The getFollowing function returns user objects with 'id' field
+        const followingIds = following.map(f => f.id).filter(id => id !== undefined && id !== null);
+        console.log('[ActivityFeed] Extracted following IDs:', followingIds);
 
         if (followingIds.length === 0) {
+          console.log('[ActivityFeed] No following IDs found');
           setActivities([]);
           setLoading(false);
           return () => {};
         }
 
-        // Use first 10 following IDs (Firestore 'in' limit)
-        const batch = followingIds.slice(0, 10);
+        // Fetch all activities and filter client-side
         const q = query(
           activitiesCollection,
-          where('userId', 'in', batch),
           orderBy('createdAt', 'desc'),
-          firestoreLimit(limit)
+          firestoreLimit(500) // Fetch more to ensure we get enough from followed users
         );
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
-          console.log('[ActivityFeed] Real-time update: received', snapshot.docs.length, 'activities');
+          console.log('[ActivityFeed] Real-time update: received', snapshot.docs.length, 'total activities');
 
-          const activities = await Promise.all(
+          const allActivities = await Promise.all(
             snapshot.docs.map(async (docSnapshot) => {
               const data = docSnapshot.data();
               let userAvatar = data.userAvatar || '';
@@ -169,7 +183,16 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
             })
           );
 
-          setActivities(activities);
+          // Filter to only show activities from followed users
+          const followingActivities = allActivities.filter(activity =>
+            followingIds.includes(activity.userId)
+          );
+
+          console.log('[ActivityFeed] Filtered to', followingActivities.length, 'activities from', followingIds.length, 'followed users');
+          console.log('[ActivityFeed] Following IDs:', followingIds);
+          console.log('[ActivityFeed] Sample activity userIds:', allActivities.slice(0, 5).map(a => a.userId));
+
+          setActivities(followingActivities.slice(0, limit));
           setLoading(false);
         }, (error) => {
           console.error('[ActivityFeed] Real-time listener error:', error);
@@ -282,7 +305,10 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
     );
   }
 
-  if (activities.length === 0) {
+  // Filter out blocked users
+  const filteredActivities = activities.filter(activity => !blockedUsers.includes(activity.userId));
+
+  if (filteredActivities.length === 0) {
     return (
       <div className="text-center py-16 px-4">
         <div className="max-w-md mx-auto space-y-3">
@@ -300,8 +326,8 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
     );
   }
 
-  const displayedActivities = activities.slice(0, showCount);
-  const hasMore = activities.length > showCount;
+  const displayedActivities = filteredActivities.slice(0, showCount);
+  const hasMore = filteredActivities.length > showCount;
 
   return (
     <div className="space-y-3 sm:space-y-4 md:space-y-5 max-w-3xl mx-auto px-3 sm:px-4">
@@ -495,14 +521,14 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
             onClick={() => setShowCount(prev => prev + 10)}
             className="w-full sm:w-auto bg-black/80 border border-gray-700 text-gray-300 hover:bg-racing-red hover:text-white hover:border-racing-red transition-all duration-300 font-semibold px-8"
           >
-            Load More ({activities.length - showCount} remaining)
+            Load More ({filteredActivities.length - showCount} remaining)
           </Button>
         </div>
       )}
 
-      {!hasMore && activities.length > initialShow && (
+      {!hasMore && filteredActivities.length > initialShow && (
         <div className="text-center pt-6 text-sm text-gray-500">
-          Showing all {activities.length} activities
+          Showing all {filteredActivities.length} activities
         </div>
       )}
     </div>

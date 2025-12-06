@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
 import { CreateListDialog } from "@/components/CreateListDialog";
-import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight } from "lucide-react";
+import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight, Ban } from "lucide-react";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { getUserProfile, getUserRaceLogs, calculateTotalHoursWatched } from "@/services/raceLogs";
@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useParams, useNavigate } from "react-router-dom";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { blockUser, unblockUser, isUserBlocked } from "@/services/reports";
 
 const Profile = () => {
   const { userId } = useParams();
@@ -49,6 +50,8 @@ const Profile = () => {
   const [likes, setLikes] = useState<any[]>([]);
   const [fullLogs, setFullLogs] = useState<any[]>([]);
   const [reviewsToShow, setReviewsToShow] = useState(8);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
 
   const targetUserId = userId || currentUser?.uid;
   const isOwnProfile = !userId || userId === currentUser?.uid;
@@ -109,6 +112,10 @@ const Profile = () => {
       if (currentUser && targetUserId !== currentUser.uid) {
         const following = await isFollowing(targetUserId);
         setFollowingUser(following);
+
+        // Check if user is blocked
+        const blocked = await isUserBlocked(targetUserId);
+        setIsBlocked(blocked);
       }
 
       // Load followers, following, lists, watchlist, and likes
@@ -182,6 +189,33 @@ const Profile = () => {
     }
   };
 
+  const handleBlockToggle = async () => {
+    if (!currentUser || !targetUserId || targetUserId === currentUser.uid) return;
+
+    setBlockLoading(true);
+    try {
+      if (isBlocked) {
+        await unblockUser(targetUserId);
+        setIsBlocked(false);
+        toast({ title: 'User unblocked' });
+      } else {
+        await blockUser(targetUserId);
+        setIsBlocked(true);
+        // Automatically unfollow when blocking
+        if (followingUser) {
+          await unfollowUser(targetUserId);
+          setFollowingUser(false);
+          setStats(prev => ({ ...prev, followers: prev.followers - 1 }));
+        }
+        toast({ title: 'User blocked' });
+      }
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setBlockLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadProfile();
   }, [userId]);
@@ -246,33 +280,58 @@ const Profile = () => {
                 </p>
               )}
 
-              {/* Action Button */}
-              <div>
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 flex-wrap">
                 {currentUser?.uid === (userId || currentUser?.uid) ? (
                   <EditProfileDialog profile={profile} onSuccess={loadProfile} />
                 ) : (
-                  <Button
-                    onClick={handleFollowToggle}
-                    disabled={followLoading}
-                    size="sm"
-                    variant={followingUser ? "outline" : "default"}
-                    className={followingUser
-                      ? "border border-gray-600 bg-transparent text-white hover:bg-gray-800 hover:border-gray-500"
-                      : "bg-racing-red hover:bg-red-600 text-white"
-                    }
-                  >
-                    {followingUser ? (
-                      <>
-                        <UserMinus className="w-4 h-4 mr-2" />
-                        Unfollow
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Follow
-                      </>
-                    )}
-                  </Button>
+                  <>
+                    <Button
+                      onClick={handleFollowToggle}
+                      disabled={followLoading || isBlocked}
+                      size="sm"
+                      variant={followingUser ? "outline" : "default"}
+                      className={followingUser
+                        ? "border border-gray-600 bg-transparent text-white hover:bg-gray-800 hover:border-gray-500"
+                        : "bg-racing-red hover:bg-red-600 text-white"
+                      }
+                    >
+                      {followingUser ? (
+                        <>
+                          <UserMinus className="w-4 h-4 mr-2" />
+                          Unfollow
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      onClick={handleBlockToggle}
+                      disabled={blockLoading}
+                      size="sm"
+                      variant="outline"
+                      className={isBlocked
+                        ? "border border-orange-600 bg-transparent text-orange-500 hover:bg-orange-900/20 hover:border-orange-500"
+                        : "border border-gray-600 bg-transparent text-white hover:bg-gray-800 hover:border-gray-500"
+                      }
+                    >
+                      {isBlocked ? (
+                        <>
+                          <Ban className="w-4 h-4 mr-2" />
+                          Unblock
+                        </>
+                      ) : (
+                        <>
+                          <Ban className="w-4 h-4 mr-2" />
+                          Block
+                        </>
+                      )}
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
