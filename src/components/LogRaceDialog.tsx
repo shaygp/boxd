@@ -71,6 +71,7 @@ export const LogRaceDialog = ({
   const [loadingWinner, setLoadingWinner] = useState(false);
   const [historicalRaces, setHistoricalRaces] = useState<any[]>([]);
   const [loadingCircuits, setLoadingCircuits] = useState(false);
+  const [weGotYouYuki, setWeGotYouYuki] = useState(false);
   const hasPrefilledRef = useRef(false);
 
   const { user } = useAuth();
@@ -500,6 +501,7 @@ export const LogRaceDialog = ({
         mediaUrls: [],
         spoilerWarning: spoiler,
         visibility,
+        weGotYouYuki: weGotYouYuki || false,
       };
 
       // Only add round if it's defined (Firestore doesn't accept undefined values)
@@ -532,6 +534,7 @@ export const LogRaceDialog = ({
               raceYear,
               raceLocation,
               rating,
+              weGotYouYuki: weGotYouYuki || false,
             };
 
             // Only add content if review exists (Firestore doesn't allow undefined values)
@@ -845,6 +848,26 @@ export const LogRaceDialog = ({
               </div>
             )}
           </div>
+
+          {/* We Got You Yuki - Abu Dhabi 2025 only */}
+          {raceName.toLowerCase().includes('abu dhabi') && raceYear === 2025 && (
+            <div className="bg-gradient-to-r from-racing-red/10 via-black to-racing-red/10 backdrop-blur-sm border-2 border-racing-red/60 rounded-lg p-3 sm:p-6 space-y-2">
+              <div className="flex items-center gap-2 pt-2">
+                <Switch
+                  checked={weGotYouYuki}
+                  onCheckedChange={setWeGotYouYuki}
+                  id="weGotYouYuki"
+                />
+                <Label htmlFor="weGotYouYuki" className="text-sm font-bold text-white cursor-pointer uppercase tracking-wider flex items-center gap-2">
+                  <span className="text-lg">🏎️</span>
+                  #WeGotYouYuki
+                </Label>
+              </div>
+              <p className="text-xs text-gray-400 font-bold pl-10">
+                Support Yuki Tsunoda in his final race with Red Bull Racing
+              </p>
+            </div>
+          )}
 
         </div>
 

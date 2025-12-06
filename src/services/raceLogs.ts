@@ -38,6 +38,7 @@ export interface RaceLog {
   spoilerWarning: boolean;
   visibility: 'public' | 'private' | 'friends';
   addToLists?: string[];
+  weGotYouYuki?: boolean;
   createdAt: Date;
   updatedAt: Date;
   likesCount: number;
@@ -351,4 +352,16 @@ export const calculateTotalHoursWatched = (logs: RaceLog[]): number => {
 export const getUserProfile = async (userId: string) => {
   const userDoc = await getDoc(doc(db, 'users', userId));
   return userDoc.exists() ? { id: userDoc.id, ...userDoc.data() } : null;
+};
+
+export const getWeGotYouYukiCount = async (raceName: string, raceYear: number): Promise<number> => {
+  const q = query(
+    raceLogsCollection,
+    where('raceName', '==', raceName),
+    where('raceYear', '==', raceYear),
+    where('weGotYouYuki', '==', true)
+  );
+
+  const snapshot = await getDocs(q);
+  return snapshot.size;
 };

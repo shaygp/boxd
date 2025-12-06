@@ -401,6 +401,13 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                         ))}
                       </div>
                     )}
+                    {/* We Got You Yuki tribute badge */}
+                    {activity.weGotYouYuki && (
+                      <span className="text-xs text-gray-400">
+                        ,{' '}
+                        <span className="font-bold text-racing-red">paid tribute to Yuki Tsunoda</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Timestamp and race metadata - Letterboxd style subtle */}

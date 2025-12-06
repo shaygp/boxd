@@ -18,9 +18,9 @@ export interface Activity {
   userId: string;
   username: string;
   userAvatar?: string;
-  type: 'log' | 'review' | 'like' | 'list' | 'follow';
+  type: 'log' | 'review' | 'like' | 'list' | 'follow' | 'prediction';
   targetId: string;
-  targetType: 'raceLog' | 'list' | 'user';
+  targetType: 'raceLog' | 'list' | 'user' | 'prediction';
   content?: string;
   createdAt: Date;
   // Optional race metadata for enhanced display
@@ -30,6 +30,7 @@ export interface Activity {
   raceLocation?: string;
   rating?: number;
   posterUrl?: string;
+  weGotYouYuki?: boolean;
 }
 
 const activitiesCollection = collection(db, 'activities');

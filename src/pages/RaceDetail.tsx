@@ -15,7 +15,7 @@ import { addToWatchlist, removeFromWatchlist } from "@/services/watchlist";
 import { toggleLike } from "@/services/likes";
 import { getCountryFlag } from "@/services/f1Api";
 import { getRaceByYearAndRound as getFirestoreRaceByYearAndRound } from "@/services/f1Calendar";
-import { getRaceLogById, getPublicRaceLogs, getRaceLogsByRace, deleteRaceLog } from "@/services/raceLogs";
+import { getRaceLogById, getPublicRaceLogs, getRaceLogsByRace, deleteRaceLog, getWeGotYouYukiCount } from "@/services/raceLogs";
 import { auth } from "@/lib/firebase";
 import {
   AlertDialog,
@@ -38,6 +38,7 @@ const RaceDetail = () => {
 
   // Only log on mount to avoid spam
   console.log('[RaceDetail] URL Params:', { id, season, year, round, highlightReviewId });
+  console.log('[RaceDetail] Highlight parameter from URL:', highlightReviewId);
 
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [watchlistId, setWatchlistId] = useState<string | null>(null);
@@ -48,6 +49,7 @@ const RaceDetail = () => {
   const [allRaceLogs, setAllRaceLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [logDialogOpen, setLogDialogOpen] = useState(false);
+  const [yukiTributeCount, setYukiTributeCount] = useState<number>(0);
   const [revealedSpoilers, setRevealedSpoilers] = useState<Set<string>>(new Set());
   const [winner, setWinner] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -137,6 +139,17 @@ const RaceDetail = () => {
             const raceLogs = await getRaceLogsByRace(firestoreRace.raceName, firestoreRace.year);
             console.log('[RaceDetail] Loaded', raceLogs.length, 'race-specific logs for year/round');
             setAllRaceLogs(raceLogs);
+
+            // Load Yuki tribute count for Abu Dhabi 2025
+            if (firestoreRace.raceName.toLowerCase().includes('abu dhabi') && firestoreRace.year === 2025) {
+              try {
+                const count = await getWeGotYouYukiCount(firestoreRace.raceName, firestoreRace.year);
+                setYukiTributeCount(count);
+                console.log('[RaceDetail] Loaded Yuki tribute count:', count);
+              } catch (error) {
+                console.warn('[RaceDetail] Failed to load Yuki tribute count:', error);
+              }
+            }
           } catch (error) {
             console.warn('[RaceDetail] Failed to load race-specific logs:', error);
             setAllRaceLogs([]);
@@ -166,17 +179,34 @@ const RaceDetail = () => {
     loadRaceData();
   }, [id, season, round]); // Use 'season' instead of 'year' to avoid stale closure
 
+  // Auto-expand reviews when there's a highlight parameter
+  useEffect(() => {
+    if (highlightReviewId && !loading) {
+      // Automatically show all reviews if there's a highlight parameter
+      setShowAllReviews(true);
+    }
+  }, [highlightReviewId, loading]);
+
   // Scroll to highlighted review when page loads
   useEffect(() => {
+    console.log('[RaceDetail] Scroll effect triggered:', { highlightReviewId, loading, hasRef: !!reviewRefs.current[highlightReviewId] });
     if (highlightReviewId && !loading && reviewRefs.current[highlightReviewId]) {
+      console.log('[RaceDetail] Scrolling to highlighted review:', highlightReviewId);
       setTimeout(() => {
         reviewRefs.current[highlightReviewId]?.scrollIntoView({
           behavior: 'smooth',
           block: 'center'
         });
       }, 500); // Wait for page to finish loading
+    } else {
+      console.log('[RaceDetail] Not scrolling because:', {
+        hasHighlight: !!highlightReviewId,
+        isLoading: loading,
+        hasRef: highlightReviewId ? !!reviewRefs.current[highlightReviewId] : 'no highlight id',
+        availableRefs: Object.keys(reviewRefs.current)
+      });
     }
-  }, [highlightReviewId, loading]);
+  }, [highlightReviewId, loading, showAllReviews]);
 
   if (loading) {
     return (
@@ -301,6 +331,29 @@ const RaceDetail = () => {
         return bDate.getTime() - aDate.getTime();
       }
     });
+
+  // Debug: Log review IDs and highlight match
+  if (highlightReviewId) {
+    console.log('[RaceDetail] Looking for review ID:', highlightReviewId);
+    console.log('[RaceDetail] Available review IDs:', reviews.map(r => r.id));
+    console.log('[RaceDetail] All race logs count:', allRaceLogs.length);
+    console.log('[RaceDetail] Filtered reviews count:', reviews.length);
+    const matchingLog = allRaceLogs.find(log => log.id === highlightReviewId);
+    if (matchingLog) {
+      console.log('[RaceDetail] Found matching log:', {
+        id: matchingLog.id,
+        raceName: matchingLog.raceName,
+        raceYear: matchingLog.raceYear,
+        hasReview: !!matchingLog.review
+      });
+      console.log('[RaceDetail] Current page race:', {
+        raceName: raceLog?.raceName || raceInfo?.meeting_name,
+        raceYear: raceLog?.raceYear || raceInfo?.year
+      });
+    } else {
+      console.log('[RaceDetail] No matching log found in allRaceLogs');
+    }
+  }
 
   const handleLikeReview = async (reviewId: string) => {
     try {
@@ -525,13 +578,37 @@ const RaceDetail = () => {
 
             {/* Prediction Box - Only for Abu Dhabi GP */}
             {race.gpName?.toLowerCase().includes('abu dhabi') && (
-              <div className="mb-6">
+              <div className="mb-6 space-y-4">
                 <PredictionBox
                   raceName={race.gpName}
                   raceYear={race.season}
                   round={race.round}
                   locked={true}
                 />
+
+                {/* Yuki Tribute Counter */}
+                {race.season === 2025 && (
+                  <Card className="p-4 border-2 border-racing-red/40 bg-black/90 backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wide">
+                          #WeGotYouYuki
+                        </h3>
+                        <p className="text-xs text-gray-400">
+                          Supporting Yuki in his final RB race
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black text-racing-red">
+                          {yukiTributeCount}
+                        </div>
+                        <div className="text-xs text-gray-400 font-bold uppercase">
+                          {yukiTributeCount === 1 ? 'Tribute' : 'Tributes'}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                )}
               </div>
             )}
 
@@ -560,12 +637,21 @@ const RaceDetail = () => {
                   </div>
                 ) : (
                   <>
-                  {(showAllReviews ? reviews : reviews.slice(0, 10)).map((review) => (
-                    <Card
+                  {(showAllReviews ? reviews : reviews.slice(0, 10)).map((review) => {
+                    const isHighlighted = highlightReviewId === review.id;
+                    if (isHighlighted) {
+                      console.log('[RaceDetail] Rendering highlighted review:', review.id);
+                    }
+                    return (<Card
                       key={review.id}
-                      ref={(el) => { reviewRefs.current[review.id] = el; }}
+                      ref={(el) => {
+                        reviewRefs.current[review.id] = el;
+                        if (el && isHighlighted) {
+                          console.log('[RaceDetail] Ref set for highlighted review:', review.id);
+                        }
+                      }}
                       className={`p-4 sm:p-5 border backdrop-blur-sm hover:bg-black/80 transition-all ${
-                        highlightReviewId === review.id
+                        isHighlighted
                           ? 'border-racing-red border-2 bg-racing-red/10 shadow-[0_0_20px_rgba(220,38,38,0.3)]'
                           : 'border-gray-800 bg-black/60'
                       }`}
@@ -697,8 +783,8 @@ const RaceDetail = () => {
                           </div>
                         )}
                       </div>
-                    </Card>
-                  ))}
+                    </Card>);
+                  })}
 
                   {/* View More Button */}
                   {reviews.length > 10 && !showAllReviews && (

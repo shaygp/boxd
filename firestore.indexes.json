@@ -327,6 +327,24 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "raceLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "raceName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "raceYear",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "weGotYouYuki",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []
