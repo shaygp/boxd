@@ -16,6 +16,7 @@ interface PredictionBoxProps {
   raceName: string;
   raceYear: number;
   round?: number;
+  locked?: boolean;
 }
 
 const drivers2025 = [
@@ -41,7 +42,7 @@ const drivers2025 = [
   { id: 'bortoleto', name: 'Gabriel Bortoleto', team: 'Sauber' },
 ];
 
-export const PredictionBox = ({ raceName, raceYear, round }: PredictionBoxProps) => {
+export const PredictionBox = ({ raceName, raceYear, round, locked = false }: PredictionBoxProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedDriver, setSelectedDriver] = useState<string>('');
@@ -77,6 +78,15 @@ export const PredictionBox = ({ raceName, raceYear, round }: PredictionBoxProps)
   }, [user, raceName, raceYear]);
 
   const handleSubmit = async () => {
+    if (locked) {
+      toast({
+        title: 'Predictions locked',
+        description: 'Predictions are now locked for this race',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!user) {
       toast({
         title: 'Sign in required',
@@ -135,51 +145,63 @@ export const PredictionBox = ({ raceName, raceYear, round }: PredictionBoxProps)
           </div>
           <div className="flex-1">
             <h3 className="text-sm font-bold text-white uppercase tracking-wide">
-              Predict the Winner
+              {locked ? 'Race Predictions' : 'Predict the Winner'}
             </h3>
-            {existingPrediction && (
+            {locked ? (
+              <p className="text-xs text-gray-400 mt-0.5">Predictions are now locked</p>
+            ) : existingPrediction ? (
               <p className="text-xs text-gray-400 mt-0.5">Update your prediction</p>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {/* Prediction Form */}
-        <div className="space-y-2">
-          <Select value={selectedDriver} onValueChange={setSelectedDriver}>
-            <SelectTrigger className="border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white h-10 text-sm">
-              <SelectValue placeholder="Select a driver..." />
-            </SelectTrigger>
-            <SelectContent className="max-h-[300px] bg-black/95 border-2 border-red-900/40">
-              {drivers2025.map((driver) => (
-                <SelectItem
-                  key={driver.id}
-                  value={driver.name}
-                  className="text-white hover:bg-racing-red/20 cursor-pointer"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium text-sm">{driver.name}</span>
-                    <span className="text-xs text-gray-400">{driver.team}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Show existing prediction when locked */}
+        {locked && existingPrediction && (
+          <div className="bg-racing-red/10 border border-racing-red/40 rounded-lg p-3">
+            <p className="text-xs text-gray-400 mb-1">Your prediction</p>
+            <p className="text-sm font-bold text-white">{existingPrediction.predictedWinner}</p>
+          </div>
+        )}
 
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !selectedDriver}
-            className="w-full bg-racing-red hover:bg-red-600 text-white font-bold uppercase tracking-wide h-9 text-sm"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                {existingPrediction ? 'Updating...' : 'Submitting...'}
-              </span>
-            ) : (
-              <span>{existingPrediction ? 'Update' : 'Submit'}</span>
-            )}
-          </Button>
-        </div>
+        {/* Prediction Form - Only show if not locked */}
+        {!locked && (
+          <div className="space-y-2">
+            <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+              <SelectTrigger className="border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white h-10 text-sm">
+                <SelectValue placeholder="Select a driver..." />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px] bg-black/95 border-2 border-red-900/40">
+                {drivers2025.map((driver) => (
+                  <SelectItem
+                    key={driver.id}
+                    value={driver.name}
+                    className="text-white hover:bg-racing-red/20 cursor-pointer"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">{driver.name}</span>
+                      <span className="text-xs text-gray-400">{driver.team}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || !selectedDriver}
+              className="w-full bg-racing-red hover:bg-red-600 text-white font-bold uppercase tracking-wide h-9 text-sm"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {existingPrediction ? 'Updating...' : 'Submitting...'}
+                </span>
+              ) : (
+                <span>{existingPrediction ? 'Update' : 'Submit'}</span>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Community Predictions */}
         {!statsLoading && stats.length > 0 && (

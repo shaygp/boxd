@@ -38,6 +38,11 @@ export const createOrUpdatePrediction = async (
   const user = auth.currentUser;
   if (!user) throw new Error('User not authenticated');
 
+  // Lock predictions for Abu Dhabi GP 2025
+  if (raceName.toLowerCase().includes('abu dhabi') && raceYear === 2025) {
+    throw new Error('Predictions are locked for this race');
+  }
+
   try {
     // Fetch user's profile
     const userDoc = await getDoc(doc(db, 'users', user.uid));

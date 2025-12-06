@@ -530,6 +530,7 @@ const RaceDetail = () => {
                   raceName={race.gpName}
                   raceYear={race.season}
                   round={race.round}
+                  locked={true}
                 />
               </div>
             )}
