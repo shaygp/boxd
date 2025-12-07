@@ -24,6 +24,7 @@ import Settings from "./pages/Settings";
 import Support from "./pages/Support";
 import SeedData from "./pages/SeedData";
 import { FormulaWrapped } from "./pages/FormulaWrapped";
+import LiveChatPage from "./pages/LiveChatPage";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => (
             <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
             <Route path="/race/:id" element={<ProtectedRoute><RaceDetail /></ProtectedRoute>} />
             <Route path="/race/:season/:round" element={<ProtectedRoute><RaceDetail /></ProtectedRoute>} />
+            <Route path="/live-chat/:year/:round" element={<ProtectedRoute><LiveChatPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />

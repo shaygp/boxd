@@ -345,6 +345,46 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "liveChat",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "raceName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "raceYear",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "liveChat",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "raceName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "raceYear",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

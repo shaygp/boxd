@@ -214,6 +214,27 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Support Section */}
+        <section className="relative text-center py-6 sm:py-8 px-4 sm:px-6 rounded-xl border-2 border-racing-red/30 bg-black/40 backdrop-blur-sm">
+          <div className="space-y-3">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight">
+              How to support <span className="text-racing-red">BoxBoxd</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-400 max-w-xl mx-auto">
+              Help us keep the lights on and keep BoxBoxd ad free
+            </p>
+            <a
+              href="https://buymeacoffee.com/shaygrandpx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-500 hover:from-yellow-400 hover:via-yellow-300 hover:to-yellow-400 text-black font-bold rounded-lg transition-all duration-300 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 text-sm sm:text-base"
+            >
+              <span>☕</span>
+              <span>Buy me a coffee</span>
+            </a>
+          </div>
+        </section>
+
         {tagFilter && (
           <div className="flex flex-wrap items-center gap-2 p-3 sm:p-4 bg-racing-red/10 border border-racing-red/20 rounded-lg">
             <span className="text-xs sm:text-sm font-medium">Filtering by tag:</span>

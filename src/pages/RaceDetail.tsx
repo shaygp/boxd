@@ -583,16 +583,21 @@ const RaceDetail = () => {
               </div>
             </div>
 
-            {/* Prediction Box - Only for Abu Dhabi GP */}
-            {race.gpName?.toLowerCase().includes('abu dhabi') && (
-              <div className="mb-6 space-y-4">
+            {/* Prediction Box - Only for Abu Dhabi GP - TEMPORARILY HIDDEN */}
+            {false && race.gpName?.toLowerCase().includes('abu dhabi') && (
+              <div className="mb-6">
                 <PredictionBox
                   raceName={race.gpName}
                   raceYear={race.season}
                   round={race.round}
                   locked={true}
                 />
+              </div>
+            )}
 
+            {/* Abu Dhabi GP Features */}
+            {race.gpName?.toLowerCase().includes('abu dhabi') && (
+              <div className="mb-6 space-y-4">
                 {/* Yuki Tribute Counter */}
                 {race.season === 2025 && (
                   <Card className="p-4 border-2 border-racing-red/40 bg-black/90 backdrop-blur-sm">
@@ -615,6 +620,17 @@ const RaceDetail = () => {
                       </div>
                     </div>
                   </Card>
+                )}
+
+                {/* Live Chat Button */}
+                {race.season === 2025 && (
+                  <Button
+                    onClick={() => navigate(`/live-chat/${race.season}/${race.round}`)}
+                    className="w-full bg-gradient-to-r from-racing-red via-red-600 to-racing-red hover:from-red-600 hover:via-racing-red hover:to-red-600 text-white font-black uppercase tracking-wider text-base py-6 shadow-lg shadow-red-900/30 hover:shadow-red-900/50 transition-all duration-300"
+                  >
+                    Join Live Chat
+                    <div className="ml-2 w-2 h-2 bg-white rounded-full animate-pulse" />
+                  </Button>
                 )}
               </div>
             )}
