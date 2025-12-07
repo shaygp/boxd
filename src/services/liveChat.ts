@@ -37,24 +37,6 @@ export const sendChatMessage = async (
   const user = auth.currentUser;
   if (!user) throw new Error('User not authenticated');
 
-  // Check rate limit - 1 message per minute
-  const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-  const recentMessagesQuery = query(
-    chatMessagesCollection,
-    where('userId', '==', user.uid),
-    where('raceName', '==', raceName),
-    where('raceYear', '==', raceYear),
-    where('createdAt', '>', Timestamp.fromDate(oneMinuteAgo))
-  );
-
-  const recentMessages = await getDocs(recentMessagesQuery);
-  if (!recentMessages.empty) {
-    const lastMessage = recentMessages.docs[0].data();
-    const lastMessageTime = lastMessage.createdAt.toDate();
-    const secondsRemaining = Math.ceil((60 - (Date.now() - lastMessageTime.getTime()) / 1000));
-    throw new Error(`Please wait ${secondsRemaining} seconds before sending another message`);
-  }
-
   // Get user data
   const userDocRef = doc(db, 'users', user.uid);
   const userDocSnap = await getDoc(userDocRef);

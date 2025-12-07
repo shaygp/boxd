@@ -24,7 +24,6 @@ export const LiveChat = ({ raceName, raceYear, limit = 100 }: LiveChatProps) => 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const [countdown, setCountdown] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [supportingDriver, setSupportingDriver] = useState<'verstappen' | 'norris' | 'piastri' | undefined>(undefined);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -65,14 +64,6 @@ export const LiveChat = ({ raceName, raceYear, limit = 100 }: LiveChatProps) => 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Countdown timer
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown]);
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -91,10 +82,9 @@ export const LiveChat = ({ raceName, raceYear, limit = 100 }: LiveChatProps) => 
     try {
       await sendChatMessage(newMessage, raceName, raceYear, supportingDriver);
       setNewMessage('');
-      setCountdown(60); // Start 60 second countdown
       toast({
         title: 'Message sent',
-        description: 'You can send another message in 60 seconds',
+        description: 'Your message has been sent to the chat',
       });
     } catch (error: any) {
       toast({
@@ -102,12 +92,6 @@ export const LiveChat = ({ raceName, raceYear, limit = 100 }: LiveChatProps) => 
         description: error.message,
         variant: 'destructive',
       });
-
-      // Extract countdown from error message
-      const match = error.message.match(/wait (\d+) seconds/);
-      if (match) {
-        setCountdown(parseInt(match[1]));
-      }
     } finally {
       setSending(false);
     }
@@ -318,14 +302,14 @@ export const LiveChat = ({ raceName, raceYear, limit = 100 }: LiveChatProps) => 
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={countdown > 0 ? `Wait ${countdown}s...` : "Type a message..."}
-              disabled={sending || countdown > 0}
+              placeholder="Type a message..."
+              disabled={sending}
               maxLength={200}
               className="bg-black/60 border-gray-700 text-white flex-1 text-sm sm:text-base h-9 sm:h-10"
             />
             <Button
               type="submit"
-              disabled={sending || !newMessage.trim() || countdown > 0}
+              disabled={sending || !newMessage.trim()}
               className="bg-racing-red hover:bg-red-600 h-9 sm:h-10 px-3 sm:px-4"
             >
               <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -333,11 +317,6 @@ export const LiveChat = ({ raceName, raceYear, limit = 100 }: LiveChatProps) => 
           </div>
           <div className="flex justify-between text-[10px] sm:text-xs text-gray-500">
             <span>{newMessage.length}/200</span>
-            {countdown > 0 && (
-              <span className="text-racing-red font-bold">
-                Next message in {countdown}s
-              </span>
-            )}
           </div>
         </form>
       </Card>
