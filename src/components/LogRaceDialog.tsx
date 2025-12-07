@@ -739,6 +739,34 @@ export const LogRaceDialog = ({
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-gray-300 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Date Watched *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal border-2 border-red-900/40 hover:border-racing-red bg-black/60 text-white hover:bg-black/80",
+                      !date && "text-gray-400"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-black border-2 border-racing-red/60" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={(newDate) => newDate && setDate(newDate)}
+                    initialFocus
+                    className="bg-black text-white"
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-gray-400 font-bold">When did you watch this race?</p>
+            </div>
           </div>
 
           {/* Rating Section */}
