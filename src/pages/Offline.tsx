@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { WifiOff, RefreshCw, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const NotFound = () => {
+const Offline = () => {
   const navigate = useNavigate();
 
   const handleRetry = () => {
@@ -155,4 +155,4 @@ const NotFound = () => {
   );
 };
 
-export default NotFound;
+export default Offline;

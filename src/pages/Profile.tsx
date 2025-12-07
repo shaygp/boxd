@@ -473,7 +473,12 @@ const Profile = () => {
                         key={log.id}
                         onClick={() => {
                           console.log('[Profile] Navigating to review:', { raceYear: log.raceYear, round: log.round, id: log.id });
-                          navigate(`/race/${log.raceYear}/${log.round || 1}?highlight=${log.id}`);
+                          // If round exists, navigate to race detail, otherwise show the review inline or navigate to race ID
+                          if (log.id) {
+                            navigate(`/race/${log.id}`);
+                          } else if (log.round) {
+                            navigate(`/race/${log.raceYear}/${log.round}?highlight=${log.id}`);
+                          }
                         }}
                         className="border-b border-gray-800 hover:bg-gray-900/30 transition-colors cursor-pointer p-4"
                       >
