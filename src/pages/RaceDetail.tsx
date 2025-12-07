@@ -433,13 +433,26 @@ const RaceDetail = () => {
     if (!reviewToDelete) return;
 
     try {
+      console.log('[confirmDeleteReview] Attempting to delete review:', reviewToDelete);
+      console.log('[confirmDeleteReview] Current user:', auth.currentUser?.uid);
       await deleteRaceLog(reviewToDelete);
       toast({ title: "Review deleted successfully" });
       await loadRaceData(); // Reload data
     } catch (error: any) {
+      console.error('[confirmDeleteReview] Delete error:', error);
+      console.error('[confirmDeleteReview] Error code:', error.code);
+      console.error('[confirmDeleteReview] Error message:', error.message);
+
+      let errorMessage = error.message;
+      if (error.code === 'permission-denied') {
+        errorMessage = "You don't have permission to delete this review";
+      } else if (error.code === 'unavailable' || error.message?.includes('offline')) {
+        errorMessage = "Unable to connect to server. Please check your internet connection";
+      }
+
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Error deleting review",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -622,16 +635,6 @@ const RaceDetail = () => {
                   </Card>
                 )}
 
-                {/* Live Chat Button */}
-                {race.season === 2025 && (
-                  <Button
-                    onClick={() => navigate(`/live-chat/${race.season}/${race.round}`)}
-                    className="w-full bg-gradient-to-r from-racing-red via-red-600 to-racing-red hover:from-red-600 hover:via-racing-red hover:to-red-600 text-white font-black uppercase tracking-wider text-base py-6 shadow-lg shadow-red-900/30 hover:shadow-red-900/50 transition-all duration-300"
-                  >
-                    Join Live Chat
-                    <div className="ml-2 w-2 h-2 bg-white rounded-full animate-pulse" />
-                  </Button>
-                )}
               </div>
             )}
 
@@ -819,6 +822,18 @@ const RaceDetail = () => {
                               : ''
                           }`} />
                           <span className="font-medium">{review.likesCount > 0 ? review.likesCount : 'Like'}</span>
+                        </button>
+
+                        <button
+                          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-racing-red transition-colors"
+                          onClick={() => {
+                            const reviewUrl = `${window.location.origin}/race/${review.raceYear}/${review.round || '1'}?highlight=${review.id}`;
+                            const tweetText = `Just watched the ${review.raceName}! 🏁\n\nLogged on @Box_Boxd\n${reviewUrl}`;
+                            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank');
+                          }}
+                        >
+                          <Share2 className="w-4 h-4" />
+                          <span className="font-medium">Share</span>
                         </button>
 
                         {/* Edit & Delete buttons - only show for own reviews */}
