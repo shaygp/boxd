@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LogRaceDialog } from "@/components/LogRaceDialog";
-import { Search, Plus, User, Bell, LogOut, Settings, Menu, X, Home, Compass, Activity, Calendar, Eye, Sparkles } from "lucide-react";
+import { Search, Plus, User, Bell, LogOut, Settings, Menu, X, Home, Compass, Activity, Calendar, Eye, Sparkles, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -121,6 +121,18 @@ export const Header = () => {
       <header className="sticky top-0 z-50 w-full border-b-2 border-racing-red/20 bg-black/90 backdrop-blur-xl shadow-lg shadow-red-900/10">
         <div className="container flex h-28 md:h-32 items-end pb-2 px-4 md:px-6 lg:px-8">
           <div className="flex items-end gap-4 sm:gap-6 md:gap-8 flex-1 pb-2">
+            {/* Back button - show on specific pages */}
+            {!['/home', '/login', '/'].includes(location.pathname) && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-white hover:text-racing-red hover:bg-racing-red/10 w-12 h-12 mb-1"
+                onClick={() => navigate(-1)}
+              >
+                <ArrowLeft className="w-6 h-6" />
+              </Button>
+            )}
+
             <a href="/home" className="flex items-center pb-1">
               <div className="text-3xl sm:text-4xl font-black tracking-tighter">
                 <span className="text-white">BOX</span>

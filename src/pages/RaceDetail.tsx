@@ -77,37 +77,42 @@ const RaceDetail = () => {
             setIsLiked(log.likedBy?.includes(user.uid) || false);
           }
 
-          // Load race-specific logs
-          try {
-            const raceLogs = await getRaceLogsByRace(log.raceName, log.raceYear);
-            console.log('[RaceDetail] Loaded', raceLogs.length, 'race-specific logs');
-            setAllRaceLogs(raceLogs);
-          } catch (error) {
-            console.warn('[RaceDetail] Failed to load race-specific logs:', error);
-            setAllRaceLogs([]);
+          // Load race-specific logs and race info in parallel
+          const parallelTasks = [
+            getRaceLogsByRace(log.raceName, log.raceYear).catch(err => {
+              console.warn('[RaceDetail] Failed to load race-specific logs:', err);
+              return [];
+            })
+          ];
+
+          // Add race info fetch if we have year and round
+          if (log.raceYear && log.round) {
+            parallelTasks.push(
+              getFirestoreRaceByYearAndRound(log.raceYear, log.round).catch(err => {
+                console.warn('[RaceDetail] Could not load race info for log:', err);
+                return null;
+              })
+            );
           }
 
-          // Try to load the race info from Firestore using the log's race details
-          if (log.raceYear && log.round) {
-            try {
-              const firestoreRace = await getFirestoreRaceByYearAndRound(log.raceYear, log.round);
-              if (firestoreRace) {
-                const raceData = {
-                  meeting_key: firestoreRace.round,
-                  year: firestoreRace.year,
-                  round: firestoreRace.round,
-                  meeting_name: firestoreRace.raceName,
-                  circuit_short_name: firestoreRace.circuitName,
-                  date_start: firestoreRace.dateStart.toISOString(),
-                  country_code: firestoreRace.countryCode,
-                  country_name: firestoreRace.countryName,
-                  location: firestoreRace.location
-                };
-                setRaceInfo(raceData);
-              }
-            } catch (error) {
-              console.warn('[RaceDetail] Could not load race info for log:', error);
-            }
+          const [raceLogs, firestoreRace] = await Promise.all(parallelTasks);
+
+          console.log('[RaceDetail] Loaded', raceLogs.length, 'race-specific logs');
+          setAllRaceLogs(raceLogs);
+
+          if (firestoreRace) {
+            const raceData = {
+              meeting_key: firestoreRace.round,
+              year: firestoreRace.year,
+              round: firestoreRace.round,
+              meeting_name: firestoreRace.raceName,
+              circuit_short_name: firestoreRace.circuitName,
+              date_start: firestoreRace.dateStart.toISOString(),
+              country_code: firestoreRace.countryCode,
+              country_name: firestoreRace.countryName,
+              location: firestoreRace.location
+            };
+            setRaceInfo(raceData);
           }
         }
       } else if (year && round) {
@@ -363,18 +368,36 @@ const RaceDetail = () => {
   }
 
   const handleLikeReview = async (reviewId: string) => {
-    try {
-      const liked = await toggleLike(reviewId);
+    const user = auth.currentUser;
+    if (!user) return;
 
-      // Reload race-specific logs to update like counts
+    // Optimistic update - update UI immediately
+    setAllRaceLogs(prevLogs =>
+      prevLogs.map(log => {
+        if (log.id === reviewId) {
+          const isCurrentlyLiked = log.likedBy?.includes(user.uid);
+          return {
+            ...log,
+            likedBy: isCurrentlyLiked
+              ? log.likedBy.filter(id => id !== user.uid)
+              : [...(log.likedBy || []), user.uid],
+            likesCount: (log.likesCount || 0) + (isCurrentlyLiked ? -1 : 1)
+          };
+        }
+        return log;
+      })
+    );
+
+    try {
+      await toggleLike(reviewId);
+    } catch (error: any) {
+      // Revert optimistic update on error
       const targetRaceName = raceLog?.raceName || raceInfo?.meeting_name;
       const targetRaceYear = raceLog?.raceYear || raceInfo?.year;
-
       if (targetRaceName && targetRaceYear) {
         const logs = await getRaceLogsByRace(targetRaceName, targetRaceYear);
         setAllRaceLogs(logs);
       }
-    } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
@@ -385,14 +408,31 @@ const RaceDetail = () => {
 
   const handleLikeRace = async () => {
     if (!id) return;
-    try {
-      const liked = await toggleLike(id);
-      setIsLiked(liked);
-      toast({ title: liked ? "Added to likes" : "Removed from likes" });
+    const user = auth.currentUser;
+    if (!user) return;
 
+    // Optimistic update - update UI immediately
+    const wasLiked = isLiked;
+    setIsLiked(!wasLiked);
+
+    if (raceLog) {
+      setRaceLog({
+        ...raceLog,
+        likedBy: wasLiked
+          ? raceLog.likedBy?.filter(uid => uid !== user.uid) || []
+          : [...(raceLog.likedBy || []), user.uid],
+        likesCount: (raceLog.likesCount || 0) + (wasLiked ? -1 : 1)
+      });
+    }
+
+    try {
+      await toggleLike(id);
+      toast({ title: !wasLiked ? "Added to likes" : "Removed from likes" });
+    } catch (error: any) {
+      // Revert optimistic update on error
+      setIsLiked(wasLiked);
       const log = await getRaceLogById(id);
       setRaceLog(log);
-    } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
@@ -829,7 +869,26 @@ const RaceDetail = () => {
                           onClick={() => {
                             const reviewUrl = `${window.location.origin}/race/${review.raceYear}/${review.round || '1'}?highlight=${review.id}`;
                             const tweetText = `Just watched the ${review.raceName}! 🏁\n\nLogged on @Box_Boxd\n${reviewUrl}`;
-                            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank');
+
+                            // Detect if on mobile device
+                            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                            if (isMobile) {
+                              // Try to open Twitter app first, fallback to web
+                              const twitterAppUrl = `twitter://post?message=${encodeURIComponent(tweetText)}`;
+                              const twitterWebUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+
+                              // Try opening the Twitter app
+                              window.location.href = twitterAppUrl;
+
+                              // Fallback to web after a short delay if app doesn't open
+                              setTimeout(() => {
+                                window.open(twitterWebUrl, '_blank');
+                              }, 500);
+                            } else {
+                              // Desktop: open web version
+                              window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank');
+                            }
                           }}
                         >
                           <Share2 className="w-4 h-4" />

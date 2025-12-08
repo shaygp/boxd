@@ -104,21 +104,21 @@ export const AddToListDialog = ({ trigger, raceYear, raceName, raceLocation, cou
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full bg-black border-2 border-racing-red/40">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full bg-black/95 border-2 border-racing-red backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle className="text-white">Add to List</DialogTitle>
+          <DialogTitle className="text-2xl font-black uppercase tracking-wider text-racing-red">Add to List</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label className="text-gray-300">Select a list to add this race to:</Label>
+            <Label className="text-white font-bold uppercase tracking-wider text-sm">Select a list to add this race to:</Label>
 
             {loadingLists ? (
-              <div className="text-center py-8 text-gray-400">
+              <div className="text-center py-8 text-gray-400 font-medium">
                 Loading your lists...
               </div>
             ) : lists.length > 0 ? (
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
                 {lists.map((list) => {
                   const alreadyAdded = list.races?.some(
                     (r: RaceListItem) => r.raceYear === raceYear && r.raceName === raceName
@@ -127,23 +127,29 @@ export const AddToListDialog = ({ trigger, raceYear, raceName, raceLocation, cou
                   return (
                     <Card
                       key={list.id}
-                      className={`p-4 border-2 border-racing-red/40 bg-black/90 hover:ring-2 hover:ring-racing-red transition-all cursor-pointer ${
-                        alreadyAdded ? 'opacity-50 cursor-not-allowed' : ''
+                      className={`p-4 border-2 bg-black/60 transition-all cursor-pointer ${
+                        alreadyAdded
+                          ? 'border-gray-700 opacity-50 cursor-not-allowed'
+                          : 'border-red-900/50 hover:border-racing-red hover:shadow-lg hover:shadow-red-500/20'
                       }`}
                       onClick={() => !alreadyAdded && !loading && handleAddToList(list.id, list.title)}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-racing-red/10 rounded-lg flex items-center justify-center border border-racing-red/40">
-                          <ListIcon className="w-5 h-5 text-racing-red" />
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center border-2 ${
+                          alreadyAdded
+                            ? 'bg-gray-800/50 border-gray-700'
+                            : 'bg-racing-red/10 border-racing-red/40'
+                        }`}>
+                          <ListIcon className={`w-6 h-6 ${alreadyAdded ? 'text-gray-600' : 'text-racing-red'}`} />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-white">{list.title}</h3>
-                          <p className="text-sm text-gray-400">
+                          <h3 className="font-bold text-white uppercase tracking-wide">{list.title}</h3>
+                          <p className="text-sm text-gray-400 font-medium">
                             {list.races?.length || 0} races
                           </p>
                         </div>
                         {alreadyAdded && (
-                          <span className="text-sm text-gray-500">Already added</span>
+                          <span className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Already added</span>
                         )}
                       </div>
                     </Card>
@@ -151,15 +157,19 @@ export const AddToListDialog = ({ trigger, raceYear, raceName, raceLocation, cou
                 })}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-400">
-                <p>You don't have any lists yet.</p>
-                <p className="text-sm mt-2">Create a list first to add races to it.</p>
+              <div className="text-center py-8 space-y-2">
+                <p className="text-gray-400 font-medium">You don't have any lists yet.</p>
+                <p className="text-sm text-gray-500 font-medium">Create a list first to add races to it.</p>
               </div>
             )}
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button variant="outline" onClick={() => setOpen(false)} className="flex-1 border-gray-600 bg-transparent text-white hover:bg-gray-800">
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="flex-1 bg-black/60 border-2 border-gray-700 text-white hover:bg-black/80 hover:text-white font-bold uppercase tracking-wider"
+            >
               Cancel
             </Button>
           </div>

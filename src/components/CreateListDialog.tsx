@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface CreateListDialogProps {
   trigger?: React.ReactNode;
-  onSuccess?: () => void;
+  onSuccess?: (listId: string) => void;
 }
 
 export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) => {
@@ -24,6 +25,7 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
 
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async () => {
     if (!user || !title) {
@@ -42,7 +44,7 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
       const username = profile?.username || profile?.name || user.displayName || 'User';
       const userProfileImageUrl = profile?.photoURL || user.photoURL || '';
 
-      await createList({
+      const listId = await createList({
         userId: user.uid,
         username,
         userProfileImageUrl,
@@ -55,11 +57,17 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
 
       toast({ title: "List created successfully!" });
       setOpen(false);
-      onSuccess?.();
 
       setTitle("");
       setDescription("");
       setIsPublic(true);
+
+      // Navigate to the created list or call onSuccess callback
+      if (onSuccess) {
+        onSuccess(listId);
+      } else {
+        navigate(`/list/${listId}`);
+      }
     } catch (error: any) {
       toast({
         title: "Error",

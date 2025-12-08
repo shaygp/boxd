@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RaceCard } from "@/components/RaceCard";
 import { AddRaceToListDialog } from "@/components/AddRaceToListDialog";
+import { EditListDialog } from "@/components/EditListDialog";
 import { Heart, MessageSquare, Share2, Edit, Trash2, Lock, Globe, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -43,9 +44,8 @@ const ListDetail = () => {
       if (listData) {
         // Enrich race data with F1 API info for proper navigation
         if (listData.races && listData.races.length > 0) {
+          // Group races by year to minimize API calls
           const yearMap = new Map<number, any[]>();
-
-          // Group races by year
           listData.races.forEach(race => {
             if (!yearMap.has(race.raceYear)) {
               yearMap.set(race.raceYear, []);
@@ -53,45 +53,52 @@ const ListDetail = () => {
             yearMap.get(race.raceYear)!.push(race);
           });
 
-          // Fetch F1 data for each year from Firestore
-          const enrichedRaces = await Promise.all(
-            listData.races.map(async (race) => {
-              try {
-                const firestoreRaces = await getFirestoreRacesBySeason(race.raceYear);
-                // Convert to expected format
-                const yearRaces = firestoreRaces.map(r => ({
-                  meeting_key: r.round,
-                  year: r.year,
-                  round: r.round,
-                  meeting_name: r.raceName,
-                  circuit_short_name: r.circuitName,
-                  date_start: r.dateStart.toISOString(),
-                  country_code: r.countryCode,
-                  location: r.location,
-                  circuit_key: r.round
-                }));
+          // Fetch F1 data for unique years ONLY (in parallel)
+          const uniqueYears = Array.from(yearMap.keys());
+          const yearDataPromises = uniqueYears.map(async (year) => {
+            try {
+              const firestoreRaces = await getFirestoreRacesBySeason(year);
+              const yearRaces = firestoreRaces.map(r => ({
+                meeting_key: r.round,
+                year: r.year,
+                round: r.round,
+                meeting_name: r.raceName,
+                circuit_short_name: r.circuitName,
+                date_start: r.dateStart.toISOString(),
+                country_code: r.countryCode,
+                location: r.location,
+                circuit_key: r.round
+              }));
+              return { year, races: yearRaces };
+            } catch (error) {
+              console.warn(`Failed to fetch F1 data for year ${year}:`, error);
+              return { year, races: [] };
+            }
+          });
 
-                const matchedRace = yearRaces.find(r =>
-                  r.meeting_name.toLowerCase().includes(race.raceName.toLowerCase()) ||
-                  race.raceName.toLowerCase().includes(r.meeting_name.toLowerCase())
-                );
+          const yearDataResults = await Promise.all(yearDataPromises);
 
-                return {
-                  ...race,
-                  round: matchedRace?.round || 1,
-                  countryCode: race.countryCode || matchedRace?.country_code,
-                  date: matchedRace?.date_start || '',
-                };
-              } catch (error) {
-                console.warn(`Failed to fetch F1 data for ${race.raceName}:`, error);
-                return {
-                  ...race,
-                  round: 1,
-                  date: '',
-                };
-              }
-            })
-          );
+          // Create a lookup map for quick access
+          const yearDataMap = new Map<number, any[]>();
+          yearDataResults.forEach(({ year, races }) => {
+            yearDataMap.set(year, races);
+          });
+
+          // Enrich all races using the cached year data
+          const enrichedRaces = listData.races.map(race => {
+            const yearRaces = yearDataMap.get(race.raceYear) || [];
+            const matchedRace = yearRaces.find(r =>
+              r.meeting_name.toLowerCase().includes(race.raceName.toLowerCase()) ||
+              race.raceName.toLowerCase().includes(r.meeting_name.toLowerCase())
+            );
+
+            return {
+              ...race,
+              round: matchedRace?.round || 1,
+              countryCode: race.countryCode || matchedRace?.country_code,
+              date: matchedRace?.date_start || '',
+            };
+          });
 
           listData.races = enrichedRaces;
         }
@@ -102,7 +109,7 @@ const ListDetail = () => {
           title: "List not found",
           variant: "destructive"
         });
-        navigate("/lists");
+        navigate("/profile");
       }
     } catch (error: any) {
       toast({
@@ -124,7 +131,7 @@ const ListDetail = () => {
         title: "List deleted",
         description: "Your list has been deleted successfully"
       });
-      navigate("/lists");
+      navigate("/profile");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -241,6 +248,18 @@ const ListDetail = () => {
       <main className="container px-4 sm:px-6 py-6 sm:py-8 max-w-7xl mx-auto">
         {/* List Header */}
         <Card className="relative overflow-hidden mb-6 sm:mb-8 bg-black/90 border-2 border-red-900/40 backdrop-blur-sm shadow-lg">
+          {/* Cover Image (if exists) */}
+          {list.listImageUrl && (
+            <div className="relative w-full h-48 sm:h-64 overflow-hidden">
+              <img
+                src={list.listImageUrl}
+                alt={list.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-black/90" />
+            </div>
+          )}
+
           {/* Racing accent line */}
           <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
 
@@ -296,11 +315,18 @@ const ListDetail = () => {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {new Date(list.createdAt || Date.now()).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
+                    {list.createdAt?.toDate
+                      ? list.createdAt.toDate().toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })
+                      : new Date(list.createdAt || Date.now()).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })
+                    }
                   </p>
                 </div>
               </div>
@@ -368,9 +394,15 @@ const ListDetail = () => {
 
                 {isOwner && (
                   <>
-                    <Button variant="outline" size="sm" className="bg-black/60 border border-gray-700 text-white hover:bg-black/80 hover:text-racing-red hover:border-racing-red h-8 w-8 p-0">
-                      <Edit className="w-3.5 h-3.5" />
-                    </Button>
+                    <EditListDialog
+                      list={list}
+                      onSuccess={loadList}
+                      trigger={
+                        <Button variant="outline" size="sm" className="bg-black/60 border border-gray-700 text-white hover:bg-black/80 hover:text-racing-red hover:border-racing-red h-8 w-8 p-0">
+                          <Edit className="w-3.5 h-3.5" />
+                        </Button>
+                      }
+                    />
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -403,46 +435,56 @@ const ListDetail = () => {
           </div>
         </Card>
 
-        {/* Races Grid */}
+        {/* Races List */}
         {list.races && list.races.length > 0 ? (
           <div>
             <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white mb-4 sm:mb-6">Races in this list</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            <div className="space-y-2">
               {list.races
                 .sort((a: any, b: any) => a.order - b.order)
                 .map((race: any, idx: number) => (
-                  <div key={idx} className="relative group/race">
-                    <div className="absolute top-1 left-1 sm:top-2 sm:left-2 z-10 w-6 h-6 sm:w-7 sm:h-7 bg-racing-red text-white rounded-full flex items-center justify-center text-xs font-black shadow-lg">
-                      {race.order + 1}
+                  <Card
+                    key={idx}
+                    className="relative bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all cursor-pointer group/race"
+                    onClick={() => navigate(`/race/${race.raceYear}/${race.round || 1}`)}
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
+                      {/* Order Number */}
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-racing-red text-white rounded-full flex items-center justify-center text-sm sm:text-base font-black shadow-lg flex-shrink-0">
+                        {race.order + 1}
+                      </div>
+
+                      {/* Race Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-white text-sm sm:text-base group-hover/race:text-racing-red transition-colors truncate">
+                          {race.raceName}
+                        </h3>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400 font-medium">
+                          <span>{race.raceYear}</span>
+                          <span>•</span>
+                          <span className="truncate">{race.raceLocation}</span>
+                        </div>
+                        {race.note && (
+                          <p className="text-xs text-gray-500 mt-1 font-medium line-clamp-1">{race.note}</p>
+                        )}
+                      </div>
+
+                      {/* Remove Button */}
+                      {isOwner && (
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveRace(idx, race.raceName);
+                          }}
+                          className="w-8 h-8 sm:w-9 sm:h-9 bg-black/90 hover:bg-red-600 text-white border-2 border-gray-700 hover:border-red-400 opacity-0 group-hover/race:opacity-100 transition-opacity flex-shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
-                    {isOwner && (
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveRace(idx, race.raceName);
-                        }}
-                        className="absolute top-1 right-1 sm:top-2 sm:right-2 z-10 w-8 h-8 sm:w-9 sm:h-9 bg-black/90 hover:bg-red-600 text-white border-2 border-gray-700 hover:border-red-400 opacity-0 group-hover/race:opacity-100 transition-opacity"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
-                    <RaceCard
-                      season={race.raceYear}
-                      round={race.round}
-                      gpName={race.raceName}
-                      circuit={race.raceLocation}
-                      date={race.date}
-                      watched={false}
-                      country={race.countryCode}
-                    />
-                    {race.note && (
-                      <Card className="mt-2 p-2 bg-black/60 border-2 border-gray-700">
-                        <p className="text-xs text-gray-300 font-medium">{race.note}</p>
-                      </Card>
-                    )}
-                  </div>
+                  </Card>
                 ))}
             </div>
           </div>

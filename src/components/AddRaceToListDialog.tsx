@@ -3,11 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addRaceToList, RaceListItem } from "@/services/lists";
+import { addRaceToList, RaceListItem, getListById } from "@/services/lists";
+import { getRacesBySeason, F1Race } from "@/services/f1Calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { getCountryFlag } from "@/services/f1Api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AddRaceToListDialogProps {
   trigger?: React.ReactNode;
@@ -15,74 +17,111 @@ interface AddRaceToListDialogProps {
   onSuccess?: () => void;
 }
 
-// Popular F1 races to show as suggestions
-const SUGGESTED_RACES = [
-  { year: 2024, name: "Bahrain Grand Prix", location: "Sakhir", countryCode: "BH" },
-  { year: 2024, name: "Saudi Arabian Grand Prix", location: "Jeddah", countryCode: "SA" },
-  { year: 2024, name: "Australian Grand Prix", location: "Melbourne", countryCode: "AU" },
-  { year: 2024, name: "Japanese Grand Prix", location: "Suzuka", countryCode: "JP" },
-  { year: 2024, name: "Monaco Grand Prix", location: "Monaco", countryCode: "MC" },
-  { year: 2024, name: "Canadian Grand Prix", location: "Montreal", countryCode: "CA" },
-  { year: 2024, name: "Spanish Grand Prix", location: "Barcelona", countryCode: "ES" },
-  { year: 2024, name: "British Grand Prix", location: "Silverstone", countryCode: "GB" },
-  { year: 2024, name: "Belgian Grand Prix", location: "Spa-Francorchamps", countryCode: "BE" },
-  { year: 2024, name: "Dutch Grand Prix", location: "Zandvoort", countryCode: "NL" },
-  { year: 2024, name: "Italian Grand Prix", location: "Monza", countryCode: "IT" },
-  { year: 2024, name: "Singapore Grand Prix", location: "Marina Bay", countryCode: "SG" },
-  { year: 2024, name: "United States Grand Prix", location: "Austin", countryCode: "US" },
-  { year: 2024, name: "Mexico City Grand Prix", location: "Mexico City", countryCode: "MX" },
-  { year: 2024, name: "Brazilian Grand Prix", location: "Interlagos", countryCode: "BR" },
-  { year: 2024, name: "Las Vegas Grand Prix", location: "Las Vegas", countryCode: "US" },
-  { year: 2024, name: "Qatar Grand Prix", location: "Lusail", countryCode: "QA" },
-  { year: 2024, name: "Abu Dhabi Grand Prix", location: "Yas Marina", countryCode: "AE" },
-];
+const YEARS = [2025, 2024, 2023, 2022, 2021, 2020];
 
 export const AddRaceToListDialog = ({ trigger, listId, onSuccess }: AddRaceToListDialogProps) => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [customYear, setCustomYear] = useState("2024");
-  const [customName, setCustomName] = useState("");
-  const [customLocation, setCustomLocation] = useState("");
+  const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const [races, setRaces] = useState<F1Race[]>([]);
+  const [filteredRaces, setFilteredRaces] = useState<F1Race[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filteredRaces, setFilteredRaces] = useState(SUGGESTED_RACES);
+  const [loadingRaces, setLoadingRaces] = useState(false);
+  const [existingRaces, setExistingRaces] = useState<RaceListItem[]>([]);
 
   const { toast } = useToast();
 
+  // Load existing list races and season races when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadExistingRaces();
+      loadRaces();
+    }
+  }, [open, selectedYear]);
+
+  const loadExistingRaces = async () => {
+    try {
+      const list = await getListById(listId);
+      if (list) {
+        setExistingRaces(list.races || []);
+      }
+    } catch (error) {
+      console.error('[AddRaceToListDialog] Error loading existing races:', error);
+    }
+  };
+
+  // Filter races when search query changes
   useEffect(() => {
     if (searchQuery) {
-      const filtered = SUGGESTED_RACES.filter(race =>
-        race.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        race.location.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered = races.filter(race =>
+        race.raceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        race.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        race.circuitName.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredRaces(filtered);
     } else {
-      setFilteredRaces(SUGGESTED_RACES);
+      setFilteredRaces(races);
     }
-  }, [searchQuery]);
+  }, [searchQuery, races]);
 
-  const handleAddRace = async (year: number, name: string, location: string, countryCode?: string) => {
+  const loadRaces = async () => {
+    setLoadingRaces(true);
+    try {
+      const seasonRaces = await getRacesBySeason(selectedYear);
+      setRaces(seasonRaces);
+      setFilteredRaces(seasonRaces);
+    } catch (error) {
+      console.error('[AddRaceToListDialog] Error loading races:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load races",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingRaces(false);
+    }
+  };
+
+  const handleAddRace = async (race: F1Race) => {
+    // Check if race already exists in the list
+    const isDuplicate = existingRaces.some(
+      existingRace =>
+        existingRace.raceYear === race.year &&
+        existingRace.raceName === race.raceName
+    );
+
+    if (isDuplicate) {
+      toast({
+        title: "Already in list",
+        description: `${race.raceName} is already in this list`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const raceItem: RaceListItem = {
-        raceYear: year,
-        raceName: name,
-        raceLocation: location,
-        countryCode: countryCode,
+        raceYear: race.year,
+        raceName: race.raceName,
+        raceLocation: race.location,
+        countryCode: race.countryCode,
         order: 0,
         note: ''
       };
 
       await addRaceToList(listId, raceItem);
 
+      // Update existing races to prevent immediate re-adding
+      setExistingRaces([...existingRaces, raceItem]);
+
       toast({
         title: "Race added!",
-        description: `${name} added to list`
+        description: `${race.raceName} added to list`
       });
 
       setOpen(false);
       setSearchQuery("");
-      setCustomName("");
-      setCustomLocation("");
       onSuccess?.();
     } catch (error: any) {
       console.error('[AddRaceToListDialog] Error adding race:', error);
@@ -96,128 +135,142 @@ export const AddRaceToListDialog = ({ trigger, listId, onSuccess }: AddRaceToLis
     }
   };
 
-  const handleAddCustomRace = () => {
-    if (!customName || !customLocation) {
-      toast({
-        title: "Missing information",
-        description: "Please enter both race name and location",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    handleAddRace(parseInt(customYear), customName, customLocation);
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button className="gap-2">
+          <Button className="gap-2 bg-racing-red hover:bg-red-600 text-white font-black uppercase tracking-wider border-2 border-red-400 shadow-lg shadow-red-500/30">
             <Plus className="w-4 h-4" />
             Add Race
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col w-[95vw] sm:w-full">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col w-[95vw] sm:w-full bg-black/95 border-2 border-racing-red backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>Add Race to List</DialogTitle>
+          <DialogTitle className="text-2xl font-black uppercase tracking-wider text-racing-red">Add Race to List</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-6 py-4">
-          {/* Search */}
-          <div className="space-y-2">
-            <Label>Search Races</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by race name or location..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+          {/* Year Selector and Search */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="text-white font-bold uppercase tracking-wider text-sm">Season</Label>
+              <Select
+                value={selectedYear.toString()}
+                onValueChange={(value) => setSelectedYear(parseInt(value))}
+              >
+                <SelectTrigger className="bg-black/60 border-2 border-red-900/50 text-white focus:border-racing-red">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-black/95 border-2 border-racing-red">
+                  {YEARS.map(year => (
+                    <SelectItem key={year} value={year.toString()} className="text-white hover:bg-racing-red/20">
+                      {year} Season
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-white font-bold uppercase tracking-wider text-sm">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Input
+                  placeholder="Search races..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-black/60 border-2 border-red-900/50 text-white placeholder:text-gray-500 focus:border-racing-red"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Suggested Races */}
-          <div className="space-y-2">
-            <Label>Popular Races</Label>
-            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
-              {filteredRaces.map((race, idx) => (
-                <Card
-                  key={idx}
-                  className="p-3 hover:ring-2 hover:ring-racing-red transition-all cursor-pointer group"
-                  onClick={() => !loading && handleAddRace(race.year, race.name, race.location, race.countryCode)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-background shadow-sm flex-shrink-0">
-                      <img
-                        src={getCountryFlag(race.countryCode)}
-                        alt={race.location}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm group-hover:text-racing-red transition-colors truncate">
-                        {race.name}
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        {race.year} • {race.location}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+          {/* Races Grid */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-white font-bold uppercase tracking-wider text-sm">
+                {selectedYear} Races {filteredRaces.length > 0 && `(${filteredRaces.length})`}
+              </Label>
+              {loadingRaces && (
+                <span className="text-xs text-gray-400 font-medium animate-pulse">Loading...</span>
+              )}
             </div>
-          </div>
 
-          {/* Custom Race */}
-          <div className="space-y-4 pt-4 border-t">
-            <Label>Or Add Custom Race</Label>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="year" className="text-xs">Year</Label>
-                <Input
-                  id="year"
-                  type="number"
-                  placeholder="2024"
-                  value={customYear}
-                  onChange={(e) => setCustomYear(e.target.value)}
-                />
+            {loadingRaces ? (
+              <div className="text-center py-12 text-gray-400 font-medium">
+                Loading races...
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-xs">Race Name</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g. Monaco Grand Prix"
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
-                />
+            ) : filteredRaces.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
+                {filteredRaces.map((race) => {
+                  const isAlreadyAdded = existingRaces.some(
+                    existingRace =>
+                      existingRace.raceYear === race.year &&
+                      existingRace.raceName === race.raceName
+                  );
+
+                  return (
+                    <Card
+                      key={race.id}
+                      className={`p-3 border-2 transition-all ${
+                        isAlreadyAdded
+                          ? 'border-gray-700 bg-black/40 opacity-50 cursor-not-allowed'
+                          : 'border-red-900/50 bg-black/60 hover:border-racing-red hover:shadow-lg hover:shadow-red-500/20 cursor-pointer'
+                      } group`}
+                      onClick={() => !loading && !isAlreadyAdded && handleAddRace(race)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-racing-red/40 shadow-sm flex-shrink-0">
+                          <img
+                            src={getCountryFlag(race.countryCode)}
+                            alt={race.location}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className={`font-bold text-sm transition-colors truncate ${
+                            isAlreadyAdded
+                              ? 'text-gray-500'
+                              : 'text-white group-hover:text-racing-red'
+                          }`}>
+                            {race.raceName}
+                          </h4>
+                          <p className="text-xs text-gray-400 font-medium">
+                            Round {race.round} • {race.location}
+                          </p>
+                          <p className="text-xs text-gray-500 font-medium">
+                            {new Date(race.dateStart).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </p>
+                          {isAlreadyAdded && (
+                            <p className="text-xs text-gray-600 font-semibold uppercase mt-1">Already Added</p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="location" className="text-xs">Location</Label>
-                <Input
-                  id="location"
-                  placeholder="e.g. Monaco"
-                  value={customLocation}
-                  onChange={(e) => setCustomLocation(e.target.value)}
-                />
+            ) : (
+              <div className="text-center py-12 space-y-2">
+                <p className="text-gray-400 font-medium">No races found</p>
+                {searchQuery && (
+                  <p className="text-sm text-gray-500 font-medium">Try a different search term</p>
+                )}
               </div>
-            </div>
-            <Button
-              onClick={handleAddCustomRace}
-              disabled={loading || !customName || !customLocation}
-              className="w-full"
-              variant="outline"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Custom Race
-            </Button>
+            )}
           </div>
         </div>
 
-        <div className="flex gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={() => setOpen(false)} className="flex-1">
+        <div className="flex gap-3 pt-4 border-t-2 border-gray-800">
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            className="flex-1 bg-black/60 border-2 border-gray-700 text-white hover:bg-black/80 hover:text-white font-bold uppercase tracking-wider"
+          >
             Close
           </Button>
         </div>

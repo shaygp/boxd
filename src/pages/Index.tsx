@@ -36,9 +36,25 @@ const Index = () => {
 
       try {
         lastFetchTime.current = now;
-        // Get races from Firestore instead of external APIs
-        const f1Races = await getFirestoreRaces();
+
+        // Load races, activities, and public logs in parallel
+        const [f1Races, activityFeed, publicLogs] = await Promise.all([
+          getFirestoreRaces().catch(err => {
+            console.error('Error loading races:', err);
+            return [];
+          }),
+          getGlobalActivity(50).catch(err => {
+            console.error('Error loading activities:', err);
+            return [];
+          }),
+          getPublicRaceLogs(100).catch(err => {
+            console.error('Error loading public logs:', err);
+            return [];
+          })
+        ]);
+
         console.log('[Index] getFirestoreRaces returned:', f1Races.length, 'races');
+        console.log('[Index] Loaded activities:', activityFeed.length);
 
         if (Array.isArray(f1Races) && f1Races.length > 0) {
           // Sort races by date in descending order (most recent first)
@@ -107,27 +123,20 @@ const Index = () => {
           setCurrentRaces([]);
         }
 
-        try {
-          // Fetch activities
-          const activityFeed = await getGlobalActivity(50);
-          console.log('[Index] Loaded activities:', activityFeed.length);
-          setActivities(activityFeed);
+        // Set activities
+        setActivities(activityFeed);
 
-          // Also fetch public logs for the race cards
-          const publicLogs = await getPublicRaceLogs(100);
-          if (Array.isArray(publicLogs) && publicLogs.length > 0) {
-            // Filter by tag if present
-            if (tagFilter) {
-              const filtered = publicLogs.filter(log =>
-                log.tags && log.tags.includes(tagFilter)
-              );
-              setPopularRaces(filtered);
-            } else {
-              setPopularRaces(publicLogs.slice(0, 6));
-            }
+        // Set public logs
+        if (Array.isArray(publicLogs) && publicLogs.length > 0) {
+          // Filter by tag if present
+          if (tagFilter) {
+            const filtered = publicLogs.filter(log =>
+              log.tags && log.tags.includes(tagFilter)
+            );
+            setPopularRaces(filtered);
+          } else {
+            setPopularRaces(publicLogs.slice(0, 6));
           }
-        } catch (logError) {
-          console.error('Error loading public logs:', logError);
         }
       } catch (err: any) {
         console.error('Error loading data:', err);

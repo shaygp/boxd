@@ -9,6 +9,8 @@ import { db, auth } from '@/lib/firebase';
 import { getFollowing } from '@/services/follows';
 import { StarRating } from './StarRating';
 import { getBlockedUsers } from '@/services/reports';
+import { toggleLike } from '@/services/likes';
+import { useToast } from '@/hooks/use-toast';
 
 interface ActivityFeedProps {
   feedType: 'following' | 'global';
@@ -43,6 +45,9 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
   const [loading, setLoading] = useState(true);
   const [showCount, setShowCount] = useState(initialShow);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [likedActivities, setLikedActivities] = useState<Set<string>>(new Set());
+  const [likingActivity, setLikingActivity] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Load blocked users
@@ -70,38 +75,63 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
         const unsubscribe = onSnapshot(q, async (snapshot) => {
           console.log('[ActivityFeed] Real-time update: received', snapshot.docs.length, 'activities');
 
-          // Fetch user profiles for activities
-          const activities = await Promise.all(
-            snapshot.docs.map(async (docSnapshot) => {
-              const data = docSnapshot.data();
-              let userAvatar = data.userAvatar || '';
-              let username = data.username || 'User';
+          // Collect all unique user IDs that need profile data
+          const activitiesData = snapshot.docs.map(docSnapshot => ({
+            id: docSnapshot.id,
+            ...docSnapshot.data()
+          }));
 
-              // If userAvatar is missing, fetch from users collection
-              if (!userAvatar && data.userId) {
-                try {
-                  const userDoc = await getDoc(doc(db, 'users', data.userId));
-                  if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    userAvatar = userData.photoURL || '';
-                    username = userData.name || username;
-                  }
-                } catch (error) {
-                  console.error('[ActivityFeed] Error fetching user profile:', error);
+          const userIdsNeedingProfile = new Set<string>();
+          activitiesData.forEach(data => {
+            if (!data.userAvatar && data.userId) {
+              userIdsNeedingProfile.add(data.userId);
+            }
+          });
+
+          // Fetch all needed user profiles in parallel (batch)
+          const userProfilesMap = new Map<string, any>();
+          if (userIdsNeedingProfile.size > 0) {
+            const profilePromises = Array.from(userIdsNeedingProfile).map(async (userId) => {
+              try {
+                const userDoc = await getDoc(doc(db, 'users', userId));
+                if (userDoc.exists()) {
+                  return { userId, data: userDoc.data() };
                 }
+              } catch (error) {
+                console.error('[ActivityFeed] Error fetching user profile:', error);
               }
+              return null;
+            });
 
-              const activity = {
-                id: docSnapshot.id,
-                ...data,
-                username,
-                userAvatar,
-                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
-              } as Activity;
+            const profileResults = await Promise.all(profilePromises);
+            profileResults.forEach(result => {
+              if (result) {
+                userProfilesMap.set(result.userId, result.data);
+              }
+            });
+          }
 
-              return activity;
-            })
-          );
+          // Map activities with cached user data
+          const activities = activitiesData.map(data => {
+            let userAvatar = data.userAvatar || '';
+            let username = data.username || 'User';
+
+            // Use cached user profile data if available
+            if (!userAvatar && data.userId) {
+              const userData = userProfilesMap.get(data.userId);
+              if (userData) {
+                userAvatar = userData.photoURL || '';
+                username = userData.name || username;
+              }
+            }
+
+            return {
+              ...data,
+              username,
+              userAvatar,
+              createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+            } as Activity;
+          });
 
           // Log the first few activities to verify ordering
           console.log('[ActivityFeed] First 3 activities:', activities.slice(0, 3).map(a => ({
@@ -154,43 +184,73 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
         const unsubscribe = onSnapshot(q, async (snapshot) => {
           console.log('[ActivityFeed] Real-time update: received', snapshot.docs.length, 'total activities');
 
-          const allActivities = await Promise.all(
-            snapshot.docs.map(async (docSnapshot) => {
-              const data = docSnapshot.data();
-              let userAvatar = data.userAvatar || '';
-              let username = data.username || 'User';
+          // Collect all activities data
+          const allActivitiesData = snapshot.docs.map(docSnapshot => ({
+            id: docSnapshot.id,
+            ...docSnapshot.data()
+          }));
 
-              if (!userAvatar && data.userId) {
-                try {
-                  const userDoc = await getDoc(doc(db, 'users', data.userId));
-                  if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    userAvatar = userData.photoURL || '';
-                    username = userData.name || username;
-                  }
-                } catch (error) {
-                  console.error('[ActivityFeed] Error fetching user profile:', error);
+          // Filter to only show activities from followed users first
+          const followingActivitiesData = allActivitiesData.filter(data =>
+            followingIds.includes(data.userId)
+          );
+
+          // Collect unique user IDs that need profile data (only for filtered activities)
+          const userIdsNeedingProfile = new Set<string>();
+          followingActivitiesData.forEach(data => {
+            if (!data.userAvatar && data.userId) {
+              userIdsNeedingProfile.add(data.userId);
+            }
+          });
+
+          // Fetch all needed user profiles in parallel (batch)
+          const userProfilesMap = new Map<string, any>();
+          if (userIdsNeedingProfile.size > 0) {
+            const profilePromises = Array.from(userIdsNeedingProfile).map(async (userId) => {
+              try {
+                const userDoc = await getDoc(doc(db, 'users', userId));
+                if (userDoc.exists()) {
+                  return { userId, data: userDoc.data() };
                 }
+              } catch (error) {
+                console.error('[ActivityFeed] Error fetching user profile:', error);
               }
+              return null;
+            });
 
-              return {
-                id: docSnapshot.id,
-                ...data,
-                username,
-                userAvatar,
-                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
-              } as Activity;
-            })
-          );
+            const profileResults = await Promise.all(profilePromises);
+            profileResults.forEach(result => {
+              if (result) {
+                userProfilesMap.set(result.userId, result.data);
+              }
+            });
+          }
 
-          // Filter to only show activities from followed users
-          const followingActivities = allActivities.filter(activity =>
-            followingIds.includes(activity.userId)
-          );
+          // Map filtered activities with cached user data
+          const followingActivities = followingActivitiesData.map(data => {
+            let userAvatar = data.userAvatar || '';
+            let username = data.username || 'User';
+
+            // Use cached user profile data if available
+            if (!userAvatar && data.userId) {
+              const userData = userProfilesMap.get(data.userId);
+              if (userData) {
+                userAvatar = userData.photoURL || '';
+                username = userData.name || username;
+              }
+            }
+
+            return {
+              ...data,
+              username,
+              userAvatar,
+              createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+            } as Activity;
+          });
 
           console.log('[ActivityFeed] Filtered to', followingActivities.length, 'activities from', followingIds.length, 'followed users');
           console.log('[ActivityFeed] Following IDs:', followingIds);
-          console.log('[ActivityFeed] Sample activity userIds:', allActivities.slice(0, 5).map(a => a.userId));
+          console.log('[ActivityFeed] Sample activity userIds:', followingActivities.slice(0, 5).map(a => a.userId));
 
           setActivities(followingActivities.slice(0, limit));
           setLoading(false);
@@ -294,6 +354,47 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
     }
   };
 
+  const handleLike = async (activity: Activity, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!auth.currentUser) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to like race logs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!activity.targetId) return;
+
+    setLikingActivity(activity.targetId);
+
+    try {
+      await toggleLike(activity.targetId);
+
+      // Toggle liked state
+      setLikedActivities(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(activity.targetId!)) {
+          newSet.delete(activity.targetId!);
+        } else {
+          newSet.add(activity.targetId!);
+        }
+        return newSet;
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to like race log",
+        variant: "destructive"
+      });
+    } finally {
+      setLikingActivity(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -332,7 +433,7 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
   return (
     <div className="space-y-3 sm:space-y-4 md:space-y-5 max-w-3xl mx-auto px-3 sm:px-4">
       {displayedActivities.map((activity) => (
-        <Card key={activity.id} className="group bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30">
+        <Card key={activity.id} className="group bg-black/90 border-2 border-red-900/40 transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg">
           {/* Racing accent line */}
           <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
 
@@ -489,23 +590,23 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                   </p>
                 )}
 
-                {/* Interaction bar - Letterboxd style - Links to full activity page */}
+                {/* Interaction bar - Letterboxd style */}
                 {activity.targetType === 'raceLog' && (
                   <div className="flex items-center gap-4 pt-2 border-t border-gray-800/50">
-                    <Link
-                      to={getActivityLink(activity)}
-                      className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-400 hover:text-racing-red transition-colors"
+                    <button
+                      onClick={(e) => handleLike(activity, e)}
+                      disabled={likingActivity === activity.targetId}
+                      className={`flex items-center gap-1.5 text-xs sm:text-sm transition-colors ${
+                        likedActivities.has(activity.targetId || '')
+                          ? 'text-racing-red'
+                          : 'text-gray-400 hover:text-racing-red'
+                      }`}
                     >
-                      <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Like</span>
-                    </Link>
-                    <Link
-                      to={getActivityLink(activity)}
-                      className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-400 hover:text-racing-red transition-colors"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Comment</span>
-                    </Link>
+                      <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${likedActivities.has(activity.targetId || '') ? 'fill-racing-red' : ''}`} />
+                      <span className="hidden sm:inline">
+                        {likedActivities.has(activity.targetId || '') ? 'Liked' : 'Like'}
+                      </span>
+                    </button>
                   </div>
                 )}
               </div>

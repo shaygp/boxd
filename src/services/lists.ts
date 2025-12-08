@@ -28,6 +28,7 @@ export interface RaceList {
   userId: string;
   username: string;
   userProfileImageUrl: string;
+  listImageUrl?: string;
   title: string;
   description: string;
   races: RaceListItem[];

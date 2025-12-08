@@ -5,7 +5,7 @@ import { auth } from "@/lib/firebase";
 import { useState } from "react";
 
 const Lists = () => {
-  const [activeTab, setActiveTab] = useState<'following' | 'global'>('following');
+  const [activeTab, setActiveTab] = useState<'following' | 'global'>('global');
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
@@ -22,28 +22,28 @@ const Lists = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="following" value={activeTab} onValueChange={(v) => setActiveTab(v as 'following' | 'global')} className="w-full">
+        <Tabs defaultValue="global" value={activeTab} onValueChange={(v) => setActiveTab(v as 'following' | 'global')} className="w-full">
           <TabsList className="flex w-auto bg-transparent mb-6 justify-start">
-            <TabsTrigger
-              value="following"
-              className="data-[state=active]:bg-racing-red data-[state=active]:text-white font-bold uppercase tracking-wider text-xs px-4 py-2"
-            >
-              Following
-            </TabsTrigger>
             <TabsTrigger
               value="global"
               className="data-[state=active]:bg-racing-red data-[state=active]:text-white font-bold uppercase tracking-wider text-xs px-4 py-2"
             >
               Global
             </TabsTrigger>
+            <TabsTrigger
+              value="following"
+              className="data-[state=active]:bg-racing-red data-[state=active]:text-white font-bold uppercase tracking-wider text-xs px-4 py-2"
+            >
+              Following
+            </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="following">
-            <ActivityFeed feedType="following" limit={50} />
-          </TabsContent>
 
           <TabsContent value="global">
             <ActivityFeed feedType="global" limit={50} />
+          </TabsContent>
+
+          <TabsContent value="following">
+            <ActivityFeed feedType="following" limit={50} />
           </TabsContent>
         </Tabs>
       </main>
