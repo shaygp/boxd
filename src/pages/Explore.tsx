@@ -24,6 +24,7 @@ const Explore = () => {
   const [seasonRaces, setSeasonRaces] = useState<any[]>([]);
   const [seasonLoading, setSeasonLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [listsToShow, setListsToShow] = useState(10);
 
   useEffect(() => {
     const loadData = async () => {
@@ -420,13 +421,14 @@ const Explore = () => {
                   description="Create the first list and share your favorite race collections"
                 />
               ) : (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {popularLists.map((list) => (
-                    <Card
-                      key={list.id}
-                      onClick={() => navigate(`/list/${list.id}`)}
-                      className="group bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30 cursor-pointer"
-                    >
+                <>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {popularLists.slice(0, listsToShow).map((list) => (
+                      <Card
+                        key={list.id}
+                        onClick={() => navigate(`/list/${list.id}`)}
+                        className="group bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30 cursor-pointer"
+                      >
                       {/* Racing accent line */}
                       <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
 
@@ -510,6 +512,21 @@ const Explore = () => {
                     </Card>
                   ))}
                 </div>
+
+                {/* View More Button */}
+                {popularLists.length > listsToShow && (
+                  <div className="flex justify-center mt-6">
+                    <Button
+                      onClick={() => setListsToShow(prev => prev + 10)}
+                      variant="outline"
+                      className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-bold uppercase tracking-wider"
+                    >
+                      <ArrowRight className="w-4 h-4 mr-2" />
+                      View More Lists ({popularLists.length - listsToShow} remaining)
+                    </Button>
+                  </div>
+                )}
+              </>
               )}
             </div>
           </TabsContent>
