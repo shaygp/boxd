@@ -63,8 +63,14 @@ const Explore = () => {
         setTopReviews(reviewsWithContent);
 
         const sortedLists = lists
-          .sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0))
-          .slice(0, 6);
+          .sort((a, b) => {
+            const racesA = a.races?.length || 0;
+            const racesB = b.races?.length || 0;
+            if (racesB !== racesA) {
+              return racesB - racesA;
+            }
+            return (b.likesCount || 0) - (a.likesCount || 0);
+          });
 
         setPopularLists(sortedLists);
 
