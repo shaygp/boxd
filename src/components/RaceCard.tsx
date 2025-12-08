@@ -48,15 +48,19 @@ const RaceCardComponent = ({
   const [fetchedWinner, setFetchedWinner] = useState<string | null>(null);
 
   useEffect(() => {
-    checkWatchlistStatus();
-  }, [season, gpName]);
+    // Only check watchlist if button is shown and not already watched
+    if (showWatchlistButton && !watched) {
+      checkWatchlistStatus();
+    }
+  }, [season, gpName, showWatchlistButton, watched]);
 
   useEffect(() => {
-    // Fetch winner if not provided and race is in the past
-    const fetchWinner = async () => {
-      if (!winner && season && round && date) {
-        const raceDate = new Date(date);
-        if (raceDate < new Date()) {
+    // Only fetch winner if not provided, race is in past, and card is not already watched
+    if (!winner && !watched && season && round && date) {
+      const raceDate = new Date(date);
+      if (raceDate < new Date()) {
+        // Add a small delay to avoid too many simultaneous requests
+        const timeout = setTimeout(async () => {
           try {
             const raceWinner = await getRaceWinner(season, round);
             if (raceWinner) {
@@ -65,11 +69,12 @@ const RaceCardComponent = ({
           } catch (error) {
             console.error('[RaceCard] Error fetching winner:', error);
           }
-        }
+        }, Math.random() * 500); // Random delay 0-500ms to stagger requests
+
+        return () => clearTimeout(timeout);
       }
-    };
-    fetchWinner();
-  }, [season, round, date, winner]);
+    }
+  }, [season, round, date, winner, watched]);
 
   const checkWatchlistStatus = async () => {
     const user = auth.currentUser;

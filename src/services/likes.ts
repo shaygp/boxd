@@ -38,85 +38,84 @@ export const toggleLike = async (raceLogId: string) => {
   const raceLogRef = doc(db, 'raceLogs', raceLogId);
 
   if (snapshot.empty) {
+    // LIKE: Add like document and update race log
     const newLike = {
       userId: user.uid,
       raceLogId,
       createdAt: Timestamp.now()
     };
-    await addDoc(likesCollection, newLike);
 
+    // Fetch race log data once
     const raceLogDoc = await getDoc(raceLogRef);
-    if (raceLogDoc.exists()) {
-      const likedBy = raceLogDoc.data().likedBy || [];
-      await updateDoc(raceLogRef, {
+    if (!raceLogDoc.exists()) {
+      throw new Error('Race log not found');
+    }
+
+    const raceData = raceLogDoc.data();
+    const likedBy = raceData.likedBy || [];
+
+    // Perform core operations in parallel
+    await Promise.all([
+      addDoc(likesCollection, newLike),
+      updateDoc(raceLogRef, {
         likedBy: [...likedBy, user.uid],
         likesCount: increment(1)
-      });
+      })
+    ]);
 
-      // Extract race metadata
-      const raceData = raceLogDoc.data();
-      const raceName = raceData.raceName;
-      const raceYear = raceData.raceYear;
-      const round = raceData.round;
-      const raceLocation = raceData.raceLocation;
-      const rating = raceData.rating;
-      const raceLogOwnerId = raceData.userId;
+    // Background tasks - don't await these
+    const raceLogOwnerId = raceData.userId;
+    if (raceLogOwnerId && raceLogOwnerId !== user.uid) {
+      // Run activity and notification creation in background
+      Promise.all([
+        createActivity({
+          type: 'like',
+          targetId: raceLogId,
+          targetType: 'raceLog',
+          raceName: raceData.raceName,
+          raceYear: raceData.raceYear,
+          round: raceData.round,
+          raceLocation: raceData.raceLocation,
+          rating: raceData.rating,
+        }).catch(err => console.error('Failed to create activity:', err)),
 
-      // Only create activity if user is liking someone else's race log (not their own)
-      if (raceLogOwnerId !== user.uid) {
-        try {
-          await createActivity({
-            type: 'like',
-            targetId: raceLogId,
-            targetType: 'raceLog',
-            raceName,
-            raceYear,
-            round,
-            raceLocation,
-            rating,
-          });
-        } catch (error) {
-          console.error('Failed to create activity:', error);
-        }
-      }
-
-      // Create notification for the race log owner
-      try {
-        const raceLogOwnerId = raceData.userId;
-        if (raceLogOwnerId && raceLogOwnerId !== user.uid) {
-          const likerDoc = await getDoc(doc(db, 'users', user.uid));
+        getDoc(doc(db, 'users', user.uid)).then(likerDoc => {
           const likerData = likerDoc.exists() ? likerDoc.data() : {};
           const likerName = likerData.username || likerData.name || user.displayName || 'Someone';
           const likerPhoto = likerData.photoURL || user.photoURL;
 
-          await createNotification({
+          return createNotification({
             userId: raceLogOwnerId,
             type: 'like',
             actorId: user.uid,
             actorName: likerName,
             actorPhotoURL: likerPhoto,
-            content: `liked your review of ${raceName || 'your race log'}`,
+            content: `liked your review of ${raceData.raceName || 'your race log'}`,
             linkTo: `/race/${raceLogId}`,
           });
-          console.log('[toggleLike] Notification created for like');
-        }
-      } catch (error) {
-        console.error('[toggleLike] Failed to create notification:', error);
-      }
+        }).catch(err => console.error('Failed to create notification:', err))
+      ]);
     }
 
     return true;
   } else {
+    // UNLIKE: Remove like document and update race log
     const likeDoc = snapshot.docs[0];
-    await deleteDoc(doc(db, 'likes', likeDoc.id));
-
     const raceLogDoc = await getDoc(raceLogRef);
+
     if (raceLogDoc.exists()) {
       const likedBy = raceLogDoc.data().likedBy || [];
-      await updateDoc(raceLogRef, {
-        likedBy: likedBy.filter((id: string) => id !== user.uid),
-        likesCount: increment(-1)
-      });
+
+      // Perform both operations in parallel
+      await Promise.all([
+        deleteDoc(doc(db, 'likes', likeDoc.id)),
+        updateDoc(raceLogRef, {
+          likedBy: likedBy.filter((id: string) => id !== user.uid),
+          likesCount: increment(-1)
+        })
+      ]);
+    } else {
+      await deleteDoc(doc(db, 'likes', likeDoc.id));
     }
 
     return false;

@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
 import { CreateListDialog } from "@/components/CreateListDialog";
-import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight, Ban } from "lucide-react";
+import { LogRaceDialog } from "@/components/LogRaceDialog";
+import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight, Ban, Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { getUserProfile, getUserRaceLogs, calculateTotalHoursWatched } from "@/services/raceLogs";
@@ -52,6 +53,8 @@ const Profile = () => {
   const [reviewsToShow, setReviewsToShow] = useState(8);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
+  const [logDialogOpen, setLogDialogOpen] = useState(false);
+  const [editingReview, setEditingReview] = useState<any>(null);
 
   const targetUserId = userId || currentUser?.uid;
   const isOwnProfile = !userId || userId === currentUser?.uid;
@@ -584,16 +587,33 @@ const Profile = () => {
                               {log.review}
                             </p>
 
-                            {/* Engagement stats */}
-                            <div className="flex items-center gap-6 mt-3 text-gray-500">
-                              <button className="flex items-center gap-1.5 hover:text-racing-red transition-colors group">
-                                <Heart className={`w-4 h-4 ${log.likedBy?.includes(currentUser?.uid || '') ? 'fill-racing-red text-racing-red' : 'group-hover:fill-racing-red'}`} />
-                                <span className="text-xs">{log.likesCount || 0}</span>
-                              </button>
-                              <button className="flex items-center gap-1.5 hover:text-blue-400 transition-colors">
-                                <MessageCircle className="w-4 h-4" />
-                                <span className="text-xs">{log.commentsCount || 0}</span>
-                              </button>
+                            {/* Engagement stats and actions */}
+                            <div className="flex items-center justify-between mt-3">
+                              <div className="flex items-center gap-6 text-gray-500">
+                                <button className="flex items-center gap-1.5 hover:text-racing-red transition-colors group">
+                                  <Heart className={`w-4 h-4 ${log.likedBy?.includes(currentUser?.uid || '') ? 'fill-racing-red text-racing-red' : 'group-hover:fill-racing-red'}`} />
+                                  <span className="text-xs">{log.likesCount || 0}</span>
+                                </button>
+                                <button className="flex items-center gap-1.5 hover:text-blue-400 transition-colors">
+                                  <MessageCircle className="w-4 h-4" />
+                                  <span className="text-xs">{log.commentsCount || 0}</span>
+                                </button>
+                              </div>
+
+                              {/* Edit button (only show on own profile) */}
+                              {isOwnProfile && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingReview(log);
+                                    setLogDialogOpen(true);
+                                  }}
+                                  className="flex items-center gap-1.5 text-gray-500 hover:text-racing-red transition-colors text-xs font-bold uppercase tracking-wider"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                  Edit
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -727,6 +747,25 @@ const Profile = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Edit Review Dialog */}
+      {isOwnProfile && (
+        <LogRaceDialog
+          open={logDialogOpen}
+          onOpenChange={(open) => {
+            setLogDialogOpen(open);
+            if (!open) {
+              setEditingReview(null);
+            }
+          }}
+          existingLog={editingReview}
+          onSuccess={() => {
+            setLogDialogOpen(false);
+            setEditingReview(null);
+            loadProfile(); // Reload profile to show updated review
+          }}
+        />
+      )}
     </div>
   );
 };
