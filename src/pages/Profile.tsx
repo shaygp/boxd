@@ -604,7 +604,7 @@ const Profile = () => {
 
                             {/* Race info */}
                             <div className="mb-2">
-                              <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
+                              <div className="flex items-center gap-2 text-sm text-gray-400 mb-1 flex-wrap">
                                 <span className="font-bold text-racing-red">{log.raceName}</span>
                                 <span>·</span>
                                 <span>{log.raceYear}</span>
@@ -627,9 +627,16 @@ const Profile = () => {
                                 )}
                               </div>
 
-                              {/* Session Type Badge */}
-                              {log.sessionType && (
-                                <div className="inline-block mb-2">
+                              {/* Driver of the Day and Session Type */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {log.driverOfTheDay && (
+                                  <div className="text-sm text-gray-400">
+                                    <span>Driver of the Day: </span>
+                                    <span className="text-white font-medium">{log.driverOfTheDay}</span>
+                                  </div>
+                                )}
+                                {/* Session Type Badge */}
+                                {log.sessionType && (
                                   <Badge variant="outline" className={`text-xs font-bold uppercase tracking-wider ${
                                     log.sessionType === 'race' ? 'border-racing-red/60 text-racing-red' :
                                     log.sessionType === 'sprint' ? 'border-orange-500/60 text-orange-500' :
@@ -643,16 +650,8 @@ const Profile = () => {
                                      log.sessionType === 'sprintQualifying' ? '⚡ Sprint Qualifying' :
                                      log.sessionType}
                                   </Badge>
-                                </div>
-                              )}
-
-                              {/* Driver of the Day */}
-                              {log.driverOfTheDay && (
-                                <div className="text-sm text-gray-400">
-                                  <span>🏆 Driver of the Day: </span>
-                                  <span className="text-white font-medium">{log.driverOfTheDay}</span>
-                                </div>
-                              )}
+                                )}
+                              </div>
                             </div>
 
                             {/* Review text */}

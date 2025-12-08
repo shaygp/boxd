@@ -86,39 +86,88 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
           }));
 
           const userIdsNeedingProfile = new Set<string>();
+          const allUserIds = new Set<string>(); // Track all user IDs to check if they exist
           const now = Date.now();
 
           activitiesData.forEach(data => {
-            if (!data.userAvatar && data.userId) {
-              // Check cache first
-              const cached = userProfileCache.get(data.userId);
-              if (!cached || (now - cached.timestamp) > CACHE_DURATION) {
-                userIdsNeedingProfile.add(data.userId);
+            if (data.userId) {
+              allUserIds.add(data.userId); // Track all user IDs
+              if (!data.userAvatar) {
+                // Check cache first
+                const cached = userProfileCache.get(data.userId);
+                if (!cached || (now - cached.timestamp) > CACHE_DURATION) {
+                  userIdsNeedingProfile.add(data.userId);
+                }
               }
             }
           });
 
           // Fetch all needed user profiles in parallel (batch)
           const userProfilesMap = new Map<string, any>();
-          if (userIdsNeedingProfile.size > 0) {
-            const profilePromises = Array.from(userIdsNeedingProfile).map(async (userId) => {
+          const deletedUsers = new Set<string>(); // Track users that don't exist
+
+          // Check ALL users to see if they still exist
+          const allUserPromises = Array.from(allUserIds).map(async (userId) => {
+            try {
+              const userDoc = await getDoc(doc(db, 'users', userId));
+              if (!userDoc.exists()) {
+                deletedUsers.add(userId);
+              }
+              return { userId, exists: userDoc.exists() };
+            } catch (error) {
+              console.error('[ActivityFeed] Error checking user existence:', error);
+            }
+            return null;
+          });
+
+          await Promise.all(allUserPromises);
+
+          // Check if target race logs/reviews still exist
+          const targetIds = new Set<string>();
+          const deletedTargets = new Set<string>();
+
+          activitiesData.forEach(data => {
+            if (data.targetType === 'raceLog' && data.targetId) {
+              targetIds.add(data.targetId);
+            }
+          });
+
+          if (targetIds.size > 0) {
+            const targetPromises = Array.from(targetIds).map(async (targetId) => {
               try {
-                const userDoc = await getDoc(doc(db, 'users', userId));
-                if (userDoc.exists()) {
-                  const data = userDoc.data();
-                  // Cache the result
-                  userProfileCache.set(userId, {
-                    photoURL: data.photoURL || '',
-                    name: data.name || 'User',
-                    timestamp: now
-                  });
-                  return { userId, data };
+                const logDoc = await getDoc(doc(db, 'raceLogs', targetId));
+                if (!logDoc.exists()) {
+                  deletedTargets.add(targetId);
                 }
               } catch (error) {
-                console.error('[ActivityFeed] Error fetching user profile:', error);
+                console.error('[ActivityFeed] Error checking race log existence:', error);
               }
-              return null;
             });
+            await Promise.all(targetPromises);
+          }
+
+          // Now fetch profiles for users that need them (and still exist)
+          if (userIdsNeedingProfile.size > 0) {
+            const profilePromises = Array.from(userIdsNeedingProfile)
+              .filter(userId => !deletedUsers.has(userId)) // Skip deleted users
+              .map(async (userId) => {
+                try {
+                  const userDoc = await getDoc(doc(db, 'users', userId));
+                  if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    // Cache the result
+                    userProfileCache.set(userId, {
+                      photoURL: data.photoURL || '',
+                      name: data.name || 'User',
+                      timestamp: now
+                    });
+                    return { userId, data };
+                  }
+                } catch (error) {
+                  console.error('[ActivityFeed] Error fetching user profile:', error);
+                }
+                return null;
+              });
 
             const profileResults = await Promise.all(profilePromises);
             profileResults.forEach(result => {
@@ -128,35 +177,38 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
             });
           }
 
-          // Map activities with cached user data
-          const activities = activitiesData.map(data => {
-            let userAvatar = data.userAvatar || '';
-            let username = data.username || 'User';
+          // Map activities with cached user data and filter out deleted users AND deleted targets
+          const activities = activitiesData
+            .filter(data => !deletedUsers.has(data.userId)) // Filter out activities from deleted users
+            .filter(data => !deletedTargets.has(data.targetId)) // Filter out activities with deleted targets
+            .map(data => {
+              let userAvatar = data.userAvatar || '';
+              let username = data.username || 'User';
 
-            // Use cached user profile data if available
-            if (!userAvatar && data.userId) {
-              // First check the newly fetched data
-              const userData = userProfilesMap.get(data.userId);
-              if (userData) {
-                userAvatar = userData.photoURL || '';
-                username = userData.name || username;
-              } else {
-                // Fall back to cache
-                const cached = userProfileCache.get(data.userId);
-                if (cached) {
-                  userAvatar = cached.photoURL;
-                  username = cached.name;
+              // Use cached user profile data if available
+              if (!userAvatar && data.userId) {
+                // First check the newly fetched data
+                const userData = userProfilesMap.get(data.userId);
+                if (userData) {
+                  userAvatar = userData.photoURL || '';
+                  username = userData.name || username;
+                } else {
+                  // Fall back to cache
+                  const cached = userProfileCache.get(data.userId);
+                  if (cached) {
+                    userAvatar = cached.photoURL;
+                    username = cached.name;
+                  }
                 }
               }
-            }
 
-            return {
-              ...data,
-              username,
-              userAvatar,
-              createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
-            } as Activity;
-          });
+              return {
+                ...data,
+                username,
+                userAvatar,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+              } as Activity;
+            });
 
           // Log the first few activities to verify ordering
           console.log('[ActivityFeed] First 3 activities:', activities.slice(0, 3).map(a => ({
@@ -222,39 +274,88 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
 
           // Collect unique user IDs that need profile data (only for filtered activities)
           const userIdsNeedingProfile = new Set<string>();
+          const allUserIds = new Set<string>(); // Track all user IDs to check if they exist
           const now = Date.now();
 
           followingActivitiesData.forEach(data => {
-            if (!data.userAvatar && data.userId) {
-              // Check cache first
-              const cached = userProfileCache.get(data.userId);
-              if (!cached || (now - cached.timestamp) > CACHE_DURATION) {
-                userIdsNeedingProfile.add(data.userId);
+            if (data.userId) {
+              allUserIds.add(data.userId); // Track all user IDs
+              if (!data.userAvatar) {
+                // Check cache first
+                const cached = userProfileCache.get(data.userId);
+                if (!cached || (now - cached.timestamp) > CACHE_DURATION) {
+                  userIdsNeedingProfile.add(data.userId);
+                }
               }
             }
           });
 
           // Fetch all needed user profiles in parallel (batch)
           const userProfilesMap = new Map<string, any>();
-          if (userIdsNeedingProfile.size > 0) {
-            const profilePromises = Array.from(userIdsNeedingProfile).map(async (userId) => {
+          const deletedUsers = new Set<string>(); // Track users that don't exist
+
+          // Check ALL users to see if they still exist
+          const allUserPromises = Array.from(allUserIds).map(async (userId) => {
+            try {
+              const userDoc = await getDoc(doc(db, 'users', userId));
+              if (!userDoc.exists()) {
+                deletedUsers.add(userId);
+              }
+              return { userId, exists: userDoc.exists() };
+            } catch (error) {
+              console.error('[ActivityFeed] Error checking user existence:', error);
+            }
+            return null;
+          });
+
+          await Promise.all(allUserPromises);
+
+          // Check if target race logs/reviews still exist
+          const targetIds = new Set<string>();
+          const deletedTargets = new Set<string>();
+
+          followingActivitiesData.forEach(data => {
+            if (data.targetType === 'raceLog' && data.targetId) {
+              targetIds.add(data.targetId);
+            }
+          });
+
+          if (targetIds.size > 0) {
+            const targetPromises = Array.from(targetIds).map(async (targetId) => {
               try {
-                const userDoc = await getDoc(doc(db, 'users', userId));
-                if (userDoc.exists()) {
-                  const data = userDoc.data();
-                  // Cache the result
-                  userProfileCache.set(userId, {
-                    photoURL: data.photoURL || '',
-                    name: data.name || 'User',
-                    timestamp: now
-                  });
-                  return { userId, data };
+                const logDoc = await getDoc(doc(db, 'raceLogs', targetId));
+                if (!logDoc.exists()) {
+                  deletedTargets.add(targetId);
                 }
               } catch (error) {
-                console.error('[ActivityFeed] Error fetching user profile:', error);
+                console.error('[ActivityFeed] Error checking race log existence:', error);
               }
-              return null;
             });
+            await Promise.all(targetPromises);
+          }
+
+          // Now fetch profiles for users that need them (and still exist)
+          if (userIdsNeedingProfile.size > 0) {
+            const profilePromises = Array.from(userIdsNeedingProfile)
+              .filter(userId => !deletedUsers.has(userId)) // Skip deleted users
+              .map(async (userId) => {
+                try {
+                  const userDoc = await getDoc(doc(db, 'users', userId));
+                  if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    // Cache the result
+                    userProfileCache.set(userId, {
+                      photoURL: data.photoURL || '',
+                      name: data.name || 'User',
+                      timestamp: now
+                    });
+                    return { userId, data };
+                  }
+                } catch (error) {
+                  console.error('[ActivityFeed] Error fetching user profile:', error);
+                }
+                return null;
+              });
 
             const profileResults = await Promise.all(profilePromises);
             profileResults.forEach(result => {
@@ -264,35 +365,38 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
             });
           }
 
-          // Map filtered activities with cached user data
-          const followingActivities = followingActivitiesData.map(data => {
-            let userAvatar = data.userAvatar || '';
-            let username = data.username || 'User';
+          // Map filtered activities with cached user data and filter out deleted users AND deleted targets
+          const followingActivities = followingActivitiesData
+            .filter(data => !deletedUsers.has(data.userId)) // Filter out activities from deleted users
+            .filter(data => !deletedTargets.has(data.targetId)) // Filter out activities with deleted targets
+            .map(data => {
+              let userAvatar = data.userAvatar || '';
+              let username = data.username || 'User';
 
-            // Use cached user profile data if available
-            if (!userAvatar && data.userId) {
-              // First check the newly fetched data
-              const userData = userProfilesMap.get(data.userId);
-              if (userData) {
-                userAvatar = userData.photoURL || '';
-                username = userData.name || username;
-              } else {
-                // Fall back to cache
-                const cached = userProfileCache.get(data.userId);
-                if (cached) {
-                  userAvatar = cached.photoURL;
-                  username = cached.name;
+              // Use cached user profile data if available
+              if (!userAvatar && data.userId) {
+                // First check the newly fetched data
+                const userData = userProfilesMap.get(data.userId);
+                if (userData) {
+                  userAvatar = userData.photoURL || '';
+                  username = userData.name || username;
+                } else {
+                  // Fall back to cache
+                  const cached = userProfileCache.get(data.userId);
+                  if (cached) {
+                    userAvatar = cached.photoURL;
+                    username = cached.name;
+                  }
                 }
               }
-            }
 
-            return {
-              ...data,
-              username,
-              userAvatar,
-              createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
-            } as Activity;
-          });
+              return {
+                ...data,
+                username,
+                userAvatar,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+              } as Activity;
+            });
 
           console.log('[ActivityFeed] Filtered to', followingActivities.length, 'activities from', followingIds.length, 'followed users');
           console.log('[ActivityFeed] Following IDs:', followingIds);
