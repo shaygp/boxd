@@ -40,6 +40,10 @@ const getUserTeamColor = (userId: string) => {
   return teamColors[Math.abs(hash) % teamColors.length];
 };
 
+// Global cache for user profiles to avoid refetching
+const userProfileCache = new Map<string, { photoURL: string; name: string; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: ActivityFeedProps) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,9 +86,15 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
           }));
 
           const userIdsNeedingProfile = new Set<string>();
+          const now = Date.now();
+
           activitiesData.forEach(data => {
             if (!data.userAvatar && data.userId) {
-              userIdsNeedingProfile.add(data.userId);
+              // Check cache first
+              const cached = userProfileCache.get(data.userId);
+              if (!cached || (now - cached.timestamp) > CACHE_DURATION) {
+                userIdsNeedingProfile.add(data.userId);
+              }
             }
           });
 
@@ -95,7 +105,14 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
               try {
                 const userDoc = await getDoc(doc(db, 'users', userId));
                 if (userDoc.exists()) {
-                  return { userId, data: userDoc.data() };
+                  const data = userDoc.data();
+                  // Cache the result
+                  userProfileCache.set(userId, {
+                    photoURL: data.photoURL || '',
+                    name: data.name || 'User',
+                    timestamp: now
+                  });
+                  return { userId, data };
                 }
               } catch (error) {
                 console.error('[ActivityFeed] Error fetching user profile:', error);
@@ -118,10 +135,18 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
 
             // Use cached user profile data if available
             if (!userAvatar && data.userId) {
+              // First check the newly fetched data
               const userData = userProfilesMap.get(data.userId);
               if (userData) {
                 userAvatar = userData.photoURL || '';
                 username = userData.name || username;
+              } else {
+                // Fall back to cache
+                const cached = userProfileCache.get(data.userId);
+                if (cached) {
+                  userAvatar = cached.photoURL;
+                  username = cached.name;
+                }
               }
             }
 
@@ -197,9 +222,15 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
 
           // Collect unique user IDs that need profile data (only for filtered activities)
           const userIdsNeedingProfile = new Set<string>();
+          const now = Date.now();
+
           followingActivitiesData.forEach(data => {
             if (!data.userAvatar && data.userId) {
-              userIdsNeedingProfile.add(data.userId);
+              // Check cache first
+              const cached = userProfileCache.get(data.userId);
+              if (!cached || (now - cached.timestamp) > CACHE_DURATION) {
+                userIdsNeedingProfile.add(data.userId);
+              }
             }
           });
 
@@ -210,7 +241,14 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
               try {
                 const userDoc = await getDoc(doc(db, 'users', userId));
                 if (userDoc.exists()) {
-                  return { userId, data: userDoc.data() };
+                  const data = userDoc.data();
+                  // Cache the result
+                  userProfileCache.set(userId, {
+                    photoURL: data.photoURL || '',
+                    name: data.name || 'User',
+                    timestamp: now
+                  });
+                  return { userId, data };
                 }
               } catch (error) {
                 console.error('[ActivityFeed] Error fetching user profile:', error);
@@ -233,10 +271,18 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
 
             // Use cached user profile data if available
             if (!userAvatar && data.userId) {
+              // First check the newly fetched data
               const userData = userProfilesMap.get(data.userId);
               if (userData) {
                 userAvatar = userData.photoURL || '';
                 username = userData.name || username;
+              } else {
+                // Fall back to cache
+                const cached = userProfileCache.get(data.userId);
+                if (cached) {
+                  userAvatar = cached.photoURL;
+                  username = cached.name;
+                }
               }
             }
 

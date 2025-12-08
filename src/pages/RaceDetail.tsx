@@ -35,7 +35,6 @@ const RaceDetail = () => {
   const [searchParams] = useSearchParams();
   const highlightReviewId = searchParams.get('highlight');
   const year = season;
-  const reviewRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Only log on mount to avoid spam
   // console.log('[RaceDetail] URL Params:', { id, season, year, round, highlightReviewId });
@@ -194,24 +193,6 @@ const RaceDetail = () => {
     }
   }, [highlightReviewId, loading]);
 
-  // Scroll to highlighted review when page loads
-  useEffect(() => {
-    if (highlightReviewId && !loading && showAllReviews) {
-      // Wait longer and try multiple times to ensure DOM is ready
-      const attemptScroll = (attempts = 0) => {
-        if (reviewRefs.current[highlightReviewId]) {
-          reviewRefs.current[highlightReviewId]?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          });
-        } else if (attempts < 10) {
-          setTimeout(() => attemptScroll(attempts + 1), 200);
-        }
-      };
-      setTimeout(() => attemptScroll(), 300);
-    }
-  }, [highlightReviewId, loading, showAllReviews, allRaceLogs]);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] racing-grid">
@@ -329,6 +310,12 @@ const RaceDetail = () => {
       return matchesRace && log.sessionType === sessionFilter;
     })
     .sort((a, b) => {
+      // Always put highlighted review first
+      if (highlightReviewId) {
+        if (a.id === highlightReviewId) return -1;
+        if (b.id === highlightReviewId) return 1;
+      }
+
       if (reviewFilter === 'liked') {
         // Sort by likes count (descending)
         const aLikes = a.likesCount || 0;
@@ -726,17 +713,8 @@ const RaceDetail = () => {
                   <>
                   {(showAllReviews ? reviews : reviews.slice(0, 10)).map((review) => {
                     const isHighlighted = highlightReviewId === review.id;
-                    if (isHighlighted) {
-                      console.log('[RaceDetail] Rendering highlighted review:', review.id);
-                    }
                     return (<Card
                       key={review.id}
-                      ref={(el) => {
-                        reviewRefs.current[review.id] = el;
-                        if (el && isHighlighted) {
-                          console.log('[RaceDetail] Ref set for highlighted review:', review.id);
-                        }
-                      }}
                       className={`p-4 sm:p-5 border backdrop-blur-sm hover:bg-black/80 transition-all ${
                         isHighlighted
                           ? 'border-racing-red border-2 bg-racing-red/10 shadow-[0_0_20px_rgba(220,38,38,0.3)]'
