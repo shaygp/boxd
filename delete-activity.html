@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Delete Activity</title>
+</head>
+<body>
+  <h1>Delete Activity O601kQp3dDmF2jyD4MpU</h1>
+  <button id="deleteBtn">Delete Activity</button>
+  <div id="result"></div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, doc, deleteDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC3jfMIVYvTdWnDZ0CWxRRqOvwLxv1pJhk",
+      authDomain: "race-logger-66c2c.firebaseapp.com",
+      projectId: "race-logger-66c2c",
+      storageBucket: "race-logger-66c2c.firebasestorage.app",
+      messagingSenderId: "324513878899",
+      appId: "1:324513878899:web:0be9db23fc92f4c6cd0fe1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    document.getElementById('deleteBtn').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('result');
+      try {
+        resultDiv.innerHTML = 'Checking activity...';
+
+        const activityRef = doc(db, 'activities', 'O601kQp3dDmF2jyD4MpU');
+        const activityDoc = await getDoc(activityRef);
+
+        if (activityDoc.exists()) {
+          resultDiv.innerHTML = 'Activity found: ' + JSON.stringify(activityDoc.data(), null, 2) + '<br><br>Deleting...';
+          await deleteDoc(activityRef);
+          resultDiv.innerHTML += '<br><strong style="color: green;">Activity deleted successfully!</strong>';
+        } else {
+          resultDiv.innerHTML = '<strong style="color: orange;">Activity not found - may already be deleted</strong>';
+        }
+      } catch (error) {
+        resultDiv.innerHTML = '<strong style="color: red;">Error: ' + error.message + '</strong><br><br>You need to be logged in to your app. Please open this file while logged into http://localhost:8085';
+      }
+    });
+  </script>
+</body>
+</html>

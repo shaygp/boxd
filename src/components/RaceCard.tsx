@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Star, Eye, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getCountryFlag, getRaceWinner } from "@/services/f1Api";
@@ -24,6 +25,7 @@ interface RaceCardProps {
   showWatchlistButton?: boolean;
   winner?: string;
   onWatchlistChange?: () => void;
+  sessionType?: string;
 }
 
 const RaceCardComponent = ({
@@ -40,6 +42,7 @@ const RaceCardComponent = ({
   showWatchlistButton = true,
   winner,
   onWatchlistChange,
+  sessionType,
 }: RaceCardProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -203,6 +206,23 @@ const RaceCardComponent = ({
             <div className="text-center space-y-0.5">
               <div className="text-base sm:text-lg md:text-xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season}</div>
               <div className="text-[10px] sm:text-xs font-black line-clamp-2 px-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</div>
+              {sessionType && (
+                <div className="flex justify-center">
+                  <Badge variant="outline" className={`text-[8px] sm:text-[9px] px-1 py-0 h-4 font-bold uppercase tracking-wider ${
+                    sessionType === 'race' ? 'border-racing-red/60 text-racing-red bg-racing-red/10' :
+                    sessionType === 'sprint' ? 'border-orange-500/60 text-orange-500 bg-orange-500/10' :
+                    sessionType === 'qualifying' ? 'border-blue-500/60 text-blue-500 bg-blue-500/10' :
+                    sessionType === 'sprintQualifying' ? 'border-purple-500/60 text-purple-500 bg-purple-500/10' :
+                    'border-gray-500/60 text-gray-500 bg-gray-500/10'
+                  }`}>
+                    {sessionType === 'race' ? '🏁 Race' :
+                     sessionType === 'sprint' ? '⚡ Sprint' :
+                     sessionType === 'qualifying' ? '🏎️ Qualifying' :
+                     sessionType === 'sprintQualifying' ? '⚡ Sprint Qual' :
+                     sessionType}
+                  </Badge>
+                </div>
+              )}
               {displayWinner && (
                 <div className="text-xs sm:text-sm font-black text-racing-red line-clamp-1 px-1 flex items-center justify-center gap-1 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
                   <span>🏆 {displayWinner}</span>
@@ -261,7 +281,7 @@ const RaceCardComponent = ({
       {/* Info */}
       <div className="p-1.5 sm:p-2 text-center sm:text-left bg-gradient-to-b from-black/90 to-black border-t-2 border-red-900/40">
         <h3 className="font-black text-xs sm:text-sm line-clamp-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</h3>
-        <p className="text-[10px] sm:text-xs text-gray-300 mt-0.5 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season} • R{round}</p>
+        <p className="text-[10px] sm:text-xs text-gray-300 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)] mt-0.5">{season} • R{round}</p>
         <p className="text-[10px] sm:text-xs text-gray-400 line-clamp-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{circuit}</p>
       </div>
     </Card>

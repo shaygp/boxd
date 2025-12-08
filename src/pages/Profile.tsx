@@ -125,6 +125,7 @@ const Profile = () => {
         rating: log.rating,
         watched: true,
         country: log.countryCode,
+        sessionType: log.sessionType,
       })));
 
       // Prepare all remaining async tasks
@@ -627,16 +628,9 @@ const Profile = () => {
                                 )}
                               </div>
 
-                              {/* Driver of the Day and Session Type */}
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {log.driverOfTheDay && (
-                                  <div className="text-sm text-gray-400">
-                                    <span>Driver of the Day: </span>
-                                    <span className="text-white font-medium">{log.driverOfTheDay}</span>
-                                  </div>
-                                )}
-                                {/* Session Type Badge */}
-                                {log.sessionType && (
+                              {/* Session Type Badge */}
+                              {log.sessionType && (
+                                <div className="mb-1">
                                   <Badge variant="outline" className={`text-xs font-bold uppercase tracking-wider ${
                                     log.sessionType === 'race' ? 'border-racing-red/60 text-racing-red' :
                                     log.sessionType === 'sprint' ? 'border-orange-500/60 text-orange-500' :
@@ -650,8 +644,16 @@ const Profile = () => {
                                      log.sessionType === 'sprintQualifying' ? '⚡ Sprint Qualifying' :
                                      log.sessionType}
                                   </Badge>
-                                )}
-                              </div>
+                                </div>
+                              )}
+
+                              {/* Driver of the Day */}
+                              {log.driverOfTheDay && (
+                                <div className="text-sm text-gray-400">
+                                  <span>Driver of the Day: </span>
+                                  <span className="text-white font-medium">{log.driverOfTheDay}</span>
+                                </div>
+                              )}
                             </div>
 
                             {/* Review text */}

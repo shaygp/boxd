@@ -27,7 +27,7 @@ export interface RaceLog {
   round?: number;
   countryCode?: string;
   dateWatched: Date;
-  sessionType: 'race' | 'sprint' | 'qualifying' | 'highlights';
+  sessionType: 'race' | 'sprint' | 'qualifying' | 'sprintQualifying' | 'highlights';
   watchMode: 'live' | 'replay' | 'tvBroadcast' | 'highlights' | 'attendedInPerson';
   rating: number;
   review: string;
@@ -336,11 +336,13 @@ export const calculateTotalHoursWatched = (logs: RaceLog[]): number => {
       case 'qualifying':
         hours = 1;
         break;
+      case 'sprintQualifying':
+        hours = 0.5;
+        break;
       case 'highlights':
         hours = 0.25;
         break;
       default:
-        // Fallback for any unhandled session types (e.g., 'sprintQualifying')
         hours = 1;
         console.warn(`[calculateTotalHoursWatched] Unknown sessionType: ${log.sessionType}, using 1 hour default`);
         break;

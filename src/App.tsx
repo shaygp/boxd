@@ -25,6 +25,7 @@ import Support from "./pages/Support";
 import SeedData from "./pages/SeedData";
 import { FormulaWrapped } from "./pages/FormulaWrapped";
 import LiveChatPage from "./pages/LiveChatPage";
+import DeleteActivity from "./pages/DeleteActivity";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,7 @@ const App = () => (
             <Route path="/support" element={<Support />} />
             <Route path="/seed-data" element={<ProtectedRoute><SeedData /></ProtectedRoute>} />
             <Route path="/wrapped" element={<ProtectedRoute><FormulaWrapped /></ProtectedRoute>} />
+            <Route path="/delete-activity" element={<ProtectedRoute><DeleteActivity /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
