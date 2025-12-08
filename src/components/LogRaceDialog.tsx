@@ -787,7 +787,12 @@ export const LogRaceDialog = ({
             <Textarea
               value={review}
               onChange={(e) => setReview(e.target.value)}
-              placeholder="Share your thoughts about this race... What made it memorable?"
+              placeholder={
+                sessionType === 'race' ? "Share your thoughts about this race... What made it memorable?" :
+                sessionType === 'sprint' ? "Share your thoughts about this sprint... What made it memorable?" :
+                sessionType === 'qualifying' ? "Share your thoughts about this qualifying session... What made it memorable?" :
+                "Share your thoughts about this session... What made it memorable?"
+              }
               className="min-h-[120px] border-2 border-red-900/40 focus:border-racing-red bg-black/60 text-white resize-none"
             />
             <div className="flex items-center gap-2 pt-2">
