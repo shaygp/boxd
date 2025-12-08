@@ -14,7 +14,7 @@ import { CalendarIcon, Plus, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { createRaceLog, updateRaceLog } from "@/services/raceLogs";
+import { createRaceLog, updateRaceLog, getUserRaceLogs } from "@/services/raceLogs";
 import { createActivity } from "@/services/activity";
 import { getUserProfile } from "@/services/auth";
 import { getCountryCodeFromName, getRaceWinner } from "@/services/f1Api";
@@ -73,6 +73,8 @@ export const LogRaceDialog = ({
   const [loadingCircuits, setLoadingCircuits] = useState(false);
   const [weGotYouYuki, setWeGotYouYuki] = useState(false);
   const hasPrefilledRef = useRef(false);
+  const [loadedExistingLog, setLoadedExistingLog] = useState<any>(null);
+  const [isEditMode, setIsEditMode] = useState(editMode);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -471,6 +473,51 @@ export const LogRaceDialog = ({
         watchMode,
       });
 
+      // Check for duplicate logs (only when creating new, not editing)
+      if (!isEditMode && !loadedExistingLog) {
+        const userLogs = await getUserRaceLogs(user.uid);
+        const duplicateLog = userLogs.find(log =>
+          log.raceName === raceName &&
+          log.raceYear === raceYear &&
+          log.sessionType === sessionType
+        );
+
+        if (duplicateLog) {
+          setLoading(false);
+          // Load the existing log for editing
+          console.log('[LogRaceDialog] Found existing log, switching to edit mode:', duplicateLog);
+          setLoadedExistingLog(duplicateLog);
+          setIsEditMode(true);
+          setRaceName(duplicateLog.raceName || '');
+          setRaceLocation(duplicateLog.raceLocation || '');
+          setRaceYear(duplicateLog.raceYear || new Date().getFullYear());
+          setRating(duplicateLog.rating || 0);
+          setReview(duplicateLog.review || '');
+          setSessionType(duplicateLog.sessionType || 'race');
+          setWatchMode(duplicateLog.watchMode || 'live');
+          setVisibility(duplicateLog.visibility || 'public');
+          setCompanions(duplicateLog.companions || []);
+          setDriverOfTheDay(duplicateLog.driverOfTheDay || '');
+          setRaceWinner(duplicateLog.raceWinner || '');
+          setSpoiler(duplicateLog.spoilerWarning || false);
+          setWeGotYouYuki(duplicateLog.weGotYouYuki || false);
+          setCountryCode(duplicateLog.countryCode);
+
+          if (duplicateLog.dateWatched) {
+            const watchedDate = duplicateLog.dateWatched instanceof Date
+              ? duplicateLog.dateWatched
+              : new Date(duplicateLog.dateWatched);
+            setDate(watchedDate);
+          }
+
+          toast({
+            title: "Editing existing log",
+            description: `You've already logged this ${sessionType}. Your existing log has been loaded for editing.`,
+          });
+          return;
+        }
+      }
+
       // Try to fetch the round number from the F1 calendar
       let round: number | undefined;
       try {
@@ -511,10 +558,11 @@ export const LogRaceDialog = ({
 
       let logId: string;
 
-      if (editMode && existingLog?.id) {
+      const currentExistingLog = loadedExistingLog || existingLog;
+      if (isEditMode && currentExistingLog?.id) {
         // Update existing log
-        await updateRaceLog(existingLog.id, logData);
-        logId = existingLog.id;
+        await updateRaceLog(currentExistingLog.id, logData);
+        logId = currentExistingLog.id;
         console.log('[LogRaceDialog] Race log updated successfully:', logId);
         toast({ title: "Race log updated successfully!" });
       } else {
@@ -922,7 +970,7 @@ export const LogRaceDialog = ({
                 Saving...
               </span>
             ) : (
-              editMode ? 'Update' : 'Save'
+              isEditMode ? 'Update' : 'Save'
             )}
           </Button>
         </div>
