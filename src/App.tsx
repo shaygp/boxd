@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
@@ -18,7 +17,6 @@ import Search from "./pages/Search";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
-import Offline from "./pages/Offline";
 import Test from "./pages/Test";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -58,42 +56,6 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppContent = () => {
-  const isOnline = useOnlineStatus();
-
-  if (!isOnline) {
-    return <Offline />;
-  }
-
-  return (
-    <Routes>
-      <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-      <Route path="/test" element={<Test />} />
-      <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/user/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/diary" element={<ProtectedRoute><Diary /></ProtectedRoute>} />
-      <Route path="/watchlist" element={<ProtectedRoute><Watchlist /></ProtectedRoute>} />
-      <Route path="/lists" element={<ProtectedRoute><Lists /></ProtectedRoute>} />
-      <Route path="/list/:listId" element={<ProtectedRoute><ListDetail /></ProtectedRoute>} />
-      <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
-      <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
-      <Route path="/race/:id" element={<ProtectedRoute><RaceDetail /></ProtectedRoute>} />
-      <Route path="/race/:season/:round" element={<ProtectedRoute><RaceDetail /></ProtectedRoute>} />
-      <Route path="/live-chat/:year/:round" element={<ProtectedRoute><LiveChatPage /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-      <Route path="/terms-of-service" element={<TermsOfService />} />
-      <Route path="/support" element={<Support />} />
-      <Route path="/seed-data" element={<ProtectedRoute><SeedData /></ProtectedRoute>} />
-      <Route path="/wrapped" element={<ProtectedRoute><FormulaWrapped /></ProtectedRoute>} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -101,7 +63,31 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppContent />
+          <Routes>
+            <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/test" element={<Test />} />
+            <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/user/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/diary" element={<ProtectedRoute><Diary /></ProtectedRoute>} />
+            <Route path="/watchlist" element={<ProtectedRoute><Watchlist /></ProtectedRoute>} />
+            <Route path="/lists" element={<ProtectedRoute><Lists /></ProtectedRoute>} />
+            <Route path="/list/:listId" element={<ProtectedRoute><ListDetail /></ProtectedRoute>} />
+            <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
+            <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
+            <Route path="/race/:id" element={<ProtectedRoute><RaceDetail /></ProtectedRoute>} />
+            <Route path="/race/:season/:round" element={<ProtectedRoute><RaceDetail /></ProtectedRoute>} />
+            <Route path="/live-chat/:year/:round" element={<ProtectedRoute><LiveChatPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/seed-data" element={<ProtectedRoute><SeedData /></ProtectedRoute>} />
+            <Route path="/wrapped" element={<ProtectedRoute><FormulaWrapped /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
