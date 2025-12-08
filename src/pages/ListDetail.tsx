@@ -8,7 +8,7 @@ import { EditListDialog } from "@/components/EditListDialog";
 import { Heart, MessageSquare, Share2, Edit, Trash2, Lock, Globe, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getListById, deleteList, removeRaceFromList, likeList, unlikeList, isListLiked } from "@/services/lists";
+import { getListById, deleteList, removeRaceFromList, likeList, unlikeList, isListLiked, updateList } from "@/services/lists";
 import { getRacesBySeason as getFirestoreRacesBySeason } from "@/services/f1Calendar";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +32,7 @@ const ListDetail = () => {
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const loadList = async () => {
     if (!listId) {
@@ -164,6 +165,43 @@ const ListDetail = () => {
       toast({
         title: "Error",
         description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex || !listId) return;
+
+    const newRaces = [...list.races];
+    const [movedRace] = newRaces.splice(draggedIndex, 1);
+    newRaces.splice(dropIndex, 0, movedRace);
+
+    // Update order property
+    const reorderedRaces = newRaces.map((race, index) => ({
+      ...race,
+      order: index
+    }));
+
+    try {
+      await updateList(listId, { races: reorderedRaces });
+      setList({ ...list, races: reorderedRaces });
+      setDraggedIndex(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to reorder races",
         variant: "destructive"
       });
     }
@@ -445,7 +483,11 @@ const ListDetail = () => {
                 .map((race: any, idx: number) => (
                   <Card
                     key={idx}
-                    className="relative bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all cursor-pointer group/race"
+                    draggable={isOwner}
+                    onDragStart={(e) => handleDragStart(e, idx)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, idx)}
+                    className={`relative bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all ${isOwner ? 'cursor-move' : 'cursor-pointer'} group/race ${draggedIndex === idx ? 'opacity-50' : ''}`}
                     onClick={() => navigate(`/race/${race.raceYear}/${race.round || 1}`)}
                   >
                     <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
