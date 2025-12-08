@@ -106,81 +106,41 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
           const userProfilesMap = new Map<string, any>();
           const deletedUsers = new Set<string>(); // Track users that don't exist
 
-          // Check ALL users to see if they still exist
-          const allUserPromises = Array.from(allUserIds).map(async (userId) => {
-            try {
-              const userDoc = await getDoc(doc(db, 'users', userId));
-              if (!userDoc.exists()) {
-                deletedUsers.add(userId);
-              }
-              return { userId, exists: userDoc.exists() };
-            } catch (error) {
-              console.error('[ActivityFeed] Error checking user existence:', error);
-            }
-            return null;
-          });
-
-          await Promise.all(allUserPromises);
-
-          // Check if target race logs/reviews still exist
-          const targetIds = new Set<string>();
-          const deletedTargets = new Set<string>();
-
-          activitiesData.forEach(data => {
-            if (data.targetType === 'raceLog' && data.targetId) {
-              targetIds.add(data.targetId);
-            }
-          });
-
-          if (targetIds.size > 0) {
-            const targetPromises = Array.from(targetIds).map(async (targetId) => {
+          if (userIdsNeedingProfile.size > 0) {
+            const profilePromises = Array.from(userIdsNeedingProfile).map(async (userId) => {
               try {
-                const logDoc = await getDoc(doc(db, 'raceLogs', targetId));
-                if (!logDoc.exists()) {
-                  deletedTargets.add(targetId);
+                const userDoc = await getDoc(doc(db, 'users', userId));
+                if (userDoc.exists()) {
+                  const data = userDoc.data();
+                  // Cache the result
+                  userProfileCache.set(userId, {
+                    photoURL: data.photoURL || '',
+                    name: data.name || 'User',
+                    timestamp: now
+                  });
+                  return { userId, data, exists: true };
+                } else {
+                  // User doesn't exist - mark for filtering
+                  deletedUsers.add(userId);
+                  return { userId, data: null, exists: false };
                 }
               } catch (error) {
-                console.error('[ActivityFeed] Error checking race log existence:', error);
+                console.error('[ActivityFeed] Error fetching user profile:', error);
               }
+              return null;
             });
-            await Promise.all(targetPromises);
-          }
-
-          // Now fetch profiles for users that need them (and still exist)
-          if (userIdsNeedingProfile.size > 0) {
-            const profilePromises = Array.from(userIdsNeedingProfile)
-              .filter(userId => !deletedUsers.has(userId)) // Skip deleted users
-              .map(async (userId) => {
-                try {
-                  const userDoc = await getDoc(doc(db, 'users', userId));
-                  if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    // Cache the result
-                    userProfileCache.set(userId, {
-                      photoURL: data.photoURL || '',
-                      name: data.name || 'User',
-                      timestamp: now
-                    });
-                    return { userId, data };
-                  }
-                } catch (error) {
-                  console.error('[ActivityFeed] Error fetching user profile:', error);
-                }
-                return null;
-              });
 
             const profileResults = await Promise.all(profilePromises);
             profileResults.forEach(result => {
-              if (result) {
+              if (result && result.exists && result.data) {
                 userProfilesMap.set(result.userId, result.data);
               }
             });
           }
 
-          // Map activities with cached user data and filter out deleted users AND deleted targets
+          // Map activities with cached user data and filter out deleted users
           const activities = activitiesData
             .filter(data => !deletedUsers.has(data.userId)) // Filter out activities from deleted users
-            .filter(data => !deletedTargets.has(data.targetId)) // Filter out activities with deleted targets
             .map(data => {
               let userAvatar = data.userAvatar || '';
               let username = data.username || 'User';
@@ -294,81 +254,41 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
           const userProfilesMap = new Map<string, any>();
           const deletedUsers = new Set<string>(); // Track users that don't exist
 
-          // Check ALL users to see if they still exist
-          const allUserPromises = Array.from(allUserIds).map(async (userId) => {
-            try {
-              const userDoc = await getDoc(doc(db, 'users', userId));
-              if (!userDoc.exists()) {
-                deletedUsers.add(userId);
-              }
-              return { userId, exists: userDoc.exists() };
-            } catch (error) {
-              console.error('[ActivityFeed] Error checking user existence:', error);
-            }
-            return null;
-          });
-
-          await Promise.all(allUserPromises);
-
-          // Check if target race logs/reviews still exist
-          const targetIds = new Set<string>();
-          const deletedTargets = new Set<string>();
-
-          followingActivitiesData.forEach(data => {
-            if (data.targetType === 'raceLog' && data.targetId) {
-              targetIds.add(data.targetId);
-            }
-          });
-
-          if (targetIds.size > 0) {
-            const targetPromises = Array.from(targetIds).map(async (targetId) => {
+          if (userIdsNeedingProfile.size > 0) {
+            const profilePromises = Array.from(userIdsNeedingProfile).map(async (userId) => {
               try {
-                const logDoc = await getDoc(doc(db, 'raceLogs', targetId));
-                if (!logDoc.exists()) {
-                  deletedTargets.add(targetId);
+                const userDoc = await getDoc(doc(db, 'users', userId));
+                if (userDoc.exists()) {
+                  const data = userDoc.data();
+                  // Cache the result
+                  userProfileCache.set(userId, {
+                    photoURL: data.photoURL || '',
+                    name: data.name || 'User',
+                    timestamp: now
+                  });
+                  return { userId, data, exists: true };
+                } else {
+                  // User doesn't exist - mark for filtering
+                  deletedUsers.add(userId);
+                  return { userId, data: null, exists: false };
                 }
               } catch (error) {
-                console.error('[ActivityFeed] Error checking race log existence:', error);
+                console.error('[ActivityFeed] Error fetching user profile:', error);
               }
+              return null;
             });
-            await Promise.all(targetPromises);
-          }
-
-          // Now fetch profiles for users that need them (and still exist)
-          if (userIdsNeedingProfile.size > 0) {
-            const profilePromises = Array.from(userIdsNeedingProfile)
-              .filter(userId => !deletedUsers.has(userId)) // Skip deleted users
-              .map(async (userId) => {
-                try {
-                  const userDoc = await getDoc(doc(db, 'users', userId));
-                  if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    // Cache the result
-                    userProfileCache.set(userId, {
-                      photoURL: data.photoURL || '',
-                      name: data.name || 'User',
-                      timestamp: now
-                    });
-                    return { userId, data };
-                  }
-                } catch (error) {
-                  console.error('[ActivityFeed] Error fetching user profile:', error);
-                }
-                return null;
-              });
 
             const profileResults = await Promise.all(profilePromises);
             profileResults.forEach(result => {
-              if (result) {
+              if (result && result.exists && result.data) {
                 userProfilesMap.set(result.userId, result.data);
               }
             });
           }
 
-          // Map filtered activities with cached user data and filter out deleted users AND deleted targets
+          // Map filtered activities with cached user data and filter out deleted users
           const followingActivities = followingActivitiesData
             .filter(data => !deletedUsers.has(data.userId)) // Filter out activities from deleted users
-            .filter(data => !deletedTargets.has(data.targetId)) // Filter out activities with deleted targets
             .map(data => {
               let userAvatar = data.userAvatar || '';
               let username = data.username || 'User';
