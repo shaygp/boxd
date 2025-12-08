@@ -6,6 +6,7 @@ import { LogRaceDialog } from "@/components/LogRaceDialog";
 import { PredictionBox } from "@/components/PredictionBox";
 import { StarRating } from "@/components/StarRating";
 import { AddToListDialog } from "@/components/AddToListDialog";
+import { RaceHighlightsDialog } from "@/components/RaceHighlightsDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Heart, Bookmark, Share2, Eye, Star, MessageSquare, List, Edit, Trash2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -37,8 +38,8 @@ const RaceDetail = () => {
   const reviewRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Only log on mount to avoid spam
-  console.log('[RaceDetail] URL Params:', { id, season, year, round, highlightReviewId });
-  console.log('[RaceDetail] Highlight parameter from URL:', highlightReviewId);
+  // console.log('[RaceDetail] URL Params:', { id, season, year, round, highlightReviewId });
+  // console.log('[RaceDetail] Highlight parameter from URL:', highlightReviewId);
 
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [watchlistId, setWatchlistId] = useState<string | null>(null);
@@ -61,13 +62,13 @@ const RaceDetail = () => {
   const { toast } = useToast();
 
   const loadRaceData = async () => {
-    console.log('[RaceDetail] Starting data load...');
+    // console.log('[RaceDetail] Starting data load...');
 
     try {
       if (id) {
-        console.log('[RaceDetail] Loading by ID:', id);
+        // console.log('[RaceDetail] Loading by ID:', id);
         const log = await getRaceLogById(id);
-        console.log('[RaceDetail] Race log by ID:', log);
+        // console.log('[RaceDetail] Race log by ID:', log);
 
         if (log) {
           setRaceLog(log);
@@ -97,7 +98,7 @@ const RaceDetail = () => {
 
           const [raceLogs, firestoreRace] = await Promise.all(parallelTasks);
 
-          console.log('[RaceDetail] Loaded', raceLogs.length, 'race-specific logs');
+          // console.log('[RaceDetail] Loaded', raceLogs.length, 'race-specific logs');
           setAllRaceLogs(raceLogs);
 
           if (firestoreRace) {
@@ -195,24 +196,21 @@ const RaceDetail = () => {
 
   // Scroll to highlighted review when page loads
   useEffect(() => {
-    console.log('[RaceDetail] Scroll effect triggered:', { highlightReviewId, loading, hasRef: !!reviewRefs.current[highlightReviewId] });
-    if (highlightReviewId && !loading && reviewRefs.current[highlightReviewId]) {
-      console.log('[RaceDetail] Scrolling to highlighted review:', highlightReviewId);
-      setTimeout(() => {
-        reviewRefs.current[highlightReviewId]?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
-      }, 500); // Wait for page to finish loading
-    } else {
-      console.log('[RaceDetail] Not scrolling because:', {
-        hasHighlight: !!highlightReviewId,
-        isLoading: loading,
-        hasRef: highlightReviewId ? !!reviewRefs.current[highlightReviewId] : 'no highlight id',
-        availableRefs: Object.keys(reviewRefs.current)
-      });
+    if (highlightReviewId && !loading && showAllReviews) {
+      // Wait longer and try multiple times to ensure DOM is ready
+      const attemptScroll = (attempts = 0) => {
+        if (reviewRefs.current[highlightReviewId]) {
+          reviewRefs.current[highlightReviewId]?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        } else if (attempts < 10) {
+          setTimeout(() => attemptScroll(attempts + 1), 200);
+        }
+      };
+      setTimeout(() => attemptScroll(), 300);
     }
-  }, [highlightReviewId, loading, showAllReviews]);
+  }, [highlightReviewId, loading, showAllReviews, allRaceLogs]);
 
   if (loading) {
     return (
@@ -579,7 +577,7 @@ const RaceDetail = () => {
                 </div>
 
                 {/* Action Icons */}
-                <div className="flex gap-2 justify-center md:justify-start mt-4">
+                <div className="flex gap-2 flex-wrap justify-center md:justify-start mt-4">
                   <LogRaceDialog
                     trigger={
                       <Button size="icon" className="h-9 w-9 bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30">
@@ -632,6 +630,15 @@ const RaceDetail = () => {
                   <Button variant="outline" size="icon" className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" onClick={handleShare}>
                     <Share2 className="w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />
                   </Button>
+                </div>
+
+                {/* What Happened Button */}
+                <div className="mt-4 flex justify-center md:justify-start">
+                  <RaceHighlightsDialog
+                    year={race.season}
+                    round={race.round}
+                    raceName={race.gpName}
+                  />
                 </div>
               </div>
             </div>
