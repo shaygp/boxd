@@ -508,11 +508,9 @@ const Profile = () => {
                         key={log.id}
                         onClick={() => {
                           console.log('[Profile] Navigating to review:', { raceYear: log.raceYear, round: log.round, id: log.id });
-                          // Navigate to race detail with highlight parameter to scroll to the review
-                          if (log.round && log.raceYear) {
-                            navigate(`/race/${log.raceYear}/${log.round}?highlight=${log.id}`);
-                          } else if (log.id) {
-                            navigate(`/race/${log.id}`);
+                          // Always use the log ID to navigate to avoid crashes from missing round data
+                          if (log.id) {
+                            navigate(`/race/${log.id}?highlight=${log.id}`);
                           }
                         }}
                         className="border-b border-gray-800 hover:bg-gray-900/30 transition-colors cursor-pointer p-4"
