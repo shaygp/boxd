@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { CreateListDialog } from "@/components/CreateListDialog";
 import { LogRaceDialog } from "@/components/LogRaceDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight, Ban, Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
@@ -58,6 +59,7 @@ const Profile = () => {
   const [editingReview, setEditingReview] = useState<any>(null);
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
+  const [ratedSortBy, setRatedSortBy] = useState<'dateWatched' | 'raceDate' | 'ratingDate'>('dateWatched');
 
   const targetUserId = userId || currentUser?.uid;
   const isOwnProfile = !userId || userId === currentUser?.uid;
@@ -467,11 +469,48 @@ const Profile = () => {
             {loading ? (
               <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
             ) : logs.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-                {logs.map((race, idx) => (
-                  <RaceCard key={idx} {...race} />
-                ))}
-              </div>
+              <>
+                {/* Sort dropdown */}
+                <div className="flex justify-start mb-4">
+                  <Select value={ratedSortBy} onValueChange={(value: 'dateWatched' | 'raceDate' | 'ratingDate') => setRatedSortBy(value)}>
+                    <SelectTrigger className="w-[180px] h-8 text-xs font-bold uppercase tracking-wider bg-black/60 border-gray-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black/95 border-gray-700">
+                      <SelectItem value="dateWatched" className="text-xs font-bold uppercase text-white cursor-pointer">Date Watched</SelectItem>
+                      <SelectItem value="raceDate" className="text-xs font-bold uppercase text-white cursor-pointer">Race Date</SelectItem>
+                      <SelectItem value="ratingDate" className="text-xs font-bold uppercase text-white cursor-pointer">Rating Date</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                  {(() => {
+                    // Sort logs based on selected option
+                    const sortedLogs = [...logs].sort((a, b) => {
+                      if (ratedSortBy === 'dateWatched') {
+                        // Sort by date watched (most recent first)
+                        const aDate = new Date(a.date);
+                        const bDate = new Date(b.date);
+                        return bDate.getTime() - aDate.getTime();
+                      } else if (ratedSortBy === 'raceDate') {
+                        // Sort by race chronology (most recent season/round first)
+                        if (a.season !== b.season) {
+                          return b.season - a.season;
+                        }
+                        return b.round - a.round;
+                      } else {
+                        // ratingDate - keep original order (already sorted by creation date)
+                        return 0;
+                      }
+                    });
+
+                    return sortedLogs.map((race, idx) => (
+                      <RaceCard key={idx} {...race} />
+                    ));
+                  })()}
+                </div>
+              </>
             ) : (
               <EmptyState
                 icon={Calendar}
