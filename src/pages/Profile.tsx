@@ -116,6 +116,12 @@ const Profile = () => {
         date: log.dateWatched instanceof Date
           ? log.dateWatched.toISOString()
           : new Date(log.dateWatched).toISOString(),
+        dateWatched: log.dateWatched instanceof Date
+          ? log.dateWatched
+          : new Date(log.dateWatched),
+        createdAt: log.createdAt instanceof Date
+          ? log.createdAt
+          : new Date(log.createdAt),
         rating: log.rating,
         watched: true,
         country: log.countryCode,
@@ -487,12 +493,10 @@ const Profile = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
                   {(() => {
                     // Sort logs based on selected option
-                    const sortedLogs = [...logs].sort((a, b) => {
+                    const sortedLogs = [...logs].sort((a: any, b: any) => {
                       if (ratedSortBy === 'dateWatched') {
                         // Sort by date watched (most recent first)
-                        const aDate = new Date(a.date);
-                        const bDate = new Date(b.date);
-                        return bDate.getTime() - aDate.getTime();
+                        return b.dateWatched.getTime() - a.dateWatched.getTime();
                       } else if (ratedSortBy === 'raceDate') {
                         // Sort by race chronology (most recent season/round first)
                         if (a.season !== b.season) {
@@ -500,8 +504,8 @@ const Profile = () => {
                         }
                         return b.round - a.round;
                       } else {
-                        // ratingDate - keep original order (already sorted by creation date)
-                        return 0;
+                        // ratingDate - sort by creation date (most recent first)
+                        return b.createdAt.getTime() - a.createdAt.getTime();
                       }
                     });
 
