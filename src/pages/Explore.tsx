@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { CreateListDialog } from "@/components/CreateListDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Star, List, Calendar, History, MessageCircle, Heart, Plus } from "lucide-react";
+import { TrendingUp, Star, List, Calendar, History, MessageCircle, Heart, Plus, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPublicRaceLogs } from "@/services/raceLogs";
