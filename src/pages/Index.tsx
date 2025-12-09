@@ -294,7 +294,7 @@ const Index = () => {
 
         {/* Season Leaderboard */}
         {!tagFilter && seasonRatings.filter(s => s.count > 0).length > 0 && (
-          <section className="space-y-6">
+          <section className="space-y-6 bg-gradient-to-b from-black/80 via-racing-red/5 to-black/80 p-6 rounded-xl border-2 border-racing-red/20 backdrop-blur-sm shadow-[0_0_40px_rgba(220,38,38,0.1)]">
             {/* Section Header with Racing Flair */}
             <div className="relative overflow-hidden bg-gradient-to-r from-black via-racing-red/10 to-black p-4 rounded-lg border-2 border-racing-red/30">
               <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(220,38,38,0.05)_10px,rgba(220,38,38,0.05)_20px)]" />
@@ -350,9 +350,6 @@ const Index = () => {
                       <div className="mb-3 bg-black/40 px-4 py-2 rounded border border-gray-800/50 text-center">
                         <div className="text-3xl font-black text-gray-400 tracking-tighter leading-none">
                           {season.average.toFixed(1)}
-                        </div>
-                        <div className="text-[9px] text-gray-600 font-bold uppercase tracking-wider mt-1">
-                          {season.count} {season.count === 1 ? 'vote' : 'votes'}
                         </div>
                       </div>
 
@@ -416,9 +413,6 @@ const Index = () => {
                       <div className="mb-3 bg-racing-red/10 px-4 py-2 rounded border border-racing-red/30 text-center">
                         <div className="text-4xl font-black text-racing-red tracking-tighter leading-none">
                           {season.average.toFixed(1)}
-                        </div>
-                        <div className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-1">
-                          {season.count} {season.count === 1 ? 'vote' : 'votes'}
                         </div>
                       </div>
 
@@ -485,9 +479,6 @@ const Index = () => {
                       <div className="mb-3 bg-black/40 px-4 py-2 rounded border border-orange-900/30 text-center">
                         <div className="text-3xl font-black text-orange-700 tracking-tighter leading-none">
                           {season.average.toFixed(1)}
-                        </div>
-                        <div className="text-[9px] text-gray-600 font-bold uppercase tracking-wider mt-1">
-                          {season.count} {season.count === 1 ? 'vote' : 'votes'}
                         </div>
                       </div>
 

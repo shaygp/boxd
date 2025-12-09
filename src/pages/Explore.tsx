@@ -244,9 +244,12 @@ const Explore = () => {
                 ) : (
                   <button
                     onClick={() => setRateSeasonDialogOpen(true)}
-                    className="bg-black/60 hover:bg-racing-red/20 text-white px-2 py-1 text-xs rounded font-black uppercase tracking-wider border-2 border-racing-red transition-colors whitespace-nowrap"
+                    className="group relative bg-gradient-to-r from-racing-red/10 to-racing-red/5 hover:from-racing-red hover:to-red-600 text-white px-4 py-2 text-xs rounded-md font-black uppercase tracking-wider border-2 border-racing-red hover:border-red-400 transition-all duration-300 whitespace-nowrap shadow-lg hover:shadow-red-500/50 backdrop-blur-sm"
                   >
-                    Rate
+                    <span className="flex items-center gap-1.5">
+                      <Star className="w-3.5 h-3.5 group-hover:fill-yellow-400 group-hover:text-yellow-400 transition-all" />
+                      Rate this season
+                    </span>
                   </button>
                 )}
               </div>
