@@ -289,9 +289,8 @@ export const EditProfileDialog = ({ profile, onSuccess }: EditProfileDialogProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 text-xs">
-          <Edit className="w-3.5 h-3.5" />
-          Edit Profile
+        <Button variant="outline" size="sm" className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20">
+          <Edit className="w-4 h-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm w-[90vw] sm:w-full bg-black border-2 border-racing-red/40 max-h-[85vh] overflow-y-auto">

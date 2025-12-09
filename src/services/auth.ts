@@ -6,7 +6,7 @@ import {
   sendEmailVerification,
   User
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, Timestamp, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, Timestamp, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, db, storage } from '@/lib/firebase';
 
@@ -275,5 +275,17 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
   } catch (error: any) {
     console.error('[uploadProfilePicture] Upload failed:', error);
     throw new Error(`Failed to upload profile picture: ${error.message}`);
+  }
+};
+
+export const setFavoriteRace = async (userId: string, raceData: any) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      favoriteRace: raceData
+    });
+  } catch (error: any) {
+    console.error('[setFavoriteRace] Error:', error);
+    throw new Error(`Failed to set favorite race: ${error.message}`);
   }
 };
