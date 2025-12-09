@@ -662,7 +662,7 @@ const Profile = () => {
                             navigate(`/race/${log.id}?highlight=${log.id}`);
                           }
                         }}
-                        className="border-b border-gray-800/60 hover:bg-black/40 transition-all cursor-pointer px-4 py-3"
+                        className="border-b border-gray-800/60 hover:bg-black/20 transition-all cursor-pointer px-4 py-3"
                       >
                         <div className="flex gap-3">
                           {/* Avatar */}
@@ -712,8 +712,9 @@ const Profile = () => {
                             <div className="bg-black/40 border border-racing-red/20 rounded-lg p-3 mb-3 hover:border-racing-red/40 transition-colors">
                               <div className="flex items-center justify-between gap-3 flex-wrap">
                                 <div className="flex-1 min-w-0">
-                                  <div className="font-black text-racing-red text-sm mb-1">{log.raceName}</div>
-                                  <div className="text-gray-400 text-xs font-medium">{log.raceYear}</div>
+                                  <div className="font-black text-racing-red text-sm">
+                                    {log.raceName.replace('Grand Prix', 'GP')} <span className="text-gray-400 font-medium">{log.raceYear}</span>
+                                  </div>
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -762,7 +763,7 @@ const Profile = () => {
                             </div>
 
                             {/* Review text - Shown AFTER the GP card */}
-                            <p className="text-white text-[15px] leading-relaxed whitespace-pre-wrap break-words mb-3">
+                            <p className="text-white text-[14px] leading-relaxed whitespace-pre-wrap break-words mb-3">
                               {log.review}
                             </p>
 
