@@ -110,28 +110,53 @@ export const RateSeasonDialog = ({ open, onOpenChange, year, onRatingSubmitted }
               Season Rating
             </label>
             <div className="flex gap-1 items-center justify-center">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  onMouseEnter={() => setHoverRating(star)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  className="transition-all transform hover:scale-110"
-                >
-                  <Star
-                    className={`w-9 h-9 ${
-                      star <= (hoverRating || rating)
-                        ? 'fill-yellow-400 text-yellow-400'
-                        : 'fill-gray-700 text-gray-700'
-                    }`}
-                  />
-                </button>
-              ))}
+              {[1, 2, 3, 4, 5].map((starPosition) => {
+                const displayRating = hoverRating || rating;
+                const isFull = displayRating >= starPosition;
+                const isHalf = displayRating >= starPosition - 0.5 && displayRating < starPosition;
+
+                return (
+                  <button
+                    key={starPosition}
+                    type="button"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const relativeX = e.clientX - rect.left;
+                      const halfWidth = rect.width / 2;
+                      const newRating = relativeX < halfWidth ? starPosition - 0.5 : starPosition;
+                      setRating(newRating);
+                    }}
+                    onMouseMove={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const relativeX = e.clientX - rect.left;
+                      const halfWidth = rect.width / 2;
+                      const newRating = relativeX < halfWidth ? starPosition - 0.5 : starPosition;
+                      setHoverRating(newRating);
+                    }}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="transition-all transform hover:scale-110 relative"
+                  >
+                    {/* Background star (empty state) */}
+                    <Star className="w-9 h-9 fill-gray-700 text-gray-700" />
+
+                    {/* Filled star overlay */}
+                    {(isFull || isHalf) && (
+                      <div
+                        className="absolute inset-0 overflow-hidden"
+                        style={{
+                          clipPath: isHalf ? 'inset(0 50% 0 0)' : 'none'
+                        }}
+                      >
+                        <Star className="w-9 h-9 fill-yellow-400 text-yellow-400" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
             {rating > 0 && (
               <div className="text-center text-xs font-bold text-gray-400">
-                {rating} / 5 stars
+                {rating.toFixed(1)} / 5.0 stars
               </div>
             )}
           </div>

@@ -29,7 +29,7 @@ export interface RaceLog {
   dateWatched: Date;
   sessionType: 'race' | 'sprint' | 'qualifying' | 'sprintQualifying' | 'highlights';
   watchMode: 'live' | 'replay' | 'tvBroadcast' | 'highlights' | 'attendedInPerson';
-  rating: number;
+  rating: number; // 0.5-5.0 stars (half-star increments)
   review: string;
   companions: string[];
   driverOfTheDay?: string;

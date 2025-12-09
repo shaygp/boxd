@@ -85,8 +85,8 @@ const Index = () => {
             new Date(b.dateStart).getTime() - new Date(a.dateStart).getTime()
           );
 
-          // Take the 2 most recent races (Abu Dhabi & Qatar)
-          const racesToShow = sortedRaces.slice(0, 2);
+          // Take the 4 most recent races
+          const racesToShow = sortedRaces.slice(0, 4);
           console.log('[Index] Setting currentRaces:', racesToShow.length);
 
           // Convert to expected format
@@ -202,7 +202,7 @@ const Index = () => {
 
       <main className="container px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-10 space-y-8 sm:space-y-12 md:space-y-16">
         {/* Hero Section */}
-        <section className="relative text-center space-y-4 py-12 sm:py-20 md:py-24 px-3 sm:px-6 md:px-8 rounded-2xl overflow-hidden border-2 border-red-900/50">
+        <section className="relative text-center space-y-4 py-12 sm:py-20 md:py-24 px-3 sm:px-6 md:px-8 rounded-2xl overflow-hidden">
           {/* Background Image */}
           <div
             className="absolute inset-0 z-0"
@@ -215,10 +215,6 @@ const Index = () => {
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/80 z-0" />
-
-          {/* Racing stripes */}
-          <div className="absolute left-0 top-0 w-1 h-full bg-racing-red z-0" />
-          <div className="absolute right-0 top-0 w-1 h-full bg-racing-red z-0" />
 
           {/* Content */}
           <div className="relative z-10">
@@ -291,6 +287,56 @@ const Index = () => {
             </Button>
           </div>
         )}
+
+        <section className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b-2 border-red-900/50">
+            <div>
+              <div className="inline-block px-4 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
+                <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">LATEST RACES</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">RECENT GRAND PRIX</h2>
+              <p className="text-xs sm:text-sm text-gray-300 mt-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Recent F1 Races</p>
+            </div>
+            <Button
+              variant="outline"
+              className="gap-2 self-start sm:self-auto border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-bold uppercase text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,1)]"
+              onClick={() => navigate('/explore')}
+            >
+              View All <ArrowRight className="w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />
+            </Button>
+          </div>
+
+          {error ? (
+            <div className="text-center py-12 text-racing-red font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Error: {error}</div>
+          ) : loading ? (
+            <div className="text-center py-12 text-gray-300 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Loading races...</div>
+          ) : currentRaces.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {currentRaces.map((race) => {
+                  const posterUrl = getPosterUrl(race.circuit_short_name || race.circuit_key);
+                  const winnerKey = `${race.year}-${race.round}`;
+                  const winner = winners[winnerKey];
+                  return (
+                    <RaceCard
+                      key={race.meeting_key}
+                      season={race.year}
+                      round={race.round}
+                      gpName={race.meeting_name}
+                      circuit={race.circuit_short_name}
+                      date={race.date_start}
+                      country={race.country_code}
+                      posterUrl={posterUrl || undefined}
+                      winner={winner}
+                    />
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12 text-gray-400 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">No races available</div>
+          )}
+        </section>
 
         {/* Season Leaderboard */}
         {!tagFilter && seasonRatings.filter(s => s.count > 0).length > 0 && (
@@ -515,57 +561,6 @@ const Index = () => {
             </div>
           </section>
         )}
-
-        <section className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b-2 border-red-900/50">
-            <div>
-              <div className="inline-block px-4 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
-                <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">LATEST RACES</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">RECENT GRAND PRIX</h2>
-              <p className="text-xs sm:text-sm text-gray-300 mt-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Recent F1 Races</p>
-            </div>
-            <Button
-              variant="outline"
-              className="gap-2 self-start sm:self-auto border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-bold uppercase text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,1)]"
-              onClick={() => navigate('/explore')}
-            >
-              View All <ArrowRight className="w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />
-            </Button>
-          </div>
-
-          {error ? (
-            <div className="text-center py-12 text-racing-red font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Error: {error}</div>
-          ) : loading ? (
-            <div className="text-center py-12 text-gray-300 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Loading races...</div>
-          ) : currentRaces.length > 0 ? (
-            <>
-              <p className="text-xs text-gray-400 mb-2 font-bold uppercase tracking-wider">Showing {currentRaces.length} races</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-                {currentRaces.map((race) => {
-                  const posterUrl = getPosterUrl(race.circuit_short_name || race.circuit_key);
-                  const winnerKey = `${race.year}-${race.round}`;
-                  const winner = winners[winnerKey];
-                  return (
-                    <RaceCard
-                      key={race.meeting_key}
-                      season={race.year}
-                      round={race.round}
-                      gpName={race.meeting_name}
-                      circuit={race.circuit_short_name}
-                      date={race.date_start}
-                      country={race.country_code}
-                      posterUrl={posterUrl || undefined}
-                      winner={winner}
-                    />
-                  );
-                })}
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-12 text-gray-400 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">No races available</div>
-          )}
-        </section>
 
         {/* Formula Wrapped Section */}
         <section

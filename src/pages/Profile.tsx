@@ -489,10 +489,11 @@ const Profile = () => {
                       <Star className="w-3.5 h-3.5 text-racing-red fill-racing-red" />
                       {(() => {
                         const ratedLogs = fullLogs.filter(log => log.rating && log.rating > 0);
-                        const avgRating = ratedLogs.length > 0
-                          ? (ratedLogs.reduce((sum, log) => sum + (log.rating || 0), 0) / ratedLogs.length).toFixed(1)
-                          : '0.0';
-                        return `${avgRating} AVG RATING`;
+                        if (ratedLogs.length === 0) return '0.0 AVG RATING';
+                        const average = ratedLogs.reduce((sum, log) => sum + (log.rating || 0), 0) / ratedLogs.length;
+                        // Round to nearest 0.5 for half-star precision
+                        const roundedAverage = Math.round(average * 2) / 2;
+                        return `${roundedAverage.toFixed(1)} AVG RATING`;
                       })()}
                     </span>
                   </p>

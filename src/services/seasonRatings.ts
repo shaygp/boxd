@@ -21,7 +21,7 @@ export interface SeasonRating {
   username: string;
   userAvatar?: string;
   year: number;
-  rating: number; // 1-5 stars
+  rating: number; // 0.5-5.0 stars (half-star increments)
   review?: string;
   favoriteRace?: string; // Name of favorite race from the season
   favoriteDriver?: string;
@@ -212,8 +212,11 @@ export const getSeasonAverageRating = async (year: number): Promise<{ average: n
     const sum = ratings.reduce((acc, rating) => acc + rating.rating, 0);
     const average = sum / ratings.length;
 
+    // Round to nearest 0.5 for half-star precision
+    const roundedAverage = Math.round(average * 2) / 2;
+
     const result = {
-      average: parseFloat(average.toFixed(1)),
+      average: parseFloat(roundedAverage.toFixed(1)),
       count: ratings.length
     };
     console.log(`[getSeasonAverageRating] Year ${year} result:`, result);

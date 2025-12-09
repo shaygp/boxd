@@ -210,8 +210,11 @@ const RaceDetail = () => {
     const raceLogs = allRaceLogs.filter(l => l.raceName === raceName && l.raceYear === raceYear && l.rating);
     if (raceLogs.length === 0) return { avgRating: 0, totalRatings: 0 };
     const sum = raceLogs.reduce((acc, log) => acc + (log.rating || 0), 0);
+    const average = sum / raceLogs.length;
+    // Round to nearest 0.5 for half-star precision
+    const roundedAverage = Math.round(average * 2) / 2;
     return {
-      avgRating: sum / raceLogs.length,
+      avgRating: roundedAverage,
       totalRatings: raceLogs.length
     };
   };
