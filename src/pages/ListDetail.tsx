@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getListById, deleteList, removeRaceFromList, likeList, unlikeList, isListLiked, updateList } from "@/services/lists";
 import { getRacesBySeason as getFirestoreRacesBySeason } from "@/services/f1Calendar";
+import { getCountryFlag } from "@/services/f1Api";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -491,10 +492,19 @@ const ListDetail = () => {
                     onClick={() => navigate(`/race/${race.raceYear}/${race.round || 1}`)}
                   >
                     <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
-                      {/* Order Number */}
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-racing-red text-white rounded-full flex items-center justify-center text-sm sm:text-base font-black shadow-lg flex-shrink-0">
-                        {race.order + 1}
-                      </div>
+                      {/* Country Flag */}
+                      {race.countryCode && (
+                        <div className="w-16 h-10 sm:w-20 sm:h-12 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex-shrink-0">
+                          <img
+                            src={getCountryFlag(race.countryCode)}
+                            alt={race.countryCode}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
 
                       {/* Race Info */}
                       <div className="flex-1 min-w-0">
