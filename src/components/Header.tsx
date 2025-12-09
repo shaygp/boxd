@@ -127,7 +127,13 @@ export const Header = () => {
                 size="icon"
                 variant="ghost"
                 className="text-white hover:text-racing-red hover:bg-racing-red/10 w-12 h-12 mb-1"
-                onClick={() => navigate(-1)}
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    navigate(-1);
+                  } else {
+                    navigate('/home');
+                  }
+                }}
               >
                 <ArrowLeft className="w-6 h-6" />
               </Button>
@@ -191,7 +197,7 @@ export const Header = () => {
             onOpenChange={setLogDialogOpen}
           />
 
-          <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+          <DropdownMenu modal={false} open={notificationsOpen} onOpenChange={setNotificationsOpen}>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="ghost" className="relative w-12 h-12 md:w-14 md:h-14">
                 <Bell className="w-6 h-6 md:w-7 md:h-7 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />

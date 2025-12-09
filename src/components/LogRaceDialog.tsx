@@ -33,6 +33,7 @@ interface LogRaceDialogProps {
   defaultRaceName?: string; // Pre-fill race name
   defaultYear?: number; // Pre-fill year
   defaultCountryCode?: string; // Pre-fill country code
+  defaultDate?: string; // Pre-fill race date
 }
 
 export const LogRaceDialog = ({
@@ -46,6 +47,7 @@ export const LogRaceDialog = ({
   defaultRaceName,
   defaultYear,
   defaultCountryCode,
+  defaultDate,
 }: LogRaceDialogProps) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -124,7 +126,38 @@ export const LogRaceDialog = ({
 
   // Pre-fill with default values when dialog opens and circuits are loaded
   useEffect(() => {
-    if (open && !editMode && historicalRaces.length > 0 && defaultRaceName && !hasPrefilledRef.current) {
+    // Reset the ref when dialog closes
+    if (!open) {
+      hasPrefilledRef.current = false;
+      return;
+    }
+
+    // Don't run any pre-fill logic if already pre-filled or in edit mode
+    if (hasPrefilledRef.current || editMode) {
+      return;
+    }
+
+    console.log('[LogRaceDialog] Pre-fill effect running:', {
+      open,
+      editMode,
+      historicalRacesLength: historicalRaces.length,
+      defaultRaceName,
+      defaultYear,
+      defaultDate,
+      hasPrefilledRef: hasPrefilledRef.current
+    });
+
+    // Set the year first if provided
+    if (defaultYear && raceYear !== defaultYear) {
+      console.log('[LogRaceDialog] Setting year to:', defaultYear);
+      setRaceYear(defaultYear);
+      return; // Exit early, let the next render handle circuit loading
+    }
+
+    // Pre-fill circuit and date only once when races are loaded
+    if (historicalRaces.length > 0 && defaultRaceName) {
+      console.log('[LogRaceDialog] Attempting to pre-fill');
+
       // Build circuits list from historical races
       const circuitsList = historicalRaces.map(race => ({
         name: race.meeting_name,
@@ -138,23 +171,50 @@ export const LogRaceDialog = ({
         c.location === defaultCircuit || c.name === defaultRaceName
       );
 
+      console.log('[LogRaceDialog] Matching circuit:', matchingCircuit);
+
       if (matchingCircuit) {
         setSelectedCircuitId(matchingCircuit.uniqueId);
         setRaceName(matchingCircuit.name);
         setRaceLocation(matchingCircuit.location);
         setCountryCode(getCountryCodeFromName(matchingCircuit.country));
+
+        // Set the date to the actual race date
+        if (defaultDate) {
+          console.log('[LogRaceDialog] Setting date from defaultDate prop:', defaultDate);
+          try {
+            const raceDate = new Date(defaultDate);
+            console.log('[LogRaceDialog] Parsed defaultDate:', raceDate);
+            if (!isNaN(raceDate.getTime())) {
+              setDate(raceDate);
+              console.log('[LogRaceDialog] Date set successfully');
+            }
+          } catch (error) {
+            console.error('Error setting default race date from prop:', error);
+          }
+        } else {
+          console.log('[LogRaceDialog] No defaultDate, trying to get from historicalRaces');
+          const raceData = historicalRaces.find(r => r.meeting_name === matchingCircuit.name);
+          console.log('[LogRaceDialog] Race data from historicalRaces:', raceData);
+          if (raceData && raceData.date_start) {
+            try {
+              const raceDate = new Date(raceData.date_start);
+              console.log('[LogRaceDialog] Parsed date_start:', raceDate);
+              if (!isNaN(raceDate.getTime())) {
+                setDate(raceDate);
+                console.log('[LogRaceDialog] Date set from historicalRaces');
+              }
+            } catch (error) {
+              console.error('Error setting default race date:', error);
+            }
+          }
+        }
+
         hasPrefilledRef.current = true; // Mark as prefilled
       }
-
-      if (defaultYear) setRaceYear(defaultYear);
-    }
-
-    // Reset the ref when dialog closes
-    if (!open) {
-      hasPrefilledRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, defaultRaceName, defaultCircuit, defaultYear, editMode]);
+  }, [open, defaultRaceName, defaultCircuit, defaultYear, defaultDate, editMode]);
 
   const driversByYear: Record<number, Array<{ id: string; name: string; team: string }>> = {
     2025: [
@@ -379,7 +439,8 @@ export const LogRaceDialog = ({
             country_code: race.countryCode,
             round: race.round,
             year: race.year,
-            location: race.location
+            location: race.location,
+            date_start: race.dateStart
           })));
         } else {
           // Fallback to API if Firestore has no data
@@ -671,14 +732,33 @@ export const LogRaceDialog = ({
                       setRaceName(circuit.name);
                       setCountryCode(getCountryCodeFromName(circuit.country));
 
+                      // Find the race data to get the actual race date
+                      const raceData = historicalRaces.find(r => r.meeting_name === circuit.name);
+                      console.log('[LogRaceDialog] Race data:', raceData);
+                      console.log('[LogRaceDialog] Historical races:', historicalRaces);
+
+                      // Set the date to the actual race date if available
+                      if (raceData) {
+                        try {
+                          console.log('[LogRaceDialog] date_start:', raceData.date_start);
+                          if (raceData.date_start) {
+                            const raceDate = new Date(raceData.date_start);
+                            console.log('[LogRaceDialog] Parsed race date:', raceDate);
+                            if (!isNaN(raceDate.getTime())) {
+                              setDate(raceDate);
+                              console.log('[LogRaceDialog] Date set to:', raceDate);
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Error setting race date:', error);
+                        }
+                      }
+
                       // Fetch race winner if we have a year
-                      if (raceYear) {
+                      if (raceYear && raceData) {
                         setLoadingWinner(true);
                         try {
-                          // Find the round number for this race
-                          const raceData = historicalRaces.find(r => r.meeting_name === circuit.name);
-
-                          if (raceData && raceData.round) {
+                          if (raceData.round) {
                             const winner = await getRaceWinner(raceYear, raceData.round);
                             if (winner) {
                               setRaceWinner(winner);

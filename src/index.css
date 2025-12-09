@@ -161,6 +161,9 @@ All colors MUST be HSL.
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
+      /* Disable any visual highlighting on touch */
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+      tap-highlight-color: rgba(0, 0, 0, 0);
     }
 
     /* Allow text selection in specific areas */
@@ -168,6 +171,29 @@ All colors MUST be HSL.
       -webkit-user-select: auto;
       user-select: auto;
     }
+  }
+
+  /* Disable blue highlight on all elements */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    tap-highlight-color: rgba(0, 0, 0, 0);
+  }
+
+  /* Prevent focus rings on mouse/touch interaction, keep for keyboard */
+  *:focus:not(:focus-visible) {
+    outline: none;
+    border-color: inherit !important;
+  }
+
+  /* Prevent any active/focus states from showing borders on cards and divs */
+  div:focus, div:active, article:focus, article:active {
+    outline: none !important;
+    border-color: inherit !important;
+  }
+
+  /* Prevent ScrollArea and other containers from showing focus borders */
+  [data-radix-scroll-area-viewport]:focus {
+    outline: none !important;
   }
 }
 

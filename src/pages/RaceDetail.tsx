@@ -32,14 +32,15 @@ import {
 const RaceDetail = () => {
   const { id, season, round } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const highlightReviewId = searchParams.get('highlight');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const highlightReviewIdFromUrl = searchParams.get('highlight');
   const year = season;
 
   // Only log on mount to avoid spam
   // console.log('[RaceDetail] URL Params:', { id, season, year, round, highlightReviewId });
   // console.log('[RaceDetail] Highlight parameter from URL:', highlightReviewId);
 
+  const [highlightReviewId, setHighlightReviewId] = useState<string | null>(highlightReviewIdFromUrl);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [watchlistId, setWatchlistId] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(false);
@@ -192,6 +193,24 @@ const RaceDetail = () => {
       setShowAllReviews(true);
     }
   }, [highlightReviewId, loading]);
+
+  // Clear highlight after 3 seconds
+  useEffect(() => {
+    if (highlightReviewIdFromUrl) {
+      setHighlightReviewId(highlightReviewIdFromUrl);
+
+      // Clear the highlight from state and URL after 3 seconds
+      const timer = setTimeout(() => {
+        setHighlightReviewId(null);
+        // Remove the highlight parameter from URL without navigating
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('highlight');
+        setSearchParams(newSearchParams, { replace: true });
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [highlightReviewIdFromUrl]);
 
   if (loading) {
     return (
@@ -584,6 +603,7 @@ const RaceDetail = () => {
                     defaultRaceName={race.gpName}
                     defaultYear={race.season}
                     defaultCountryCode={race.countryCode}
+                    defaultDate={race.date}
                     existingLog={editingReview}
                     editMode={!!editingReview}
                   />

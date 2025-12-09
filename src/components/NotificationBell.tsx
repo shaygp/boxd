@@ -51,6 +51,13 @@ export const NotificationBell = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Automatically mark all notifications as read when the popover opens
+  useEffect(() => {
+    if (open && unreadCount > 0) {
+      handleMarkAllAsRead();
+    }
+  }, [open]);
+
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.isRead) {
       await markNotificationAsRead(notification.id!);
@@ -79,7 +86,7 @@ export const NotificationBell = () => {
       case 'like':
         return 'd';
       case 'comment':
-        return '=¬';
+        return '=ï¿½';
       case 'follow':
         return '=d';
       case 'mention':
