@@ -219,7 +219,7 @@ const Explore = () => {
                 <select
                   value={selectedSeason}
                   onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
-                  className="bg-black/60 border-2 border-racing-red text-white px-2 py-1 text-xs rounded font-black uppercase tracking-wider hover:bg-racing-red/20 transition-colors cursor-pointer outline-none"
+                  className="bg-black/60 border-2 border-racing-red text-white px-2 py-1 pr-6 text-xs rounded font-black uppercase tracking-wider hover:bg-racing-red/20 transition-colors cursor-pointer outline-none appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3e%3cpath fill=%27white%27 d=%27M6 9L1 4h10z%27/%3e%3c/svg%3e')] bg-[length:12px_12px] bg-[position:right_0.5rem_center] bg-no-repeat"
                 >
                   {[2025, 2024, 2023, 2022, 2021, 2020].map((year) => (
                     <option key={year} value={year} className="bg-black">
