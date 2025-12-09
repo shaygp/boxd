@@ -15,7 +15,7 @@ import { auth } from "@/lib/firebase";
 import { getUserProfile, getUserRaceLogs, calculateTotalHoursWatched } from "@/services/raceLogs";
 import { followUser, unfollowUser, isFollowing, getFollowers, getFollowing } from "@/services/follows";
 import { getUserLists } from "@/services/lists";
-import { getCountryCodeFromGPName } from "@/services/f1Api";
+import { getCountryCodeFromGPName, getCountryFlag } from "@/services/f1Api";
 import { getUserWatchlist } from "@/services/watchlist";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { doc, getDoc } from "firebase/firestore";
@@ -477,6 +477,27 @@ const Profile = () => {
               <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
             ) : logs.length > 0 ? (
               <>
+                {/* Stats Section - Similar to Diary */}
+                <div className="pb-4 border-b-2 border-red-900/50">
+                  <p className="text-sm sm:text-base text-gray-300 flex items-center gap-2 sm:gap-3 flex-wrap font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-racing-red" />
+                      {fullLogs.length} RACES LOGGED
+                    </span>
+                    <span className="text-red-900">•</span>
+                    <span className="flex items-center gap-1.5">
+                      <Star className="w-3.5 h-3.5 text-racing-red fill-racing-red" />
+                      {(() => {
+                        const ratedLogs = fullLogs.filter(log => log.rating && log.rating > 0);
+                        const avgRating = ratedLogs.length > 0
+                          ? (ratedLogs.reduce((sum, log) => sum + (log.rating || 0), 0) / ratedLogs.length).toFixed(1)
+                          : '0.0';
+                        return `${avgRating} AVG RATING`;
+                      })()}
+                    </span>
+                  </p>
+                </div>
+
                 {/* Sort dropdown */}
                 <div className="flex justify-start mb-4">
                   <Select value={ratedSortBy} onValueChange={(value: 'dateWatched' | 'raceDate' | 'ratingDate') => setRatedSortBy(value)}>
@@ -491,28 +512,112 @@ const Profile = () => {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                <div className="space-y-3 sm:space-y-4 max-w-3xl mx-auto px-2 sm:px-0">
                   {(() => {
                     // Sort logs based on selected option
-                    const sortedLogs = [...logs].sort((a: any, b: any) => {
+                    const sortedLogs = [...fullLogs].sort((a: any, b: any) => {
                       if (ratedSortBy === 'dateWatched') {
-                        // Sort by date watched (most recent first)
                         return b.dateWatched.getTime() - a.dateWatched.getTime();
                       } else if (ratedSortBy === 'raceDate') {
-                        // Sort by race chronology (most recent season/round first)
-                        if (a.season !== b.season) {
-                          return b.season - a.season;
+                        if (a.raceYear !== b.raceYear) {
+                          return b.raceYear - a.raceYear;
                         }
-                        return b.round - a.round;
+                        return (b.round || 0) - (a.round || 0);
                       } else {
-                        // ratingDate - sort by creation date (most recent first)
                         return b.createdAt.getTime() - a.createdAt.getTime();
                       }
                     });
 
-                    return sortedLogs.map((race, idx) => (
-                      <RaceCard key={idx} {...race} />
-                    ));
+                    return sortedLogs.map((log) => {
+                      const flagUrl = log.countryCode ? getCountryFlag(log.countryCode) : null;
+                      const dateStr = log.dateWatched instanceof Date
+                        ? log.dateWatched.toLocaleDateString()
+                        : new Date(log.dateWatched).toLocaleDateString();
+
+                      return (
+                        <Card
+                          key={log.id}
+                          className="p-3 sm:p-4 md:p-5 hover:border-racing-red transition-all cursor-pointer group relative overflow-hidden bg-black/90 border-2 border-red-900/40 hover:shadow-xl hover:shadow-red-500/30 backdrop-blur-sm"
+                          onClick={() => navigate(`/race/${log.id}`)}
+                        >
+                          {/* Racing stripe */}
+                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+
+                          <div className="flex gap-2 sm:gap-3 md:gap-4 items-center flex-wrap sm:flex-nowrap">
+                            {/* Flag & Title */}
+                            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                              {flagUrl && (
+                                <div className="w-14 h-9 sm:w-16 sm:h-10 md:w-20 md:h-12 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex-shrink-0">
+                                  <img
+                                    src={flagUrl}
+                                    alt={log.countryCode || log.raceLocation}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              )}
+
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-black text-sm sm:text-base md:text-lg mb-0.5 truncate uppercase tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{log.raceName}</h3>
+                                <p className="text-[10px] sm:text-xs md:text-sm text-gray-200 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+                                  {log.raceYear} • {log.raceLocation}
+                                </p>
+                                {/* Session Type Badge */}
+                                {log.sessionType && (
+                                  <div className="mt-1">
+                                    <Badge variant="outline" className={`text-xs font-bold uppercase tracking-wider rounded-sm ${
+                                      log.sessionType === 'race' ? 'border-racing-red/60 text-racing-red' :
+                                      log.sessionType === 'sprint' ? 'border-orange-500/60 text-orange-500' :
+                                      log.sessionType === 'qualifying' ? 'border-blue-500/60 text-blue-500' :
+                                      log.sessionType === 'sprintQualifying' ? 'border-purple-500/60 text-purple-500' :
+                                      'border-gray-500/60 text-gray-500'
+                                    }`}>
+                                      {log.sessionType === 'race' ? 'Race 🏁' :
+                                       log.sessionType === 'sprint' ? 'Sprint ⚡' :
+                                       log.sessionType === 'qualifying' ? 'Qualifying 🏎️' :
+                                       log.sessionType === 'sprintQualifying' ? 'Sprint Qualifying ⚡' :
+                                       log.sessionType}
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Rating */}
+                            {log.rating && (
+                              <div className="flex items-center gap-1 bg-black/90 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-racing-red/50 flex-shrink-0">
+                                <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-racing-red text-racing-red drop-shadow-[0_0_4px_rgba(220,38,38,0.8)]" />
+                                <span className="font-black text-xs sm:text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{log.rating.toFixed(1)}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Driver of the Day & Review */}
+                          <div className="mt-2 sm:mt-3 space-y-1.5 sm:space-y-2">
+                            {log.driverOfTheDay && (
+                              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                                <span className="text-[10px] sm:text-xs text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">DRIVER OF THE DAY:</span>
+                                <span className="font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">🏆 {log.driverOfTheDay}</span>
+                              </div>
+                            )}
+
+                            {log.review && (
+                              <p className="text-[10px] sm:text-xs md:text-sm text-gray-200 line-clamp-2 italic font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+                                "{log.review}"
+                              </p>
+                            )}
+
+                            {/* Footer */}
+                            <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-gray-200 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)] pt-1.5 sm:pt-2">
+                              <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-racing-red" />
+                              <span>{dateStr}</span>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    });
                   })()}
                 </div>
               </>
@@ -557,12 +662,12 @@ const Profile = () => {
                             navigate(`/race/${log.id}?highlight=${log.id}`);
                           }
                         }}
-                        className="border-b border-gray-800 hover:bg-gray-900/30 transition-colors cursor-pointer p-4"
+                        className="border-b border-gray-800/60 hover:bg-black/40 transition-all cursor-pointer px-4 py-3"
                       >
                         <div className="flex gap-3">
                           {/* Avatar */}
                           <div className="flex-shrink-0">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center overflow-hidden">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 flex items-center justify-center overflow-hidden hover:border-gray-600 transition-colors">
                               {profile?.photoURL ? (
                                 <img
                                   src={profile.photoURL}
@@ -570,7 +675,7 @@ const Profile = () => {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <span className="text-sm font-bold text-white">
+                                <span className="text-base font-black text-gray-300">
                                   {(profile?.name || profile?.username || 'U').charAt(0).toUpperCase()}
                                 </span>
                               )}
@@ -579,16 +684,16 @@ const Profile = () => {
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
-                            {/* Header */}
-                            <div className="flex items-center gap-2 flex-wrap mb-2">
-                              <span className="font-bold text-white text-sm hover:underline">
+                            {/* Header - Twitter style */}
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <span className="font-black text-white text-base hover:underline cursor-pointer">
                                 {profile?.name || 'User'}
                               </span>
-                              <span className="text-gray-500 text-sm">
+                              <span className="text-gray-500 text-sm font-medium">
                                 @{profile?.username || 'user'}
                               </span>
-                              <span className="text-gray-500 text-sm">·</span>
-                              <span className="text-gray-500 text-sm">
+                              <span className="text-gray-600">·</span>
+                              <span className="text-gray-500 text-sm hover:underline">
                                 {log.dateWatched instanceof Date
                                   ? log.dateWatched.toLocaleDateString('en-US', {
                                       month: 'short',
@@ -603,78 +708,78 @@ const Profile = () => {
                               </span>
                             </div>
 
-                            {/* Race info */}
-                            <div className="mb-2">
-                              <div className="flex items-center gap-2 text-sm text-gray-400 mb-1 flex-wrap">
-                                <span className="font-bold text-racing-red">{log.raceName}</span>
-                                <span>·</span>
-                                <span>{log.raceYear}</span>
-                                {log.rating && (
-                                  <>
-                                    <span>·</span>
-                                    <div className="flex items-center gap-0.5">
+                            {/* Race info card - Compact - SHOWN FIRST */}
+                            <div className="bg-black/40 border border-racing-red/20 rounded-lg p-3 mb-3 hover:border-racing-red/40 transition-colors">
+                              <div className="flex items-center justify-between gap-3 flex-wrap">
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-black text-racing-red text-sm mb-1">{log.raceName}</div>
+                                  <div className="text-gray-400 text-xs font-medium">{log.raceYear}</div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  {/* Session Badge */}
+                                  {log.sessionType && (
+                                    <Badge variant="outline" className={`text-[10px] font-black uppercase tracking-wider rounded-sm px-2 py-0.5 ${
+                                      log.sessionType === 'race' ? 'border-racing-red/60 text-racing-red bg-racing-red/10' :
+                                      log.sessionType === 'sprint' ? 'border-orange-500/60 text-orange-500 bg-orange-500/10' :
+                                      log.sessionType === 'qualifying' ? 'border-blue-500/60 text-blue-500 bg-blue-500/10' :
+                                      log.sessionType === 'sprintQualifying' ? 'border-purple-500/60 text-purple-500 bg-purple-500/10' :
+                                      'border-gray-500/60 text-gray-500 bg-gray-500/10'
+                                    }`}>
+                                      {log.sessionType === 'race' ? '🏁 RACE' :
+                                       log.sessionType === 'sprint' ? '⚡ SPRINT' :
+                                       log.sessionType === 'qualifying' ? '🏎️ QUALI' :
+                                       log.sessionType === 'sprintQualifying' ? '⚡ SQ' :
+                                       log.sessionType}
+                                    </Badge>
+                                  )}
+
+                                  {/* Rating */}
+                                  {log.rating && (
+                                    <div className="flex items-center gap-0.5 bg-yellow-500/10 border border-yellow-500/30 rounded-sm px-2 py-1">
                                       {[...Array(5)].map((_, i) => (
                                         <Star
                                           key={i}
-                                          className={`w-3 h-3 ${
+                                          className={`w-2.5 h-2.5 ${
                                             i < log.rating!
                                               ? 'fill-yellow-400 text-yellow-400'
-                                              : 'text-gray-600 fill-gray-600'
+                                              : 'fill-gray-700 text-gray-700'
                                           }`}
                                         />
                                       ))}
                                     </div>
-                                  </>
-                                )}
-                              </div>
-
-                              {/* Session Type Badge */}
-                              {log.sessionType && (
-                                <div className="mb-1">
-                                  <Badge variant="outline" className={`text-xs font-bold uppercase tracking-wider ${
-                                    log.sessionType === 'race' ? 'border-racing-red/60 text-racing-red' :
-                                    log.sessionType === 'sprint' ? 'border-orange-500/60 text-orange-500' :
-                                    log.sessionType === 'qualifying' ? 'border-blue-500/60 text-blue-500' :
-                                    log.sessionType === 'sprintQualifying' ? 'border-purple-500/60 text-purple-500' :
-                                    'border-gray-500/60 text-gray-500'
-                                  }`}>
-                                    {log.sessionType === 'race' ? '🏁 Race' :
-                                     log.sessionType === 'sprint' ? '⚡ Sprint' :
-                                     log.sessionType === 'qualifying' ? '🏎️ Qualifying' :
-                                     log.sessionType === 'sprintQualifying' ? '⚡ Sprint Qualifying' :
-                                     log.sessionType}
-                                  </Badge>
+                                  )}
                                 </div>
-                              )}
+                              </div>
 
                               {/* Driver of the Day */}
                               {log.driverOfTheDay && (
-                                <div className="text-sm text-gray-400">
-                                  <span>Driver of the Day: </span>
-                                  <span className="text-white font-medium">{log.driverOfTheDay}</span>
+                                <div className="mt-2 pt-2 border-t border-gray-800 text-xs">
+                                  <span className="text-gray-500 font-medium">DOTD:</span>{' '}
+                                  <span className="text-white font-bold">{log.driverOfTheDay}</span>
                                 </div>
                               )}
                             </div>
 
-                            {/* Review text */}
-                            <p className="text-white text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">
+                            {/* Review text - Shown AFTER the GP card */}
+                            <p className="text-white text-[15px] leading-relaxed whitespace-pre-wrap break-words mb-3">
                               {log.review}
                             </p>
 
-                            {/* Engagement stats and actions */}
-                            <div className="flex items-center justify-between mt-3">
-                              <div className="flex items-center gap-6 text-gray-500">
-                                <button className="flex items-center gap-1.5 hover:text-racing-red transition-colors group">
-                                  <Heart className={`w-4 h-4 ${log.likedBy?.includes(currentUser?.uid || '') ? 'fill-racing-red text-racing-red' : 'group-hover:fill-racing-red'}`} />
-                                  <span className="text-xs">{log.likesCount || 0}</span>
+                            {/* Engagement bar - Twitter style */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4 sm:gap-6">
+                                <button className="flex items-center gap-2 hover:text-racing-red transition-colors group">
+                                  <Heart className={`w-[18px] h-[18px] ${log.likedBy?.includes(currentUser?.uid || '') ? 'fill-racing-red text-racing-red' : 'text-gray-600 group-hover:text-racing-red'}`} />
+                                  <span className="text-sm font-medium text-gray-500 group-hover:text-racing-red">{log.likesCount || 0}</span>
                                 </button>
-                                <button className="flex items-center gap-1.5 hover:text-blue-400 transition-colors">
-                                  <MessageCircle className="w-4 h-4" />
-                                  <span className="text-xs">{log.commentsCount || 0}</span>
+                                <button className="flex items-center gap-2 hover:text-blue-400 transition-colors group">
+                                  <MessageCircle className="w-[18px] h-[18px] text-gray-600 group-hover:text-blue-400" />
+                                  <span className="text-sm font-medium text-gray-500 group-hover:text-blue-400">{log.commentsCount || 0}</span>
                                 </button>
                               </div>
 
-                              {/* Edit button (only show on own profile) */}
+                              {/* Edit button */}
                               {isOwnProfile && (
                                 <button
                                   onClick={(e) => {
@@ -682,10 +787,10 @@ const Profile = () => {
                                     setEditingReview(log);
                                     setLogDialogOpen(true);
                                   }}
-                                  className="flex items-center gap-1.5 text-gray-500 hover:text-racing-red transition-colors text-xs font-bold uppercase tracking-wider"
+                                  className="flex items-center gap-1 text-gray-600 hover:text-racing-red transition-colors text-xs font-bold uppercase tracking-wider px-2 py-1 hover:bg-racing-red/10 rounded"
                                 >
                                   <Edit className="w-3.5 h-3.5" />
-                                  Edit
+                                  <span className="hidden sm:inline">Edit</span>
                                 </button>
                               )}
                             </div>

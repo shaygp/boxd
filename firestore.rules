@@ -43,6 +43,16 @@ service cloud.firestore {
       allow delete: if false; // Predictions can't be deleted, only updated
     }
 
+    // Season Ratings - allow all authenticated users to read, only owners to create/update
+    match /seasonRatings/{ratingId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow delete: if false; // Season ratings can't be deleted, only updated to 0
+    }
+
     // Default: require authentication for all other operations
     match /{document=**} {
       allow read, write: if request.auth != null;

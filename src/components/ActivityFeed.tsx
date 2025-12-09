@@ -409,6 +409,12 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
           return `/race/${activity.targetId}`;
         }
         return '#';
+      case 'seasonRating':
+        // Link to Explore page with season filter
+        if (activity.raceYear) {
+          return `/explore?season=${activity.raceYear}`;
+        }
+        return '/explore';
       case 'list':
         return `/list/${activity.targetId}`;
       case 'user':
@@ -545,7 +551,14 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                       {activity.username}
                     </Link>
                     <span className="text-gray-400">{getActivityText(activity)}</span>
-                    {activity.targetType === 'raceLog' && (activity.raceName || activity.raceYear) ? (
+                    {activity.targetType === 'seasonRating' && activity.raceYear ? (
+                      <Link
+                        to={getActivityLink(activity)}
+                        className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"
+                      >
+                        {activity.raceYear} Season
+                      </Link>
+                    ) : activity.targetType === 'raceLog' && (activity.raceName || activity.raceYear) ? (
                       <Link
                         to={getActivityLink(activity)}
                         className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"

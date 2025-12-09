@@ -4,18 +4,22 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
 import { CreateListDialog } from "@/components/CreateListDialog";
+import { RateSeasonDialog } from "@/components/RateSeasonDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Star, List, Calendar, History, MessageCircle, Heart, Plus, ArrowRight } from "lucide-react";
+import { TrendingUp, Star, List, Calendar, History, MessageCircle, Heart, Plus, ArrowRight, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getPublicRaceLogs } from "@/services/raceLogs";
 import { getPublicLists } from "@/services/lists";
 import { getPosterUrl } from "@/services/f1Api";
 import { getCurrentSeasonRaces as getFirestoreRaces, getRacesBySeason as getFirestoreRacesBySeason } from "@/services/f1Calendar";
+import { getSeasonAverageRating, getUserSeasonRating } from "@/services/seasonRatings";
+import { auth } from "@/lib/firebase";
 
 const Explore = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [trendingRaces, setTrendingRaces] = useState<any[]>([]);
   const [topReviews, setTopReviews] = useState<any[]>([]);
   const [popularLists, setPopularLists] = useState<any[]>([]);
@@ -25,14 +29,24 @@ const Explore = () => {
   const [seasonLoading, setSeasonLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [listsToShow, setListsToShow] = useState(10);
+  const [rateSeasonDialogOpen, setRateSeasonDialogOpen] = useState(false);
+  const [seasonRating, setSeasonRating] = useState<{ average: number; count: number }>({ average: 0, count: 0 });
+  const [userSeasonRating, setUserSeasonRating] = useState<number | null>(null);
+  const [allSeasonRatings, setAllSeasonRatings] = useState<{ year: number; average: number; count: number }[]>([]);
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'seasons');
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [logs, lists, firestoreRaces] = await Promise.all([
+        const [logs, lists, firestoreRaces, seasonRatingsData] = await Promise.all([
           getPublicRaceLogs(50),
           getPublicLists(),
-          getFirestoreRaces()
+          getFirestoreRaces(),
+          // Load all season ratings for leaderboard
+          Promise.all([2025, 2024, 2023, 2022, 2021, 2020].map(async (year) => {
+            const rating = await getSeasonAverageRating(year);
+            return { year, ...rating };
+          }))
         ]);
 
         const logCounts: { [key: string]: number } = {};
@@ -68,6 +82,9 @@ const Explore = () => {
 
         setPopularLists(sortedLists);
 
+        // Set all season ratings for leaderboard (sorted by rating)
+        setAllSeasonRatings(seasonRatingsData.sort((a, b) => b.average - a.average));
+
         // Convert Firestore races to expected format
         const today = new Date();
         const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -99,11 +116,36 @@ const Explore = () => {
     loadData();
   }, []);
 
+  // Handle URL parameters for season and tab
+  useEffect(() => {
+    const seasonParam = searchParams.get('season');
+    const tabParam = searchParams.get('tab');
+
+    if (seasonParam) {
+      const year = parseInt(seasonParam);
+      if (!isNaN(year)) {
+        setSelectedSeason(year);
+      }
+    }
+
+    // Only change tab if explicitly set in URL and different from current
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+      // Scroll to top when navigating via tab parameter
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [searchParams, activeTab]);
+
   useEffect(() => {
     const loadSeasonRaces = async () => {
       setSeasonLoading(true);
       try {
-        const firestoreRaces = await getFirestoreRacesBySeason(selectedSeason);
+        const [firestoreRaces, avgRating, userRating] = await Promise.all([
+          getFirestoreRacesBySeason(selectedSeason),
+          getSeasonAverageRating(selectedSeason),
+          auth.currentUser ? getUserSeasonRating(auth.currentUser.uid, selectedSeason) : Promise.resolve(null)
+        ]);
+
         // Convert to expected format
         const races = firestoreRaces.map(race => ({
           meeting_key: race.round,
@@ -117,9 +159,13 @@ const Explore = () => {
           circuit_key: race.round
         }));
         setSeasonRaces(races);
+        setSeasonRating(avgRating);
+        setUserSeasonRating(userRating?.rating || null);
       } catch (error) {
         console.error('Error loading season races:', error);
         setSeasonRaces([]);
+        setSeasonRating({ average: 0, count: 0 });
+        setUserSeasonRating(null);
       } finally {
         setSeasonLoading(false);
       }
@@ -143,7 +189,7 @@ const Explore = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="seasons" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="w-full overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <TabsList className="w-full sm:w-auto inline-flex min-w-max border-2 border-red-900/30 bg-black/50">
               <TabsTrigger value="seasons" className="gap-1 sm:gap-2 text-[10px] sm:text-xs whitespace-nowrap px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
@@ -168,31 +214,43 @@ const Explore = () => {
 
           <TabsContent value="seasons" className="space-y-6">
             <div>
-              <div className="inline-block px-4 py-1 bg-racing-red/20 border border-racing-red rounded-full mb-2">
-                <span className="text-racing-red font-black text-xs tracking-widest">SEASON ARCHIVE</span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-2">BROWSE BY SEASON</h2>
-              <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider mb-6">Select a season to view all races</p>
+              <div className="flex flex-wrap items-center gap-2 mb-6 justify-start">
+                {/* Year Dropdown */}
+                <select
+                  value={selectedSeason}
+                  onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
+                  className="bg-black/60 border-2 border-racing-red text-white px-2 py-1 text-xs rounded font-black uppercase tracking-wider hover:bg-racing-red/20 transition-colors cursor-pointer outline-none"
+                >
+                  {[2025, 2024, 2023, 2022, 2021, 2020].map((year) => (
+                    <option key={year} value={year} className="bg-black">
+                      {year}
+                    </option>
+                  ))}
+                </select>
 
-              <div className="flex flex-wrap gap-2 mb-6">
-                {[2025, 2024, 2023, 2022, 2021, 2020].map((year) => (
-                  <Button
-                    key={year}
-                    variant={selectedSeason === year ? "default" : "outline"}
-                    onClick={() => setSelectedSeason(year)}
-                    className={`min-w-[4rem] font-black uppercase tracking-wider ${
-                      selectedSeason === year
-                        ? 'bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30'
-                        : 'border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]'
-                    }`}
+                {/* Rating Display + Edit/Rate Button */}
+                {userSeasonRating ? (
+                  <button
+                    onClick={() => setRateSeasonDialogOpen(true)}
+                    className="flex items-center gap-1.5 bg-racing-red/10 hover:bg-racing-red/20 border-2 border-racing-red/30 hover:border-racing-red px-2 py-1 rounded transition-colors cursor-pointer"
                   >
-                    {year}
-                  </Button>
-                ))}
+                    <span className="text-xs font-black text-yellow-400">{userSeasonRating}</span>
+                    <span className="text-[10px] text-yellow-400 font-bold">/ 5</span>
+                    <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                    <span className="text-[10px] text-gray-500 font-bold uppercase ml-1">Edit</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setRateSeasonDialogOpen(true)}
+                    className="bg-black/60 hover:bg-racing-red/20 text-white px-2 py-1 text-xs rounded font-black uppercase tracking-wider border-2 border-racing-red transition-colors whitespace-nowrap"
+                  >
+                    Rate
+                  </button>
+                )}
               </div>
 
               {seasonLoading ? (
-                <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading {selectedSeason} season...</div>
+                <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider">Loading {selectedSeason}...</div>
               ) : seasonRaces.length === 0 ? (
                 <EmptyState
                   icon={History}
@@ -532,6 +590,21 @@ const Explore = () => {
           </TabsContent>
         </Tabs>
       </main>
+      {/* Rate Season Dialog */}
+      <RateSeasonDialog
+        open={rateSeasonDialogOpen}
+        onOpenChange={setRateSeasonDialogOpen}
+        year={selectedSeason}
+        onRatingSubmitted={async () => {
+          // Reload season ratings
+          const [avgRating, userRating] = await Promise.all([
+            getSeasonAverageRating(selectedSeason),
+            auth.currentUser ? getUserSeasonRating(auth.currentUser.uid, selectedSeason) : Promise.resolve(null)
+          ]);
+          setSeasonRating(avgRating);
+          setUserSeasonRating(userRating?.rating || null);
+        }}
+      />
     </div>
   );
 };

@@ -2,13 +2,15 @@ import { Header } from "@/components/Header";
 import { RaceCard } from "@/components/RaceCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, X, Sparkles } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { ArrowRight, X, Sparkles, Star } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { getPublicRaceLogs } from "@/services/raceLogs";
 import { getPosterUrl, getRaceWinner } from "@/services/f1Api";
 import { getCurrentSeasonRaces as getFirestoreRaces } from "@/services/f1Calendar";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getGlobalActivity, Activity } from "@/services/activity";
+import { getSeasonAverageRating } from "@/services/seasonRatings";
 
 // Cache duration: 5 minutes
 const CACHE_DURATION = 5 * 60 * 1000;
@@ -24,21 +26,35 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [winners, setWinners] = useState<{ [key: string]: string }>({});
   const lastFetchTime = useRef<number>(0);
+  const [seasonRatings, setSeasonRatings] = useState<{ year: number; average: number; count: number }[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
       // Check if we have fresh data (less than 5 minutes old)
       const now = Date.now();
-      if (now - lastFetchTime.current < CACHE_DURATION && currentRaces.length > 0) {
-        console.log('[Index] Using cached data, skipping fetch');
+      const useCache = now - lastFetchTime.current < CACHE_DURATION && currentRaces.length > 0;
+
+      if (useCache) {
+        console.log('[Index] Using cached data for races, but refreshing season ratings');
+        // Still refresh season ratings even when using cache
+        try {
+          const seasonRatingsData = await Promise.all([2025, 2024, 2023, 2022, 2021, 2020].map(async (year) => {
+            const rating = await getSeasonAverageRating(year);
+            return { year, ...rating };
+          }));
+          console.log('[Index] Season ratings refreshed:', seasonRatingsData);
+          setSeasonRatings(seasonRatingsData.sort((a, b) => b.average - a.average));
+        } catch (err) {
+          console.error('Error refreshing season ratings:', err);
+        }
         return;
       }
 
       try {
         lastFetchTime.current = now;
 
-        // Load races, activities, and public logs in parallel
-        const [f1Races, activityFeed, publicLogs] = await Promise.all([
+        // Load races, activities, public logs, and season ratings in parallel
+        const [f1Races, activityFeed, publicLogs, seasonRatingsData] = await Promise.all([
           getFirestoreRaces().catch(err => {
             console.error('Error loading races:', err);
             return [];
@@ -49,6 +65,13 @@ const Index = () => {
           }),
           getPublicRaceLogs(100).catch(err => {
             console.error('Error loading public logs:', err);
+            return [];
+          }),
+          Promise.all([2025, 2024, 2023, 2022, 2021, 2020].map(async (year) => {
+            const rating = await getSeasonAverageRating(year);
+            return { year, ...rating };
+          })).catch(err => {
+            console.error('Error loading season ratings:', err);
             return [];
           })
         ]);
@@ -62,8 +85,8 @@ const Index = () => {
             new Date(b.dateStart).getTime() - new Date(a.dateStart).getTime()
           );
 
-          // Take the 6 most recent races
-          const racesToShow = sortedRaces.slice(0, 6);
+          // Take the 2 most recent races (Abu Dhabi & Qatar)
+          const racesToShow = sortedRaces.slice(0, 2);
           console.log('[Index] Setting currentRaces:', racesToShow.length);
 
           // Convert to expected format
@@ -138,6 +161,13 @@ const Index = () => {
             setPopularRaces(publicLogs.slice(0, 6));
           }
         }
+
+        // Set season ratings sorted by average rating
+        console.log('[Index] Season ratings loaded:', seasonRatingsData);
+        const sortedRatings = seasonRatingsData.sort((a, b) => b.average - a.average);
+        console.log('[Index] Sorted season ratings:', sortedRatings);
+        console.log('[Index] Ratings with count > 0:', sortedRatings.filter(s => s.count > 0));
+        setSeasonRatings(sortedRatings);
       } catch (err: any) {
         console.error('Error loading data:', err);
         setError(err.message);
@@ -262,14 +292,247 @@ const Index = () => {
           </div>
         )}
 
+        {/* Season Leaderboard */}
+        {!tagFilter && seasonRatings.filter(s => s.count > 0).length > 0 && (
+          <section className="space-y-6">
+            {/* Section Header with Racing Flair */}
+            <div className="relative overflow-hidden bg-gradient-to-r from-black via-racing-red/10 to-black p-4 rounded-lg border-2 border-racing-red/30">
+              <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(220,38,38,0.05)_10px,rgba(220,38,38,0.05)_20px)]" />
+              <div className="relative flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-1 w-8 bg-racing-red shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+                    <div className="h-1 w-8 bg-white" />
+                    <div className="h-1 w-8 bg-racing-red shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wider uppercase">
+                    BEST RATED <span className="text-racing-red drop-shadow-[0_0_15px_rgba(220,38,38,0.8)]">SEASONS</span>
+                  </h2>
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Championship Standings</p>
+                </div>
+                <Star className="w-12 h-12 text-racing-red/20" />
+              </div>
+            </div>
+
+            {/* Podium Display - Top 3 */}
+            <div className="relative">
+              <div className="flex items-end justify-center gap-3 sm:gap-6">
+                {/* 2nd Place */}
+                {seasonRatings.filter(s => s.count > 0)[1] && (() => {
+                  const season = seasonRatings.filter(s => s.count > 0)[1];
+                  const percentage = (season.average / 5) * 100;
+                  return (
+                    <div
+                      className="flex flex-col items-center flex-1 max-w-[160px] cursor-pointer group"
+                      onClick={() => navigate(`/explore?tab=seasons&season=${season.year}`)}
+                    >
+                      {/* Position indicator */}
+                      <div className="mb-4">
+                        <div className="relative w-12 h-12 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-gradient-to-br from-gray-600 to-gray-800 rounded opacity-20 blur-sm" />
+                          <div className="relative w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 border border-gray-600/50 flex items-center justify-center" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
+                            <span className="text-xl font-black text-gray-400">2</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Season year */}
+                      <div className="mb-2 text-center">
+                        <div className="text-2xl font-black text-white group-hover:text-gray-400 transition-colors tracking-tight">
+                          {season.year}
+                        </div>
+                        <div className="text-[10px] text-gray-600 font-bold uppercase tracking-wider mt-0.5">
+                          Season
+                        </div>
+                      </div>
+
+                      {/* Rating */}
+                      <div className="mb-3 bg-black/40 px-4 py-2 rounded border border-gray-800/50 text-center">
+                        <div className="text-3xl font-black text-gray-400 tracking-tighter leading-none">
+                          {season.average.toFixed(1)}
+                        </div>
+                        <div className="text-[9px] text-gray-600 font-bold uppercase tracking-wider mt-1">
+                          {season.count} {season.count === 1 ? 'vote' : 'votes'}
+                        </div>
+                      </div>
+
+                      {/* Podium block */}
+                      <div className="w-full relative">
+                        <div className="h-28 bg-gradient-to-b from-gray-800 to-gray-900 border-t-2 border-gray-700/50 relative overflow-hidden group-hover:border-gray-600 transition-colors">
+                          {/* Vertical accent line */}
+                          <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-gray-600 to-transparent" />
+                          <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-gray-600 to-transparent" />
+
+                          {/* Position number on podium */}
+                          <div className="absolute top-2 left-1/2 -translate-x-1/2 text-4xl font-black text-gray-700/30">
+                            2
+                          </div>
+
+                          {/* Performance indicator */}
+                          <div className="absolute bottom-0 left-0 right-0">
+                            <div className="h-1 bg-gray-950">
+                              <div
+                                className="h-full bg-gradient-to-r from-gray-600 to-gray-700 transition-all duration-500"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 1st Place - Taller */}
+                {seasonRatings.filter(s => s.count > 0)[0] && (() => {
+                  const season = seasonRatings.filter(s => s.count > 0)[0];
+                  const percentage = (season.average / 5) * 100;
+                  return (
+                    <div
+                      className="flex flex-col items-center flex-1 max-w-[160px] cursor-pointer group"
+                      onClick={() => navigate(`/explore?tab=seasons&season=${season.year}`)}
+                    >
+                      {/* Position indicator */}
+                      <div className="mb-4">
+                        <div className="relative w-14 h-14 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-gradient-to-br from-racing-red to-red-900 rounded opacity-30 blur-md" />
+                          <div className="relative w-12 h-12 bg-gradient-to-br from-racing-red to-red-900 border border-racing-red/50 flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.4)]" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
+                            <span className="text-2xl font-black text-white">1</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Season year */}
+                      <div className="mb-2 text-center">
+                        <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-racing-red group-hover:to-white transition-all tracking-tight">
+                          {season.year}
+                        </div>
+                        <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">
+                          Champion Season
+                        </div>
+                      </div>
+
+                      {/* Rating */}
+                      <div className="mb-3 bg-racing-red/10 px-4 py-2 rounded border border-racing-red/30 text-center">
+                        <div className="text-4xl font-black text-racing-red tracking-tighter leading-none">
+                          {season.average.toFixed(1)}
+                        </div>
+                        <div className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-1">
+                          {season.count} {season.count === 1 ? 'vote' : 'votes'}
+                        </div>
+                      </div>
+
+                      {/* Podium block - Tallest */}
+                      <div className="w-full relative">
+                        <div className="h-36 bg-gradient-to-b from-red-950 to-black border-t-2 border-racing-red/50 relative overflow-hidden group-hover:border-racing-red transition-colors">
+                          {/* Vertical accent lines */}
+                          <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-racing-red/40 to-transparent" />
+                          <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-racing-red/40 to-transparent" />
+
+                          {/* Center accent */}
+                          <div className="absolute left-1/2 -translate-x-1/2 top-0 w-px h-full bg-gradient-to-b from-racing-red/20 via-transparent to-transparent" />
+
+                          {/* Position number on podium */}
+                          <div className="absolute top-2 left-1/2 -translate-x-1/2 text-5xl font-black text-racing-red/20">
+                            1
+                          </div>
+
+                          {/* Performance indicator */}
+                          <div className="absolute bottom-0 left-0 right-0">
+                            <div className="h-1 bg-gray-950">
+                              <div
+                                className="h-full bg-gradient-to-r from-racing-red to-red-600 transition-all duration-500 shadow-[0_0_8px_rgba(220,38,38,0.5)]"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 3rd Place */}
+                {seasonRatings.filter(s => s.count > 0)[2] && (() => {
+                  const season = seasonRatings.filter(s => s.count > 0)[2];
+                  const percentage = (season.average / 5) * 100;
+                  return (
+                    <div
+                      className="flex flex-col items-center flex-1 max-w-[160px] cursor-pointer group"
+                      onClick={() => navigate(`/explore?tab=seasons&season=${season.year}`)}
+                    >
+                      {/* Position indicator */}
+                      <div className="mb-4">
+                        <div className="relative w-12 h-12 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-gradient-to-br from-orange-900 to-orange-950 rounded opacity-20 blur-sm" />
+                          <div className="relative w-10 h-10 bg-gradient-to-br from-orange-900 to-orange-950 border border-orange-800/50 flex items-center justify-center" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
+                            <span className="text-xl font-black text-orange-700">3</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Season year */}
+                      <div className="mb-2 text-center">
+                        <div className="text-2xl font-black text-white group-hover:text-orange-700 transition-colors tracking-tight">
+                          {season.year}
+                        </div>
+                        <div className="text-[10px] text-gray-600 font-bold uppercase tracking-wider mt-0.5">
+                          Season
+                        </div>
+                      </div>
+
+                      {/* Rating */}
+                      <div className="mb-3 bg-black/40 px-4 py-2 rounded border border-orange-900/30 text-center">
+                        <div className="text-3xl font-black text-orange-700 tracking-tighter leading-none">
+                          {season.average.toFixed(1)}
+                        </div>
+                        <div className="text-[9px] text-gray-600 font-bold uppercase tracking-wider mt-1">
+                          {season.count} {season.count === 1 ? 'vote' : 'votes'}
+                        </div>
+                      </div>
+
+                      {/* Podium block - Shortest */}
+                      <div className="w-full relative">
+                        <div className="h-20 bg-gradient-to-b from-orange-950 to-black border-t-2 border-orange-900/50 relative overflow-hidden group-hover:border-orange-800 transition-colors">
+                          {/* Vertical accent lines */}
+                          <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-orange-900/40 to-transparent" />
+                          <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-orange-900/40 to-transparent" />
+
+                          {/* Position number on podium */}
+                          <div className="absolute top-1 left-1/2 -translate-x-1/2 text-3xl font-black text-orange-900/30">
+                            3
+                          </div>
+
+                          {/* Performance indicator */}
+                          <div className="absolute bottom-0 left-0 right-0">
+                            <div className="h-1 bg-gray-950">
+                              <div
+                                className="h-full bg-gradient-to-r from-orange-800 to-orange-900 transition-all duration-500"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Podium platform */}
+              <div className="w-full h-3 bg-gradient-to-b from-gray-900 to-black border-t border-red-900/30 mt-0" />
+            </div>
+          </section>
+        )}
+
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b-2 border-red-900/50">
             <div>
               <div className="inline-block px-4 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
                 <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">LATEST RACES</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">RECENT & UPCOMING GRAND PRIX</h2>
-              <p className="text-xs sm:text-sm text-gray-300 mt-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Recent & Upcoming F1 Races</p>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">RECENT GRAND PRIX</h2>
+              <p className="text-xs sm:text-sm text-gray-300 mt-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Recent F1 Races</p>
             </div>
             <Button
               variant="outline"
@@ -364,20 +627,21 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="space-y-6">
-          <div className="pb-2 border-b-2 border-red-900/50">
-            <div className="inline-block px-4 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
-              <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">
-                {tagFilter ? `#${tagFilter.toUpperCase()}` : 'COMMUNITY'}
-              </span>
+        {tagFilter && (
+          <section className="space-y-6">
+            <div className="pb-2 border-b-2 border-red-900/50">
+              <div className="inline-block px-4 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
+                <span className="text-racing-red font-black text-xs tracking-widest drop-shadow-[0_0_6px_rgba(220,38,38,0.8)]">
+                  #{tagFilter.toUpperCase()}
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                TAGGED RACES
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-300 mt-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                {popularRaces.length} Race${popularRaces.length === 1 ? '' : 's'} Found
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-              {tagFilter ? `TAGGED RACES` : 'RECENTLY LOGGED'}
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-300 mt-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-              {tagFilter ? `${popularRaces.length} Race${popularRaces.length === 1 ? '' : 's'} Found` : 'Latest from the Paddock'}
-            </p>
-          </div>
 
           {loading ? (
             <div className="text-center py-12 text-gray-300 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Loading...</div>
@@ -400,11 +664,12 @@ const Index = () => {
             </div>
           ) : (
             <div className="text-center py-12 text-gray-400">
-              <p className="font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">No races logged yet</p>
-              <p className="text-sm mt-2 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Be the first to log a race!</p>
+              <p className="font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">No races found with this tag</p>
+              <p className="text-sm mt-2 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Try a different tag</p>
             </div>
           )}
-        </section>
+          </section>
+        )}
 
         {/* Footer */}
         <footer className="border-t-2 border-red-900/50 mt-16 pt-8 pb-12">

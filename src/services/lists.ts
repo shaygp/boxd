@@ -13,6 +13,8 @@ import {
   increment
 } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
+import { createActivity } from './activity';
+import { createNotification } from './notifications';
 
 export interface RaceListItem {
   raceYear: number;
@@ -71,6 +73,16 @@ export const createList = async (list: Omit<RaceList, 'id' | 'createdAt' | 'upda
       listsCount: increment(1)
     });
     console.log('[createList] User stats updated');
+
+    // Create activity for public lists
+    if (list.isPublic) {
+      createActivity({
+        type: 'list',
+        targetId: docRef.id,
+        targetType: 'list',
+        content: list.title,
+      }).catch(err => console.error('Failed to create activity:', err));
+    }
 
     return docRef.id;
   } catch (error) {
@@ -170,6 +182,14 @@ export const likeList = async (listId: string) => {
     throw new Error('Already liked');
   }
 
+  // Fetch list data
+  const listDoc = await getDoc(doc(db, 'lists', listId));
+  if (!listDoc.exists()) {
+    throw new Error('List not found');
+  }
+
+  const listData = listDoc.data();
+
   await addDoc(collection(db, 'listLikes'), {
     userId: user.uid,
     listId,
@@ -179,6 +199,42 @@ export const likeList = async (listId: string) => {
   await updateDoc(doc(db, 'lists', listId), {
     likesCount: increment(1)
   });
+
+  // Create activity and notification for list owner
+  const listOwnerId = listData.userId;
+  if (listOwnerId && listOwnerId !== user.uid) {
+    Promise.all([
+      createActivity({
+        type: 'like',
+        targetId: listId,
+        targetType: 'list',
+        content: listData.title,
+      }).catch(err => console.error('[likeList] Failed to create activity:', err)),
+
+      getDoc(doc(db, 'users', user.uid)).then(likerDoc => {
+        const likerData = likerDoc.exists() ? likerDoc.data() : {};
+        const likerName = likerData.username || likerData.name || user.displayName || 'Someone';
+        const likerPhoto = likerData.photoURL || user.photoURL;
+
+        console.log('[likeList] Creating notification for list owner:', {
+          userId: listOwnerId,
+          actorId: user.uid,
+          actorName: likerName,
+          listTitle: listData.title
+        });
+
+        return createNotification({
+          userId: listOwnerId,
+          type: 'like',
+          actorId: user.uid,
+          actorName: likerName,
+          actorPhotoURL: likerPhoto,
+          content: `liked your list "${listData.title}"`,
+          linkTo: `/list/${listId}`,
+        });
+      }).catch(err => console.error('[likeList] Failed to create notification:', err))
+    ]).catch(err => console.error('[likeList] Promise.all error:', err));
+  }
 };
 
 export const unlikeList = async (listId: string) => {

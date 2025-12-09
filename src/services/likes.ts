@@ -77,12 +77,19 @@ export const toggleLike = async (raceLogId: string) => {
           round: raceData.round,
           raceLocation: raceData.raceLocation,
           rating: raceData.rating,
-        }).catch(err => console.error('Failed to create activity:', err)),
+        }).catch(err => console.error('[toggleLike] Failed to create activity:', err)),
 
         getDoc(doc(db, 'users', user.uid)).then(likerDoc => {
           const likerData = likerDoc.exists() ? likerDoc.data() : {};
           const likerName = likerData.username || likerData.name || user.displayName || 'Someone';
           const likerPhoto = likerData.photoURL || user.photoURL;
+
+          console.log('[toggleLike] Creating notification for review owner:', {
+            userId: raceLogOwnerId,
+            actorId: user.uid,
+            actorName: likerName,
+            raceName: raceData.raceName
+          });
 
           return createNotification({
             userId: raceLogOwnerId,
@@ -93,8 +100,8 @@ export const toggleLike = async (raceLogId: string) => {
             content: `liked your review of ${raceData.raceName || 'your race log'}`,
             linkTo: `/race/${raceLogId}`,
           });
-        }).catch(err => console.error('Failed to create notification:', err))
-      ]);
+        }).catch(err => console.error('[toggleLike] Failed to create notification:', err))
+      ]).catch(err => console.error('[toggleLike] Promise.all error:', err));
     }
 
     return true;

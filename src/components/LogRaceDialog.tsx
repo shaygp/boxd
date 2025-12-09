@@ -153,7 +153,8 @@ export const LogRaceDialog = ({
     if (!open) {
       hasPrefilledRef.current = false;
     }
-  }, [open, defaultRaceName, defaultCircuit, defaultYear, editMode, historicalRaces]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, defaultRaceName, defaultCircuit, defaultYear, editMode]);
 
   const driversByYear: Record<number, Array<{ id: string; name: string; team: string }>> = {
     2025: [
@@ -638,12 +639,15 @@ export const LogRaceDialog = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col bg-[#0a0a0a] border-2 border-racing-red/40 w-[95vw] sm:w-full p-0">
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col bg-[#0a0a0a] border-2 border-racing-red/40 w-[95vw] sm:w-full p-0" aria-describedby="log-race-description">
         <DialogHeader className="border-b-2 border-red-900/50 pb-3 px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
           <DialogTitle className="text-base sm:text-xl font-black flex items-center gap-2 uppercase tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             <div className="w-1 h-6 bg-racing-red rounded-full shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
             {editMode ? 'Edit Race Log' : 'Log a Race'}
           </DialogTitle>
+          <p id="log-race-description" className="sr-only">
+            {editMode ? 'Edit your race log details including rating, review, and session information' : 'Log a new race by selecting the circuit, date, and adding your review and rating'}
+          </p>
         </DialogHeader>
 
         <div className="space-y-4 py-4 px-4 sm:px-6 overflow-y-auto flex-1 overscroll-contain">

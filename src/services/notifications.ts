@@ -29,10 +29,16 @@ const notificationsCollection = collection(db, 'notifications');
 
 export const createNotification = async (notification: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) => {
   const user = auth.currentUser;
-  if (!user) throw new Error('User not authenticated');
+  if (!user) {
+    console.error('[createNotification] User not authenticated');
+    throw new Error('User not authenticated');
+  }
 
   // Don't create notification if actor is the same as recipient
-  if (notification.actorId === notification.userId) return;
+  if (notification.actorId === notification.userId) {
+    console.log('[createNotification] Skipping self-notification');
+    return;
+  }
 
   const newNotification = {
     ...notification,
@@ -40,7 +46,15 @@ export const createNotification = async (notification: Omit<Notification, 'id' |
     createdAt: Timestamp.now(),
   };
 
-  await addDoc(notificationsCollection, newNotification);
+  console.log('[createNotification] Creating notification:', newNotification);
+
+  try {
+    const docRef = await addDoc(notificationsCollection, newNotification);
+    console.log('[createNotification] Notification created successfully with ID:', docRef.id);
+  } catch (error) {
+    console.error('[createNotification] Error creating notification:', error);
+    throw error;
+  }
 };
 
 export const getUserNotifications = async (userId: string, limitCount: number = 20) => {
