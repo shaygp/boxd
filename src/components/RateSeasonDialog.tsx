@@ -65,9 +65,6 @@ export const RateSeasonDialog = ({ open, onOpenChange, year, onRatingSubmitted }
 
     try {
       await createOrUpdateSeasonRating(year, rating, review, favoriteRace, favoriteDriver);
-      toast.success(existingRating ? 'Rating updated!' : 'Season rated!', {
-        duration: 2000,
-      });
       onRatingSubmitted?.();
       onOpenChange(false);
     } catch (error) {
