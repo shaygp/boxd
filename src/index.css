@@ -177,6 +177,39 @@ All colors MUST be HSL.
   * {
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Remove white/blue selection highlight color */
+  *::selection {
+    background: transparent;
+    color: inherit;
+  }
+
+  *::-moz-selection {
+    background: transparent;
+    color: inherit;
+  }
+
+  /* Allow text selection only in specific areas */
+  input, textarea, [contenteditable], p, span, h1, h2, h3, h4, h5, h6, label {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Ensure all form elements can receive input */
+  input, textarea, select, button[type="submit"] {
+    pointer-events: auto;
+    -webkit-user-select: auto;
+    user-select: auto;
+  }
+
+  /* Custom selection color for text areas only */
+  input::selection, textarea::selection, [contenteditable]::selection,
+  p::selection, span::selection, h1::selection, h2::selection, h3::selection, h4::selection, h5::selection, h6::selection {
+    background: rgba(220, 38, 38, 0.3);
+    color: white;
   }
 
   /* Prevent focus rings on mouse/touch interaction, keep for keyboard */

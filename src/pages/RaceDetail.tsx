@@ -35,6 +35,7 @@ const RaceDetail = () => {
   const [searchParams] = useSearchParams();
   const highlightReviewId = searchParams.get('highlight');
   const year = season;
+  const currentUser = auth.currentUser;
 
   // Only log on mount to avoid spam
   // console.log('[RaceDetail] URL Params:', { id, season, year, round, highlightReviewId });
@@ -58,6 +59,7 @@ const RaceDetail = () => {
   const [reviewFilter, setReviewFilter] = useState<'recent' | 'liked'>('recent');
   const [sessionFilter, setSessionFilter] = useState<'all' | 'race' | 'sprint' | 'qualifying' | 'sprintQualifying'>('all');
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const loadRaceData = async () => {
@@ -317,6 +319,12 @@ const RaceDetail = () => {
       if (highlightReviewId) {
         if (a.id === highlightReviewId) return -1;
         if (b.id === highlightReviewId) return 1;
+      }
+
+      // Put current user's review at the top (if not highlighted)
+      if (currentUser) {
+        if (a.userId === currentUser.uid) return -1;
+        if (b.userId === currentUser.uid) return 1;
       }
 
       if (reviewFilter === 'liked') {
@@ -821,9 +829,24 @@ const RaceDetail = () => {
                             </div>
                           </div>
                         ) : review.review && (
-                          <p className="text-sm leading-relaxed text-gray-200">
-                            {review.review}
-                          </p>
+                          <div className="text-sm leading-relaxed text-gray-200">
+                            {review.review.length > 300 && !expandedReviews.has(review.id) ? (
+                              <>
+                                <p className="whitespace-pre-wrap">{review.review.substring(0, 300)}...</p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedReviews(new Set([...expandedReviews, review.id]));
+                                  }}
+                                  className="text-racing-red hover:text-red-400 text-xs font-semibold mt-1"
+                                >
+                                  Read more
+                                </button>
+                              </>
+                            ) : (
+                              <p className="whitespace-pre-wrap">{review.review}</p>
+                            )}
+                          </div>
                         )}
 
                         {/* Companions */}

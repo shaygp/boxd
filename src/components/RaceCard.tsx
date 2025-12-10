@@ -118,6 +118,11 @@ const RaceCardComponent = ({
     }
   };
 
+  const handleMouseEnter = () => {
+    // Prefetch RaceDetail component on hover
+    import('@/pages/RaceDetail');
+  };
+
   const handleWatchlistToggle = async (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -179,6 +184,7 @@ const RaceCardComponent = ({
   return (
     <Card
       onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
       className="group relative overflow-hidden bg-black/90 border-2 border-red-900/40 hover:border-racing-red hover:ring-2 hover:ring-racing-red hover:shadow-xl hover:shadow-red-500/30 transition-all duration-200 cursor-pointer touch-manipulation backdrop-blur-sm"
     >
       {/* Poster */}

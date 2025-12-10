@@ -5,14 +5,13 @@ import { RaceCard } from "@/components/RaceCard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
-import { CreateListDialog } from "@/components/CreateListDialog";
 import { LogRaceDialog } from "@/components/LogRaceDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight, Ban, Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
-import { getUserProfile, getUserRaceLogs, calculateTotalHoursWatched } from "@/services/raceLogs";
+import { getUserProfile, getUserRaceLogs } from "@/services/raceLogs";
 import { followUser, unfollowUser, isFollowing, getFollowers, getFollowing } from "@/services/follows";
 import { getUserLists } from "@/services/lists";
 import { getCountryCodeFromGPName, getCountryFlag } from "@/services/f1Api";
@@ -64,6 +63,9 @@ const Profile = () => {
   const [ratedSortBy, setRatedSortBy] = useState<'dateWatched' | 'raceDate' | 'ratingDate'>('dateWatched');
   const [selectFavoriteDialogOpen, setSelectFavoriteDialogOpen] = useState(false);
   const [allRaces, setAllRaces] = useState<any[]>([]);
+  const [likesDialogOpen, setLikesDialogOpen] = useState(false);
+  const [selectedLogLikes, setSelectedLogLikes] = useState<any[]>([]);
+  const [likesLoading, setLikesLoading] = useState(false);
 
   const targetUserId = userId || currentUser?.uid;
   const isOwnProfile = !userId || userId === currentUser?.uid;
@@ -93,7 +95,6 @@ const Profile = () => {
         });
       }
 
-      const hoursWatched = calculateTotalHoursWatched(userLogs);
       const reviewsCount = userLogs.filter(log => log.review && log.review.length > 0).length;
 
       // Store full logs with review content
@@ -104,7 +105,7 @@ const Profile = () => {
 
       setStats({
         racesWatched: userLogs.length,
-        hoursSpent: Math.round(hoursWatched),
+        hoursSpent: 0,
         reviews: reviewsCount,
         lists: statsData.listsCount || 0,
         followers: statsData.followersCount || 0,
@@ -261,6 +262,43 @@ const Profile = () => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
       setBlockLoading(false);
+    }
+  };
+
+  const handleShowLikes = async (log: any) => {
+    if (!log.likedBy || log.likedBy.length === 0) {
+      toast({ title: 'No likes yet' });
+      return;
+    }
+
+    setLikesLoading(true);
+    setLikesDialogOpen(true);
+    setSelectedLogLikes([]);
+
+    try {
+      const likesData = await Promise.all(
+        log.likedBy.map(async (uid: string) => {
+          const userDoc = await getDoc(doc(db, 'users', uid));
+          if (userDoc.exists()) {
+            return {
+              id: uid,
+              ...userDoc.data()
+            };
+          }
+          return null;
+        })
+      );
+
+      setSelectedLogLikes(likesData.filter(user => user !== null));
+    } catch (error) {
+      console.error('Error loading likes:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load likes',
+        variant: 'destructive'
+      });
+    } finally {
+      setLikesLoading(false);
     }
   };
 
@@ -866,13 +904,17 @@ const Profile = () => {
                             {/* Engagement bar - Twitter style */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4 sm:gap-6">
-                                <button className="flex items-center gap-2 hover:text-racing-red transition-colors group">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    handleShowLikes(log);
+                                  }}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  className="flex items-center gap-2 hover:text-racing-red transition-colors group cursor-pointer select-none"
+                                >
                                   <Heart className={`w-[18px] h-[18px] ${log.likedBy?.includes(currentUser?.uid || '') ? 'fill-racing-red text-racing-red' : 'text-gray-600 group-hover:text-racing-red'}`} />
                                   <span className="text-sm font-medium text-gray-500 group-hover:text-racing-red">{log.likesCount || 0}</span>
-                                </button>
-                                <button className="flex items-center gap-2 hover:text-blue-400 transition-colors group">
-                                  <MessageCircle className="w-[18px] h-[18px] text-gray-600 group-hover:text-blue-400" />
-                                  <span className="text-sm font-medium text-gray-500 group-hover:text-blue-400">{log.commentsCount || 0}</span>
                                 </button>
                               </div>
 
@@ -1158,6 +1200,47 @@ const Profile = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Likes Dialog */}
+      <Dialog open={likesDialogOpen} onOpenChange={setLikesDialogOpen}>
+        <DialogContent className="max-w-md bg-black border-2 border-racing-red/40">
+          <DialogHeader>
+            <DialogTitle className="text-white">Liked by</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4 space-y-3 max-h-[400px] overflow-y-auto">
+            {likesLoading ? (
+              <div className="text-center text-gray-400 py-8">Loading...</div>
+            ) : selectedLogLikes.length === 0 ? (
+              <div className="text-center text-gray-400 py-8">No likes yet</div>
+            ) : (
+              selectedLogLikes.map((user: any) => (
+                <div
+                  key={user.id}
+                  onClick={() => {
+                    setLikesDialogOpen(false);
+                    navigate(`/user/${user.id}`);
+                  }}
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-900 transition-colors cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800 flex-shrink-0">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white font-bold">
+                        {(user.name || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-medium truncate">{user.name}</div>
+                    <div className="text-gray-400 text-sm truncate">@{user.username}</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </DialogContent>
       </Dialog>

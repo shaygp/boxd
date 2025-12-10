@@ -207,7 +207,7 @@ const Index = () => {
           <div
             className="absolute inset-0 z-0"
             style={{
-              backgroundImage: `url(${import.meta.env.BASE_URL}ferrari-f1.jpg)`,
+              backgroundImage: `url(/ferrari-f1.jpg)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center center',
               opacity: 0.55,
