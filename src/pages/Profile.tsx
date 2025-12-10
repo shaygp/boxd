@@ -8,10 +8,10 @@ import { EmptyState } from "@/components/EmptyState";
 import { LogRaceDialog } from "@/components/LogRaceDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight, Ban, Edit } from "lucide-react";
+import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight, Ban, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
-import { getUserProfile, getUserRaceLogs } from "@/services/raceLogs";
+import { getUserProfile, getUserRaceLogs, deleteRaceLog } from "@/services/raceLogs";
 import { followUser, unfollowUser, isFollowing, getFollowers, getFollowing } from "@/services/follows";
 import { getUserLists } from "@/services/lists";
 import { getCountryCodeFromGPName, getCountryFlag } from "@/services/f1Api";
@@ -66,6 +66,8 @@ const Profile = () => {
   const [likesDialogOpen, setLikesDialogOpen] = useState(false);
   const [selectedLogLikes, setSelectedLogLikes] = useState<any[]>([]);
   const [likesLoading, setLikesLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [logToDelete, setLogToDelete] = useState<any>(null);
 
   const targetUserId = userId || currentUser?.uid;
   const isOwnProfile = !userId || userId === currentUser?.uid;
@@ -332,6 +334,30 @@ const Profile = () => {
     } catch (error) {
       console.error('Error setting favorite race:', error);
       toast({ title: 'Failed to set favorite race', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteLog = async () => {
+    if (!logToDelete || !currentUser) return;
+
+    try {
+      await deleteRaceLog(logToDelete.id);
+
+      // Optimistically update the UI
+      setFullLogs(prevLogs => prevLogs.filter(log => log.id !== logToDelete.id));
+      setLogs(prevLogs => prevLogs.filter(log => log.id !== logToDelete.id));
+      setStats(prev => ({ ...prev, racesWatched: prev.racesWatched - 1 }));
+
+      setDeleteDialogOpen(false);
+      setLogToDelete(null);
+      toast({ title: 'Race deleted successfully' });
+    } catch (error: any) {
+      console.error('Error deleting race log:', error);
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
     }
   };
 
@@ -676,6 +702,20 @@ const Profile = () => {
                         >
                           {/* Racing stripe */}
                           <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+
+                          {/* Delete button - Only show on own profile */}
+                          {isOwnProfile && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLogToDelete(log);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-black/60 border border-gray-700 hover:bg-red-600/20 hover:border-red-600 transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                            </button>
+                          )}
 
                           <div className="flex gap-2 sm:gap-3 md:gap-4 items-center flex-wrap sm:flex-nowrap">
                             {/* Flag & Title */}
@@ -1241,6 +1281,44 @@ const Profile = () => {
                 </div>
               ))
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md bg-black/95 border-2 border-racing-red">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black uppercase tracking-wider text-white">Delete Race Log?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-300 text-sm mb-4">
+              Are you sure you want to delete this race log? This action cannot be undone.
+            </p>
+            {logToDelete && (
+              <div className="bg-black/60 border border-racing-red/30 rounded-lg p-3 mb-4">
+                <p className="font-bold text-white text-sm mb-1">{logToDelete.raceName}</p>
+                <p className="text-xs text-gray-400">{logToDelete.raceYear} • {logToDelete.raceLocation}</p>
+              </div>
+            )}
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={() => {
+                  setDeleteDialogOpen(false);
+                  setLogToDelete(null);
+                }}
+                variant="outline"
+                className="border border-gray-600 bg-transparent text-white hover:bg-gray-800"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDeleteLog}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
