@@ -656,13 +656,29 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                         {activity.content}
                       </p>
                     </div>
-                    <Link
-                      to={getActivityLink(activity)}
-                      className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-gray-400 hover:text-racing-red transition-colors font-medium"
-                    >
-                      Read more
-                      <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    </Link>
+                    <div className="flex items-center justify-between">
+                      <Link
+                        to={getActivityLink(activity)}
+                        className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-gray-400 hover:text-racing-red transition-colors font-medium"
+                      >
+                        Read more
+                        <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                      </Link>
+                      <button
+                        onClick={(e) => handleLike(activity, e)}
+                        disabled={likingActivity === activity.targetId}
+                        className={`flex items-center gap-1.5 text-xs sm:text-sm transition-colors ${
+                          likedActivities.has(activity.targetId || '')
+                            ? 'text-racing-red'
+                            : 'text-gray-400 hover:text-racing-red'
+                        }`}
+                      >
+                        <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${likedActivities.has(activity.targetId || '') ? 'fill-racing-red' : ''}`} />
+                        <span className="hidden sm:inline">
+                          {likedActivities.has(activity.targetId || '') ? 'Liked' : 'Like'}
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 )}
 

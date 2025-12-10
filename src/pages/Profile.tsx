@@ -801,7 +801,7 @@ const Profile = () => {
                         <div className="flex gap-3">
                           {/* Avatar */}
                           <div className="flex-shrink-0">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 flex items-center justify-center overflow-hidden hover:border-gray-600 transition-colors">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 flex items-center justify-center overflow-hidden hover:border-gray-600 transition-colors">
                               {profile?.photoURL ? (
                                 <img
                                   src={profile.photoURL}
@@ -809,7 +809,7 @@ const Profile = () => {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <span className="text-base font-black text-gray-300">
+                                <span className="text-sm font-black text-gray-300">
                                   {(profile?.name || profile?.username || 'U').charAt(0).toUpperCase()}
                                 </span>
                               )}
@@ -820,7 +820,7 @@ const Profile = () => {
                           <div className="flex-1 min-w-0">
                             {/* Header - Twitter style */}
                             <div className="flex items-center gap-1.5 mb-1.5">
-                              <span className="font-black text-white text-base hover:underline cursor-pointer">
+                              <span className="font-medium text-white text-base hover:underline cursor-pointer">
                                 {profile?.name || 'User'}
                               </span>
                               <span className="text-gray-500 text-sm font-medium">

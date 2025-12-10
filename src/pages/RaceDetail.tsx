@@ -531,6 +531,8 @@ const RaceDetail = () => {
                       src={flagUrl}
                       alt={race.country}
                       className="w-full h-full object-cover"
+                      loading="eager"
+                      fetchpriority="high"
                     />
                   </div>
                   <div className="flex flex-col items-start justify-center flex-1 space-y-1 min-w-0">
@@ -865,8 +867,13 @@ const RaceDetail = () => {
                       {/* Actions footer */}
                       <div className="flex items-center gap-6 mt-3 pt-3 border-t border-gray-800">
                         <button
-                          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-racing-red transition-colors"
-                          onClick={() => review.id && handleLikeReview(review.id)}
+                          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-racing-red transition-colors select-none"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            review.id && handleLikeReview(review.id);
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()}
                         >
                           <Heart className={`w-4 h-4 ${
                             review.likedBy?.includes(auth.currentUser?.uid || '')
