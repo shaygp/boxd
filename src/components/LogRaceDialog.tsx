@@ -10,14 +10,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { StarRating } from "@/components/StarRating";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { CalendarIcon, Plus, X } from "lucide-react";
+import { CalendarIcon, Plus, X, Trophy, Award } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRaceLog, updateRaceLog, getUserRaceLogs } from "@/services/raceLogs";
 import { createActivity } from "@/services/activity";
 import { getUserProfile } from "@/services/auth";
-import { getCountryCodeFromName, getRaceWinner } from "@/services/f1Api";
+import { getCountryCodeFromName } from "@/services/f1Api";
+import { getRaceWinner } from "@/data/raceWinners2010-2019";
+import { getChampions } from "@/data/champions2010-2019";
 import { getRaceByNameAndYear } from "@/services/f1Calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Timestamp } from "firebase/firestore";
@@ -77,6 +79,7 @@ export const LogRaceDialog = ({
   const hasPrefilledRef = useRef(false);
   const [loadedExistingLog, setLoadedExistingLog] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(editMode);
+  const previousYearRef = useRef<number>(new Date().getFullYear());
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -213,8 +216,7 @@ export const LogRaceDialog = ({
         hasPrefilledRef.current = true; // Mark as prefilled
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, defaultRaceName, defaultCircuit, defaultYear, defaultDate, editMode]);
+  }, [open, defaultRaceName, defaultCircuit, defaultYear, defaultDate, editMode, historicalRaces]);
 
   const driversByYear: Record<number, Array<{ id: string; name: string; team: string }>> = {
     2025: [
@@ -348,6 +350,262 @@ export const LogRaceDialog = ({
       { id: "giovinazzi", name: "Antonio Giovinazzi", team: "Alfa Romeo" },
       { id: "magnussen", name: "Kevin Magnussen", team: "Haas" },
       { id: "grosjean", name: "Romain Grosjean", team: "Haas" },
+      { id: "aitken", name: "Jack Aitken", team: "Williams" },
+      { id: "fittipaldi", name: "Pietro Fittipaldi", team: "Haas" },
+      { id: "hulkenberg", name: "Nico Hülkenberg", team: "Racing Point" },
+    ],
+    2019: [
+      { id: "verstappen", name: "Max Verstappen", team: "Red Bull Racing" },
+      { id: "gasly", name: "Pierre Gasly", team: "Red Bull Racing" },
+      { id: "albon", name: "Alexander Albon", team: "Red Bull Racing" },
+      { id: "leclerc", name: "Charles Leclerc", team: "Ferrari" },
+      { id: "vettel", name: "Sebastian Vettel", team: "Ferrari" },
+      { id: "hamilton", name: "Lewis Hamilton", team: "Mercedes" },
+      { id: "bottas", name: "Valtteri Bottas", team: "Mercedes" },
+      { id: "sainz", name: "Carlos Sainz Jr.", team: "McLaren" },
+      { id: "norris", name: "Lando Norris", team: "McLaren" },
+      { id: "ricciardo", name: "Daniel Ricciardo", team: "Renault" },
+      { id: "hulkenberg", name: "Nico Hülkenberg", team: "Renault" },
+      { id: "perez", name: "Sergio Pérez", team: "Racing Point" },
+      { id: "stroll", name: "Lance Stroll", team: "Racing Point" },
+      { id: "kvyat", name: "Daniil Kvyat", team: "Toro Rosso" },
+      { id: "russell", name: "George Russell", team: "Williams" },
+      { id: "kubica", name: "Robert Kubica", team: "Williams" },
+      { id: "raikkonen", name: "Kimi Räikkönen", team: "Alfa Romeo" },
+      { id: "giovinazzi", name: "Antonio Giovinazzi", team: "Alfa Romeo" },
+      { id: "magnussen", name: "Kevin Magnussen", team: "Haas" },
+      { id: "grosjean", name: "Romain Grosjean", team: "Haas" },
+    ],
+    2018: [
+      { id: "ricciardo", name: "Daniel Ricciardo", team: "Red Bull Racing" },
+      { id: "verstappen", name: "Max Verstappen", team: "Red Bull Racing" },
+      { id: "vettel", name: "Sebastian Vettel", team: "Ferrari" },
+      { id: "raikkonen", name: "Kimi Räikkönen", team: "Ferrari" },
+      { id: "hamilton", name: "Lewis Hamilton", team: "Mercedes" },
+      { id: "bottas", name: "Valtteri Bottas", team: "Mercedes" },
+      { id: "alonso", name: "Fernando Alonso", team: "McLaren" },
+      { id: "vandoorne", name: "Stoffel Vandoorne", team: "McLaren" },
+      { id: "hulkenberg", name: "Nico Hülkenberg", team: "Renault" },
+      { id: "sainz", name: "Carlos Sainz Jr.", team: "Renault" },
+      { id: "ocon", name: "Esteban Ocon", team: "Force India" },
+      { id: "perez", name: "Sergio Pérez", team: "Force India" },
+      { id: "gasly", name: "Pierre Gasly", team: "Toro Rosso" },
+      { id: "hartley", name: "Brendon Hartley", team: "Toro Rosso" },
+      { id: "stroll", name: "Lance Stroll", team: "Williams" },
+      { id: "sirotkin", name: "Sergey Sirotkin", team: "Williams" },
+      { id: "leclerc", name: "Charles Leclerc", team: "Sauber" },
+      { id: "ericsson", name: "Marcus Ericsson", team: "Sauber" },
+      { id: "magnussen", name: "Kevin Magnussen", team: "Haas" },
+      { id: "grosjean", name: "Romain Grosjean", team: "Haas" },
+    ],
+    2017: [
+      { id: "ricciardo", name: "Daniel Ricciardo", team: "Red Bull Racing" },
+      { id: "verstappen", name: "Max Verstappen", team: "Red Bull Racing" },
+      { id: "vettel", name: "Sebastian Vettel", team: "Ferrari" },
+      { id: "raikkonen", name: "Kimi Räikkönen", team: "Ferrari" },
+      { id: "hamilton", name: "Lewis Hamilton", team: "Mercedes" },
+      { id: "bottas", name: "Valtteri Bottas", team: "Mercedes" },
+      { id: "alonso", name: "Fernando Alonso", team: "McLaren" },
+      { id: "vandoorne", name: "Stoffel Vandoorne", team: "McLaren" },
+      { id: "hulkenberg", name: "Nico Hülkenberg", team: "Renault" },
+      { id: "palmer", name: "Jolyon Palmer", team: "Renault" },
+      { id: "ocon", name: "Esteban Ocon", team: "Force India" },
+      { id: "perez", name: "Sergio Pérez", team: "Force India" },
+      { id: "sainz", name: "Carlos Sainz Jr.", team: "Toro Rosso" },
+      { id: "kvyat", name: "Daniil Kvyat", team: "Toro Rosso" },
+      { id: "gasly", name: "Pierre Gasly", team: "Toro Rosso" },
+      { id: "massa", name: "Felipe Massa", team: "Williams" },
+      { id: "stroll", name: "Lance Stroll", team: "Williams" },
+      { id: "ericsson", name: "Marcus Ericsson", team: "Sauber" },
+      { id: "wehrlein", name: "Pascal Wehrlein", team: "Sauber" },
+      { id: "giovinazzi", name: "Antonio Giovinazzi", team: "Sauber" },
+      { id: "magnussen", name: "Kevin Magnussen", team: "Haas" },
+      { id: "grosjean", name: "Romain Grosjean", team: "Haas" },
+    ],
+    2016: [
+      { id: "ricciardo", name: "Daniel Ricciardo", team: "Red Bull Racing" },
+      { id: "kvyat", name: "Daniil Kvyat", team: "Red Bull Racing" },
+      { id: "verstappen", name: "Max Verstappen", team: "Red Bull Racing" },
+      { id: "vettel", name: "Sebastian Vettel", team: "Ferrari" },
+      { id: "raikkonen", name: "Kimi Räikkönen", team: "Ferrari" },
+      { id: "hamilton", name: "Lewis Hamilton", team: "Mercedes" },
+      { id: "rosberg", name: "Nico Rosberg", team: "Mercedes" },
+      { id: "alonso", name: "Fernando Alonso", team: "McLaren" },
+      { id: "button", name: "Jenson Button", team: "McLaren" },
+      { id: "vandoorne", name: "Stoffel Vandoorne", team: "McLaren" },
+      { id: "magnussen", name: "Kevin Magnussen", team: "Renault" },
+      { id: "palmer", name: "Jolyon Palmer", team: "Renault" },
+      { id: "hulkenberg", name: "Nico Hülkenberg", team: "Force India" },
+      { id: "perez", name: "Sergio Pérez", team: "Force India" },
+      { id: "ocon", name: "Esteban Ocon", team: "Force India" },
+      { id: "sainz", name: "Carlos Sainz Jr.", team: "Toro Rosso" },
+      { id: "gasly", name: "Pierre Gasly", team: "Toro Rosso" },
+      { id: "bottas", name: "Valtteri Bottas", team: "Williams" },
+      { id: "massa", name: "Felipe Massa", team: "Williams" },
+      { id: "nasr", name: "Felipe Nasr", team: "Sauber" },
+      { id: "ericsson", name: "Marcus Ericsson", team: "Sauber" },
+      { id: "wehrlein", name: "Pascal Wehrlein", team: "Manor" },
+      { id: "haryanto", name: "Rio Haryanto", team: "Manor" },
+      { id: "grosjean", name: "Romain Grosjean", team: "Haas" },
+    ],
+    2015: [
+      { id: "ricciardo", name: "Daniel Ricciardo", team: "Red Bull Racing" },
+      { id: "kvyat", name: "Daniil Kvyat", team: "Red Bull Racing" },
+      { id: "vettel", name: "Sebastian Vettel", team: "Ferrari" },
+      { id: "raikkonen", name: "Kimi Räikkönen", team: "Ferrari" },
+      { id: "hamilton", name: "Lewis Hamilton", team: "Mercedes" },
+      { id: "rosberg", name: "Nico Rosberg", team: "Mercedes" },
+      { id: "alonso", name: "Fernando Alonso", team: "McLaren" },
+      { id: "button", name: "Jenson Button", team: "McLaren" },
+      { id: "magnussen", name: "Kevin Magnussen", team: "McLaren" },
+      { id: "hulkenberg", name: "Nico Hülkenberg", team: "Force India" },
+      { id: "perez", name: "Sergio Pérez", team: "Force India" },
+      { id: "sainz", name: "Carlos Sainz Jr.", team: "Toro Rosso" },
+      { id: "verstappen", name: "Max Verstappen", team: "Toro Rosso" },
+      { id: "bottas", name: "Valtteri Bottas", team: "Williams" },
+      { id: "massa", name: "Felipe Massa", team: "Williams" },
+      { id: "nasr", name: "Felipe Nasr", team: "Sauber" },
+      { id: "ericsson", name: "Marcus Ericsson", team: "Sauber" },
+      { id: "maldonado", name: "Pastor Maldonado", team: "Lotus" },
+      { id: "grosjean", name: "Romain Grosjean", team: "Lotus" },
+      { id: "merhi", name: "Roberto Merhi", team: "Manor" },
+      { id: "stevens", name: "Will Stevens", team: "Manor" },
+      { id: "rossi", name: "Alexander Rossi", team: "Manor" },
+    ],
+    2014: [
+      { id: "ricciardo", name: "Daniel Ricciardo", team: "Red Bull Racing" },
+      { id: "vettel", name: "Sebastian Vettel", team: "Red Bull Racing" },
+      { id: "alonso", name: "Fernando Alonso", team: "Ferrari" },
+      { id: "raikkonen", name: "Kimi Räikkönen", team: "Ferrari" },
+      { id: "hamilton", name: "Lewis Hamilton", team: "Mercedes" },
+      { id: "rosberg", name: "Nico Rosberg", team: "Mercedes" },
+      { id: "button", name: "Jenson Button", team: "McLaren" },
+      { id: "magnussen", name: "Kevin Magnussen", team: "McLaren" },
+      { id: "hulkenberg", name: "Nico Hülkenberg", team: "Force India" },
+      { id: "perez", name: "Sergio Pérez", team: "Force India" },
+      { id: "vergne", name: "Jean-Éric Vergne", team: "Toro Rosso" },
+      { id: "kvyat", name: "Daniil Kvyat", team: "Toro Rosso" },
+      { id: "bottas", name: "Valtteri Bottas", team: "Williams" },
+      { id: "massa", name: "Felipe Massa", team: "Williams" },
+      { id: "gutierrez", name: "Esteban Gutiérrez", team: "Sauber" },
+      { id: "sutil", name: "Adrian Sutil", team: "Sauber" },
+      { id: "maldonado", name: "Pastor Maldonado", team: "Lotus" },
+      { id: "grosjean", name: "Romain Grosjean", team: "Lotus" },
+      { id: "bianchi", name: "Jules Bianchi", team: "Marussia" },
+      { id: "chilton", name: "Max Chilton", team: "Marussia" },
+      { id: "kobayashi", name: "Kamui Kobayashi", team: "Caterham" },
+      { id: "ericsson", name: "Marcus Ericsson", team: "Caterham" },
+      { id: "lotterer", name: "André Lotterer", team: "Caterham" },
+      { id: "rossi", name: "Alexander Rossi", team: "Caterham" },
+    ],
+    2013: [
+      { id: "vettel", name: "Sebastian Vettel", team: "Red Bull Racing" },
+      { id: "webber", name: "Mark Webber", team: "Red Bull Racing" },
+      { id: "alonso", name: "Fernando Alonso", team: "Ferrari" },
+      { id: "massa", name: "Felipe Massa", team: "Ferrari" },
+      { id: "hamilton", name: "Lewis Hamilton", team: "Mercedes" },
+      { id: "rosberg", name: "Nico Rosberg", team: "Mercedes" },
+      { id: "button", name: "Jenson Button", team: "McLaren" },
+      { id: "perez", name: "Sergio Pérez", team: "McLaren" },
+      { id: "raikkonen", name: "Kimi Räikkönen", team: "Lotus" },
+      { id: "grosjean", name: "Romain Grosjean", team: "Lotus" },
+      { id: "hulkenberg", name: "Nico Hülkenberg", team: "Sauber" },
+      { id: "gutierrez", name: "Esteban Gutiérrez", team: "Sauber" },
+      { id: "diresta", name: "Paul di Resta", team: "Force India" },
+      { id: "sutil", name: "Adrian Sutil", team: "Force India" },
+      { id: "ricciardo", name: "Daniel Ricciardo", team: "Toro Rosso" },
+      { id: "vergne", name: "Jean-Éric Vergne", team: "Toro Rosso" },
+      { id: "maldonado", name: "Pastor Maldonado", team: "Williams" },
+      { id: "bottas", name: "Valtteri Bottas", team: "Williams" },
+      { id: "bianchi", name: "Jules Bianchi", team: "Marussia" },
+      { id: "chilton", name: "Max Chilton", team: "Marussia" },
+      { id: "pic", name: "Charles Pic", team: "Caterham" },
+      { id: "vandergarde", name: "Giedo van der Garde", team: "Caterham" },
+    ],
+    2012: [
+      { id: "vettel", name: "Sebastian Vettel", team: "Red Bull Racing" },
+      { id: "webber", name: "Mark Webber", team: "Red Bull Racing" },
+      { id: "alonso", name: "Fernando Alonso", team: "Ferrari" },
+      { id: "massa", name: "Felipe Massa", team: "Ferrari" },
+      { id: "hamilton", name: "Lewis Hamilton", team: "McLaren" },
+      { id: "button", name: "Jenson Button", team: "McLaren" },
+      { id: "schumacher", name: "Michael Schumacher", team: "Mercedes" },
+      { id: "rosberg", name: "Nico Rosberg", team: "Mercedes" },
+      { id: "raikkonen", name: "Kimi Räikkönen", team: "Lotus" },
+      { id: "grosjean", name: "Romain Grosjean", team: "Lotus" },
+      { id: "kobayashi", name: "Kamui Kobayashi", team: "Sauber" },
+      { id: "perez", name: "Sergio Pérez", team: "Sauber" },
+      { id: "diresta", name: "Paul di Resta", team: "Force India" },
+      { id: "hulkenberg", name: "Nico Hülkenberg", team: "Force India" },
+      { id: "ricciardo", name: "Daniel Ricciardo", team: "Toro Rosso" },
+      { id: "vergne", name: "Jean-Éric Vergne", team: "Toro Rosso" },
+      { id: "maldonado", name: "Pastor Maldonado", team: "Williams" },
+      { id: "senna", name: "Bruno Senna", team: "Williams" },
+      { id: "petrov", name: "Vitaly Petrov", team: "Caterham" },
+      { id: "kovalainen", name: "Heikki Kovalainen", team: "Caterham" },
+      { id: "glock", name: "Timo Glock", team: "Marussia" },
+      { id: "pic", name: "Charles Pic", team: "Marussia" },
+      { id: "dambrosio", name: "Jérôme d'Ambrosio", team: "Lotus" },
+      { id: "delarosa", name: "Pedro de la Rosa", team: "HRT" },
+    ],
+    2011: [
+      { id: "vettel", name: "Sebastian Vettel", team: "Red Bull Racing" },
+      { id: "webber", name: "Mark Webber", team: "Red Bull Racing" },
+      { id: "alonso", name: "Fernando Alonso", team: "Ferrari" },
+      { id: "massa", name: "Felipe Massa", team: "Ferrari" },
+      { id: "hamilton", name: "Lewis Hamilton", team: "McLaren" },
+      { id: "button", name: "Jenson Button", team: "McLaren" },
+      { id: "schumacher", name: "Michael Schumacher", team: "Mercedes" },
+      { id: "rosberg", name: "Nico Rosberg", team: "Mercedes" },
+      { id: "petrov", name: "Vitaly Petrov", team: "Renault" },
+      { id: "heidfeld", name: "Nick Heidfeld", team: "Renault" },
+      { id: "senna", name: "Bruno Senna", team: "Renault" },
+      { id: "sutil", name: "Adrian Sutil", team: "Force India" },
+      { id: "diresta", name: "Paul di Resta", team: "Force India" },
+      { id: "alguersuari", name: "Jaime Alguersuari", team: "Toro Rosso" },
+      { id: "buemi", name: "Sébastien Buemi", team: "Toro Rosso" },
+      { id: "ricciardo", name: "Daniel Ricciardo", team: "Toro Rosso" },
+      { id: "barrichello", name: "Rubens Barrichello", team: "Williams" },
+      { id: "maldonado", name: "Pastor Maldonado", team: "Williams" },
+      { id: "perez", name: "Sergio Pérez", team: "Sauber" },
+      { id: "kobayashi", name: "Kamui Kobayashi", team: "Sauber" },
+      { id: "kovalainen", name: "Heikki Kovalainen", team: "Team Lotus" },
+      { id: "trulli", name: "Jarno Trulli", team: "Team Lotus" },
+      { id: "liuzzi", name: "Vitantonio Liuzzi", team: "HRT" },
+      { id: "karthikeyan", name: "Narain Karthikeyan", team: "HRT" },
+      { id: "chandhok", name: "Karun Chandhok", team: "Team Lotus" },
+      { id: "glock", name: "Timo Glock", team: "Virgin" },
+      { id: "dambrosio", name: "Jérôme d'Ambrosio", team: "Virgin" },
+      { id: "delarosa", name: "Pedro de la Rosa", team: "Sauber" },
+    ],
+    2010: [
+      { id: "vettel", name: "Sebastian Vettel", team: "Red Bull Racing" },
+      { id: "webber", name: "Mark Webber", team: "Red Bull Racing" },
+      { id: "alonso", name: "Fernando Alonso", team: "Ferrari" },
+      { id: "massa", name: "Felipe Massa", team: "Ferrari" },
+      { id: "hamilton", name: "Lewis Hamilton", team: "McLaren" },
+      { id: "button", name: "Jenson Button", team: "McLaren" },
+      { id: "schumacher", name: "Michael Schumacher", team: "Mercedes" },
+      { id: "rosberg", name: "Nico Rosberg", team: "Mercedes" },
+      { id: "kubica", name: "Robert Kubica", team: "Renault" },
+      { id: "petrov", name: "Vitaly Petrov", team: "Renault" },
+      { id: "sutil", name: "Adrian Sutil", team: "Force India" },
+      { id: "liuzzi", name: "Vitantonio Liuzzi", team: "Force India" },
+      { id: "buemi", name: "Sébastien Buemi", team: "Toro Rosso" },
+      { id: "alguersuari", name: "Jaime Alguersuari", team: "Toro Rosso" },
+      { id: "barrichello", name: "Rubens Barrichello", team: "Williams" },
+      { id: "hulkenberg", name: "Nico Hülkenberg", team: "Williams" },
+      { id: "kobayashi", name: "Kamui Kobayashi", team: "Sauber" },
+      { id: "delarosa", name: "Pedro de la Rosa", team: "Sauber" },
+      { id: "heidfeld", name: "Nick Heidfeld", team: "Sauber" },
+      { id: "kovalainen", name: "Heikki Kovalainen", team: "Team Lotus" },
+      { id: "trulli", name: "Jarno Trulli", team: "Team Lotus" },
+      { id: "glock", name: "Timo Glock", team: "Virgin" },
+      { id: "digrassi", name: "Lucas di Grassi", team: "Virgin" },
+      { id: "senna", name: "Bruno Senna", team: "HRT" },
+      { id: "chandhok", name: "Karun Chandhok", team: "HRT" },
+      { id: "yamamoto", name: "Sakon Yamamoto", team: "HRT" },
+      { id: "klien", name: "Christian Klien", team: "HRT" },
     ],
   };
 
@@ -415,6 +673,24 @@ export const LogRaceDialog = ({
     { name: "Caesar's Palace Grand Prix", location: "Caesar's Palace", country: "United States" },
     { name: "Phoenix Grand Prix", location: "Phoenix Street Circuit", country: "United States" },
   ];
+
+  // Clear selected circuit when year changes (unless in edit mode or prefilling)
+  useEffect(() => {
+    console.log('[LogRaceDialog] Year effect running:', raceYear, 'previous:', previousYearRef.current, 'editMode:', editMode, 'hasPrefilledRef:', hasPrefilledRef.current);
+
+    // Only clear if the year actually changed (not just initial render or prefill)
+    if (previousYearRef.current !== raceYear && !editMode && !hasPrefilledRef.current) {
+      console.log('[LogRaceDialog] Clearing circuit selection due to year change');
+      setSelectedCircuitId('');
+      setRaceName('');
+      setRaceLocation('');
+      setCountryCode(undefined);
+      setRaceWinner('');
+    }
+
+    // Update the previous year ref
+    previousYearRef.current = raceYear;
+  }, [raceYear, editMode]);
 
   // Fetch circuits for selected year from Firestore
   useEffect(() => {
@@ -754,20 +1030,11 @@ export const LogRaceDialog = ({
                         }
                       }
 
-                      // Fetch race winner if we have a year
-                      if (raceYear && raceData) {
-                        setLoadingWinner(true);
-                        try {
-                          if (raceData.round) {
-                            const winner = await getRaceWinner(raceYear, raceData.round);
-                            if (winner) {
-                              setRaceWinner(winner);
-                            }
-                          }
-                        } catch (error) {
-                          console.error('Error fetching winner:', error);
-                        } finally {
-                          setLoadingWinner(false);
+                      // Set race winner from hardcoded data if available
+                      if (raceYear && raceData && raceData.round) {
+                        const winner = getRaceWinner(raceYear, raceData.round);
+                        if (winner) {
+                          setRaceWinner(winner);
                         }
                       }
                     }
@@ -830,9 +1097,9 @@ export const LogRaceDialog = ({
                 </SelectTrigger>
                 <SelectContent className="bg-black/95 border-2 border-red-900/40">
                   {(() => {
-                    // Only show years 2020-2025 (years with seeded data)
+                    // Only show years 2010-2025 (years with seeded data)
                     const currentYear = new Date().getFullYear();
-                    const minYear = 2020;
+                    const minYear = 2010;
                     const maxYear = Math.max(2025, currentYear);
                     const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => maxYear - i);
 
@@ -856,6 +1123,65 @@ export const LogRaceDialog = ({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Champions Display */}
+            {(() => {
+              const championsData = getChampions(raceYear);
+              if (!championsData) return null;
+
+              // Get team colors based on constructor name
+              const getTeamColor = (team: string) => {
+                const teamColors: { [key: string]: string } = {
+                  'Red Bull Racing': '#0600EF',
+                  'Ferrari': '#DC0000',
+                  'Mercedes': '#00D2BE',
+                  'McLaren': '#FF8700',
+                  'Alpine': '#0090FF',
+                  'Aston Martin': '#006F62',
+                  'AlphaTauri': '#2B4562',
+                  'Racing Point': '#F596C8',
+                };
+                return teamColors[team] || '#FF0000';
+              };
+
+              const teamColor = getTeamColor(championsData.constructor);
+
+              return (
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Driver Champion */}
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/30 via-amber-500/20 to-orange-500/30 rounded blur group-hover:blur-lg transition-all"></div>
+                    <div className="relative flex items-center gap-1.5 p-2 bg-gradient-to-br from-black via-yellow-950/30 to-black border-2 border-yellow-500/50 rounded group-hover:border-yellow-400/70 transition-all shadow-lg">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center font-black text-black text-sm shadow-lg flex-shrink-0">
+                        W
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[9px] font-black uppercase tracking-wider text-yellow-400/90">WDC</div>
+                        <div className="text-[10px] font-bold text-yellow-50 truncate drop-shadow-[0_2px_6px_rgba(0,0,0,1)]">
+                          {championsData.driver}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Constructor Champion */}
+                  <div className="relative group">
+                    <div className="absolute inset-0 rounded blur group-hover:blur-lg transition-all" style={{ background: `linear-gradient(to bottom right, ${teamColor}40, ${teamColor}20, ${teamColor}40)` }}></div>
+                    <div className="relative flex items-center gap-1.5 p-2 bg-gradient-to-br from-black via-gray-950/30 to-black border-2 rounded group-hover:border-opacity-70 transition-all shadow-lg" style={{ borderColor: `${teamColor}80` }}>
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-black text-sm shadow-lg flex-shrink-0" style={{ background: `linear-gradient(135deg, ${teamColor}, ${teamColor}CC)` }}>
+                        {championsData.constructor.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[9px] font-black uppercase tracking-wider" style={{ color: `${teamColor}` }}>WCC</div>
+                        <div className="text-[10px] font-bold text-gray-50 truncate drop-shadow-[0_2px_6px_rgba(0,0,0,1)]">
+                          {championsData.constructor}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase tracking-wider text-gray-300 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Session *</Label>

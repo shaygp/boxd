@@ -11,6 +11,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { races2010to2020 } from '@/data/f1-2010-2020';
 
 export interface F1Race {
   id?: string;
@@ -514,4 +515,42 @@ export const seed2025Calendar = async () => {
   }
 
   console.log('[F1Calendar] Seeding complete!');
+};
+
+// Seed 2010-2020 F1 calendar data
+export const seed2010to2020Calendar = async () => {
+  console.log('[F1Calendar] Seeding 2010-2020 F1 calendar data...');
+
+  // Flatten all years into a single array
+  const allRaces = [];
+  for (const year in races2010to2020) {
+    const yearRaces = races2010to2020[year as keyof typeof races2010to2020].map(race => ({
+      ...race,
+      year: parseInt(year)
+    }));
+    allRaces.push(...yearRaces);
+  }
+
+  console.log(`[F1Calendar] Found ${allRaces.length} races to seed from 2010-2020`);
+
+  // Add each race to Firestore
+  for (const race of allRaces) {
+    try {
+      const raceData = {
+        ...race,
+        dateStart: Timestamp.fromDate(race.dateStart),
+        createdAt: Timestamp.now()
+      };
+
+      // Use year-round as document ID for easy lookup
+      const docId = `${race.year}-${race.round}`;
+      await setDoc(doc(racesCollection, docId), raceData);
+
+      console.log(`[F1Calendar] Added ${race.year} ${race.raceName} (Round ${race.round})`);
+    } catch (error) {
+      console.error(`[F1Calendar] Error adding ${race.year} ${race.raceName}:`, error);
+    }
+  }
+
+  console.log('[F1Calendar] 2010-2020 seeding complete!');
 };

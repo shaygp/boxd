@@ -2,7 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Eye, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getCountryFlag, getRaceWinner } from "@/services/f1Api";
+import { getCountryFlag } from "@/services/f1Api";
+import { getRaceWinner } from "@/data/raceWinners2010-2019";
 import { Button } from "@/components/ui/button";
 import { addToWatchlist, removeFromWatchlist, getUserWatchlist } from "@/services/watchlist";
 import { useToast } from "@/hooks/use-toast";
@@ -62,19 +63,11 @@ const RaceCardComponent = ({
     if (!winner && !watched && season && round && date) {
       const raceDate = new Date(date);
       if (raceDate < new Date()) {
-        // Add a small delay to avoid too many simultaneous requests
-        const timeout = setTimeout(async () => {
-          try {
-            const raceWinner = await getRaceWinner(season, round);
-            if (raceWinner) {
-              setFetchedWinner(raceWinner);
-            }
-          } catch (error) {
-            console.error('[RaceCard] Error fetching winner:', error);
-          }
-        }, Math.random() * 500); // Random delay 0-500ms to stagger requests
-
-        return () => clearTimeout(timeout);
+        // Get winner from hardcoded data (instant, no API call needed)
+        const raceWinner = getRaceWinner(season, round);
+        if (raceWinner) {
+          setFetchedWinner(raceWinner);
+        }
       }
     }
   }, [season, round, date, winner, watched]);

@@ -306,7 +306,7 @@ const Profile = () => {
 
   const loadAllRaces = async () => {
     try {
-      const years = [2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018];
+      const years = [2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010];
       const racesPromises = years.map(year => getRacesBySeason(year));
       const racesArrays = await Promise.all(racesPromises);
       const allRacesFlat = racesArrays.flat();

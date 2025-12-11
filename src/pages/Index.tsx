@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { ArrowRight, X, Sparkles, Star } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { getPublicRaceLogs } from "@/services/raceLogs";
-import { getPosterUrl, getRaceWinner } from "@/services/f1Api";
+import { getPosterUrl } from "@/services/f1Api";
+import { getRaceWinner } from "@/data/raceWinners2010-2019";
 import { getCurrentSeasonRaces as getFirestoreRaces } from "@/services/f1Calendar";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getGlobalActivity, Activity } from "@/services/activity";
@@ -38,7 +39,7 @@ const Index = () => {
         console.log('[Index] Using cached data for races, but refreshing season ratings');
         // Still refresh season ratings even when using cache
         try {
-          const seasonRatingsData = await Promise.all([2025, 2024, 2023, 2022, 2021, 2020].map(async (year) => {
+          const seasonRatingsData = await Promise.all([2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010].map(async (year) => {
             const rating = await getSeasonAverageRating(year);
             return { year, ...rating };
           }));
@@ -67,7 +68,7 @@ const Index = () => {
             console.error('Error loading public logs:', err);
             return [];
           }),
-          Promise.all([2025, 2024, 2023, 2022, 2021, 2020].map(async (year) => {
+          Promise.all([2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010].map(async (year) => {
             const rating = await getSeasonAverageRating(year);
             return { year, ...rating };
           })).catch(err => {
@@ -109,33 +110,17 @@ const Index = () => {
             const today = new Date();
             const winnersMap: { [key: string]: string } = {};
 
-            const winnerPromises = convertedRaces
+            // Get winners from hardcoded data (instant, no API calls)
+            convertedRaces
               .filter(race => new Date(race.date_start) < today)
-              .map(async (race) => {
-                try {
-                  const winner = await getRaceWinner(race.year, race.round);
-                  if (winner) {
-                    return { key: `${race.year}-${race.round}`, winner };
-                  }
-                } catch (error) {
-                  console.error(`Error fetching winner for ${race.year} round ${race.round}:`, error);
+              .forEach((race) => {
+                const winner = getRaceWinner(race.year, race.round);
+                if (winner) {
+                  winnersMap[`${race.year}-${race.round}`] = winner;
                 }
-                return null;
               });
 
-            try {
-              const winnerResults = await Promise.all(winnerPromises);
-              winnerResults.forEach(result => {
-                if (result) {
-                  winnersMap[result.key] = result.winner;
-                }
-              });
-              setWinners(winnersMap);
-            } catch (error) {
-              console.error('Error fetching winners:', error);
-              // Still set empty winners map so cards display without winners
-              setWinners({});
-            }
+            setWinners(winnersMap);
           };
 
           // Fetch winners in background, don't await

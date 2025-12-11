@@ -8,7 +8,7 @@ import { RateSeasonDialog } from "@/components/RateSeasonDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Star, List, Calendar, History, MessageCircle, Heart, Plus, ArrowRight, Trophy } from "lucide-react";
+import { TrendingUp, Star, List, Calendar, History, MessageCircle, Heart, Plus, ArrowRight, Trophy, Award } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getPublicRaceLogs } from "@/services/raceLogs";
@@ -17,10 +17,11 @@ import { getPosterUrl } from "@/services/f1Api";
 import { getCurrentSeasonRaces as getFirestoreRaces, getRacesBySeason as getFirestoreRacesBySeason } from "@/services/f1Calendar";
 import { getSeasonAverageRating, getUserSeasonRating } from "@/services/seasonRatings";
 import { auth } from "@/lib/firebase";
+import { getChampions } from "@/data/champions2010-2019";
 
 const Explore = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [trendingRaces, setTrendingRaces] = useState<any[]>([]);
   const [topReviews, setTopReviews] = useState<any[]>([]);
   const [popularLists, setPopularLists] = useState<any[]>([]);
@@ -44,7 +45,7 @@ const Explore = () => {
           getPublicLists(),
           getFirestoreRaces(),
           // Load all season ratings for leaderboard
-          Promise.all([2025, 2024, 2023, 2022, 2021, 2020].map(async (year) => {
+          Promise.all([2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010].map(async (year) => {
             const rating = await getSeasonAverageRating(year);
             return { year, ...rating };
           }))
@@ -217,12 +218,19 @@ const Explore = () => {
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-6 justify-start">
                 {/* Year Dropdown */}
-                <Select value={selectedSeason.toString()} onValueChange={(value) => setSelectedSeason(parseInt(value))}>
+                <Select value={selectedSeason.toString()} onValueChange={(value) => {
+                  const year = parseInt(value);
+                  setSelectedSeason(year);
+                  // Update URL params to persist year selection
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('season', value);
+                  setSearchParams(newParams);
+                }}>
                   <SelectTrigger className="w-[100px] h-8 text-xs font-bold uppercase tracking-wider bg-black/60 border-2 border-racing-red text-white hover:bg-racing-red/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-black/95 border-2 border-gray-700">
-                    {[2025, 2024, 2023, 2022, 2021, 2020].map((year) => (
+                    {[2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010].map((year) => (
                       <SelectItem key={year} value={year.toString()} className="text-xs font-bold uppercase text-white cursor-pointer">
                         {year}
                       </SelectItem>
@@ -244,14 +252,73 @@ const Explore = () => {
                 ) : (
                   <button
                     onClick={() => setRateSeasonDialogOpen(true)}
-                    className="group relative bg-gradient-to-r from-racing-red/10 to-racing-red/5 hover:from-racing-red hover:to-red-600 text-white px-4 py-2 text-xs rounded-md font-black uppercase tracking-wider border-2 border-racing-red hover:border-red-400 transition-all duration-300 whitespace-nowrap shadow-lg hover:shadow-red-500/50 backdrop-blur-sm"
+                    className="group relative bg-gradient-to-r from-racing-red/10 to-racing-red/5 hover:from-racing-red hover:to-red-600 text-white px-2 py-1 text-[10px] rounded font-black uppercase tracking-wider border-2 border-racing-red hover:border-red-400 transition-all duration-300 whitespace-nowrap shadow-lg hover:shadow-red-500/50 backdrop-blur-sm"
                   >
-                    <span className="flex items-center gap-1.5">
-                      <Star className="w-3.5 h-3.5 group-hover:fill-yellow-400 group-hover:text-yellow-400 transition-all" />
-                      Rate this season
+                    <span className="flex items-center gap-1">
+                      <Star className="w-3 h-3 group-hover:fill-yellow-400 group-hover:text-yellow-400 transition-all" />
+                      Rate Season
                     </span>
                   </button>
                 )}
+
+                {/* Champions Display */}
+                {(() => {
+                  const championsData = getChampions(selectedSeason);
+                  if (!championsData) return null;
+
+                  // Get team colors based on constructor name
+                  const getTeamColor = (team: string) => {
+                    const teamColors: { [key: string]: string } = {
+                      'Red Bull Racing': '#0600EF',
+                      'Ferrari': '#DC0000',
+                      'Mercedes': '#00D2BE',
+                      'McLaren': '#FF8700',
+                      'Alpine': '#0090FF',
+                      'Aston Martin': '#006F62',
+                      'AlphaTauri': '#2B4562',
+                      'Racing Point': '#F596C8',
+                    };
+                    return teamColors[team] || '#FF0000';
+                  };
+
+                  const teamColor = getTeamColor(championsData.constructor);
+
+                  return (
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Driver Champion */}
+                      <div className="relative group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/30 via-amber-500/20 to-orange-500/30 rounded blur group-hover:blur-lg transition-all"></div>
+                        <div className="relative flex items-center gap-1.5 p-2 bg-gradient-to-br from-black via-yellow-950/30 to-black border-2 border-yellow-500/50 rounded group-hover:border-yellow-400/70 transition-all shadow-lg">
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center font-black text-black text-sm shadow-lg flex-shrink-0">
+                            W
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[9px] font-black uppercase tracking-wider text-yellow-400/90">WDC</div>
+                            <div className="text-[10px] font-bold text-yellow-50 truncate drop-shadow-[0_2px_6px_rgba(0,0,0,1)]">
+                              {championsData.driver}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Constructor Champion */}
+                      <div className="relative group">
+                        <div className="absolute inset-0 rounded blur group-hover:blur-lg transition-all" style={{ background: `linear-gradient(to bottom right, ${teamColor}40, ${teamColor}20, ${teamColor}40)` }}></div>
+                        <div className="relative flex items-center gap-1.5 p-2 bg-gradient-to-br from-black via-gray-950/30 to-black border-2 rounded group-hover:border-opacity-70 transition-all shadow-lg" style={{ borderColor: `${teamColor}80` }}>
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-black text-sm shadow-lg flex-shrink-0" style={{ background: `linear-gradient(135deg, ${teamColor}, ${teamColor}CC)` }}>
+                            {championsData.constructor.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[9px] font-black uppercase tracking-wider" style={{ color: `${teamColor}` }}>WCC</div>
+                            <div className="text-[10px] font-bold text-gray-50 truncate drop-shadow-[0_2px_6px_rgba(0,0,0,1)]">
+                              {championsData.constructor}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {seasonLoading ? (
