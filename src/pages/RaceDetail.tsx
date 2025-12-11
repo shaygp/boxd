@@ -758,17 +758,12 @@ const RaceDetail = () => {
                             </span>
                             <span className="text-xs text-gray-500">•</span>
                             <span className="text-xs text-gray-400">
-                              {review.dateWatched instanceof Date
-                                ? review.dateWatched.toLocaleDateString('en-US', {
+                              {review.createdAt instanceof Date
+                                ? review.createdAt.toLocaleDateString('en-US', {
                                     month: 'short',
                                     day: 'numeric'
                                   })
-                                : review.createdAt instanceof Date
-                                  ? review.createdAt.toLocaleDateString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric'
-                                    })
-                                  : 'Recently'}
+                                : 'Recently'}
                             </span>
                           </div>
                           <div className="flex items-center gap-1 mt-1">
