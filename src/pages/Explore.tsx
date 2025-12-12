@@ -36,6 +36,7 @@ const Explore = () => {
   const [userSeasonRating, setUserSeasonRating] = useState<number | null>(null);
   const [allSeasonRatings, setAllSeasonRatings] = useState<{ year: number; average: number; count: number }[]>([]);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'seasons');
+  const [listFilter, setListFilter] = useState<'recent' | 'liked' | 'items'>('recent');
 
   useEffect(() => {
     const loadData = async () => {
@@ -79,10 +80,8 @@ const Explore = () => {
 
         setTopReviews(reviewsWithContent);
 
-        const sortedLists = lists
-          .sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
-
-        setPopularLists(sortedLists);
+        // Store unsorted lists - we'll sort them based on filter
+        setPopularLists(lists);
 
         // Set all season ratings for leaderboard (sorted by rating)
         setAllSeasonRatings(seasonRatingsData.sort((a, b) => b.average - a.average));
@@ -525,12 +524,12 @@ const Explore = () => {
               <div className="inline-block px-4 py-1 bg-racing-red/20 border border-racing-red rounded-full mb-2">
                 <span className="text-racing-red font-black text-xs tracking-widest">COLLECTIONS</span>
               </div>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">POPULAR LISTS</h2>
+              <div className="flex items-center gap-3 mb-2">
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">LISTS</h2>
                 <CreateListDialog
                   trigger={
-                    <Button className="bg-racing-red hover:bg-red-600 text-white font-black uppercase tracking-wider border-2 border-red-400 shadow-lg shadow-red-500/30">
-                      <Plus className="w-4 h-4 mr-2" />
+                    <Button size="sm" className="bg-racing-red hover:bg-red-600 text-white font-black uppercase tracking-wider border-2 border-red-400 shadow-lg shadow-red-500/30 text-[10px] px-2 py-1 h-auto">
+                      <Plus className="w-3 h-3 mr-0.5" />
                       Create List
                     </Button>
                   }
@@ -540,7 +539,43 @@ const Explore = () => {
                   }}
                 />
               </div>
-              <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider mb-6">Top rated race collections</p>
+
+              {/* Filter Tabs */}
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Sort by:</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setListFilter('recent')}
+                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all ${
+                      listFilter === 'recent'
+                        ? 'bg-racing-red text-white border-2 border-red-400'
+                        : 'bg-black/60 border-2 border-red-900/50 text-gray-400 hover:border-racing-red/50'
+                    }`}
+                  >
+                    Recent
+                  </button>
+                  <button
+                    onClick={() => setListFilter('liked')}
+                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all ${
+                      listFilter === 'liked'
+                        ? 'bg-racing-red text-white border-2 border-red-400'
+                        : 'bg-black/60 border-2 border-red-900/50 text-gray-400 hover:border-racing-red/50'
+                    }`}
+                  >
+                    Top Liked
+                  </button>
+                  <button
+                    onClick={() => setListFilter('items')}
+                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all ${
+                      listFilter === 'items'
+                        ? 'bg-racing-red text-white border-2 border-red-400'
+                        : 'bg-black/60 border-2 border-red-900/50 text-gray-400 hover:border-racing-red/50'
+                    }`}
+                  >
+                    Most Items
+                  </button>
+                </div>
+              </div>
 
               {loading ? (
                 <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
@@ -550,10 +585,33 @@ const Explore = () => {
                   title="No lists yet"
                   description="Create the first list and share your favorite race collections"
                 />
-              ) : (
+              ) : (() => {
+                // Sort lists based on selected filter
+                const sortedLists = [...popularLists].sort((a, b) => {
+                  if (listFilter === 'recent') {
+                    // Sort by creation date (newest first)
+                    const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime();
+                    const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime();
+                    return dateB - dateA;
+                  } else if (listFilter === 'liked') {
+                    // Sort by likes count (most liked first)
+                    return (b.likesCount || 0) - (a.likesCount || 0);
+                  } else {
+                    // Sort by items count (most items first)
+                    const itemsA = a.listType === 'drivers'
+                      ? (a.drivers?.length || 0) + (a.pairings?.length || 0)
+                      : (a.races?.length || 0);
+                    const itemsB = b.listType === 'drivers'
+                      ? (b.drivers?.length || 0) + (b.pairings?.length || 0)
+                      : (b.races?.length || 0);
+                    return itemsB - itemsA;
+                  }
+                });
+
+                return (
                 <>
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    {popularLists.slice(0, listsToShow).map((list) => (
+                    {sortedLists.slice(0, listsToShow).map((list) => (
                       <Card
                         key={list.id}
                         onClick={() => navigate(`/list/${list.id}`)}
@@ -630,7 +688,10 @@ const Explore = () => {
                           <div className="flex items-center gap-3 text-xs text-gray-500 pt-1">
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              {list.races?.length || 0} races
+                              {list.listType === 'drivers'
+                                ? `${(list.drivers?.length || 0) + (list.pairings?.length || 0)} ${((list.drivers?.length || 0) + (list.pairings?.length || 0)) === 1 ? 'item' : 'items'}`
+                                : `${list.races?.length || 0} ${(list.races?.length || 0) === 1 ? 'race' : 'races'}`
+                              }
                             </span>
                             <span className="flex items-center gap-1">
                               <Heart className="w-3 h-3 fill-racing-red text-racing-red" />
@@ -644,7 +705,7 @@ const Explore = () => {
                 </div>
 
                 {/* View More Button */}
-                {popularLists.length > listsToShow && (
+                {sortedLists.length > listsToShow && (
                   <div className="flex justify-center mt-6">
                     <Button
                       onClick={() => setListsToShow(prev => prev + 10)}
@@ -652,12 +713,13 @@ const Explore = () => {
                       className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-bold uppercase tracking-wider"
                     >
                       <ArrowRight className="w-4 h-4 mr-2" />
-                      View More Lists ({popularLists.length - listsToShow} remaining)
+                      View More Lists ({sortedLists.length - listsToShow} remaining)
                     </Button>
                   </div>
                 )}
               </>
-              )}
+                );
+              })()}
             </div>
           </TabsContent>
         </Tabs>

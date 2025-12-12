@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { createList } from "@/services/lists";
 import { getUserProfile } from "@/services/auth";
 import { useToast } from "@/hooks/use-toast";
-import { ImagePlus } from "lucide-react";
+import { Camera } from "lucide-react";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase";
 
 interface CreateListDialogProps {
   trigger?: React.ReactNode;
@@ -19,16 +21,68 @@ interface CreateListDialogProps {
 
 export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [listType, setListType] = useState<'races' | 'drivers' | 'pairings'>('races');
+  const [listType, setListType] = useState<'races' | 'drivers'>('races');
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file",
+        description: "Please select an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Image must be less than 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      // Upload to Firebase Storage
+      const timestamp = Date.now();
+      const fileName = `temp_${timestamp}`;
+      const storageRef = ref(storage, `list-covers/${fileName}`);
+
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      setImageUrl(downloadURL);
+      toast({
+        title: "Image uploaded!",
+        description: "Your cover image has been uploaded"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!user || !title) {
@@ -64,11 +118,9 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
 
       if (listType === 'races') {
         listData.races = [];
-      } else if (listType === 'drivers') {
+      } else {
         listData.drivers = [];
         listData.pairings = []; // Initialize pairings array for driver lists
-      } else {
-        listData.pairings = [];
       }
 
       const listId = await createList(listData);
@@ -113,7 +165,7 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
           {/* List Type Selection */}
           <div className="space-y-2">
             <Label className="text-white font-bold uppercase tracking-wider text-sm">List Type *</Label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setListType('races')}
@@ -145,37 +197,48 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
                   Drivers
                 </span>
               </button>
-
-              <button
-                type="button"
-                onClick={() => setListType('pairings')}
-                className={`relative group p-4 rounded-lg border-2 transition-all ${
-                  listType === 'pairings'
-                    ? 'border-racing-red bg-racing-red/10'
-                    : 'border-red-900/50 bg-black/60 hover:border-racing-red/50'
-                }`}
-              >
-                <span className={`text-sm font-bold uppercase tracking-wider ${
-                  listType === 'pairings' ? 'text-white' : 'text-gray-400'
-                }`}>
-                  Pairings
-                </span>
-              </button>
             </div>
           </div>
 
           {/* List Image */}
-          <div className="space-y-2">
-            <Label htmlFor="imageUrl" className="text-white font-bold uppercase tracking-wider text-sm">Cover Image URL (Optional)</Label>
-            <div className="relative">
-              <ImagePlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-              <Input
-                id="imageUrl"
-                placeholder="https://example.com/image.jpg"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="pl-10 bg-black/60 border-2 border-red-900/50 text-white placeholder:text-gray-500 focus:border-racing-red"
+          <div className="space-y-3">
+            <Label className="text-white font-bold uppercase tracking-wider text-sm">Cover Image (Optional)</Label>
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-red-900/50 bg-black/60">
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt="List cover"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-500">
+                    <Camera className="w-12 h-12" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="gap-2 bg-racing-red hover:bg-red-600"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImage}
+                  >
+                    <Camera className="w-4 h-4" />
+                    {uploadingImage ? "Uploading..." : imageUrl ? "Change Image" : "Upload Image"}
+                  </Button>
+                </div>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
               />
+              <p className="text-xs text-gray-400">
+                Recommended: 1200x400px or 3:1 aspect ratio (max 5MB)
+              </p>
             </div>
           </div>
 
@@ -183,13 +246,7 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
             <Label htmlFor="title" className="text-white font-bold uppercase tracking-wider text-sm">Title *</Label>
             <Input
               id="title"
-              placeholder={
-                listType === 'races'
-                  ? "Best Races of 2024"
-                  : listType === 'drivers'
-                  ? "Top Drivers of All Time"
-                  : "Best Driver Pairings"
-              }
+              placeholder={listType === 'races' ? "Best Races of 2024" : "Top Drivers of All Time"}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="bg-black/60 border-2 border-red-900/50 text-white placeholder:text-gray-500 focus:border-racing-red"
