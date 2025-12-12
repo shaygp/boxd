@@ -145,7 +145,12 @@ export const AddToListDialog = ({ trigger, raceYear, raceName, raceLocation, cou
                         <div className="flex-1">
                           <h3 className="font-bold text-white uppercase tracking-wide">{list.title}</h3>
                           <p className="text-sm text-gray-400 font-medium">
-                            {list.races?.length || 0} races
+                            {list.listType === 'drivers'
+                              ? `${(list.drivers?.length || 0) + (list.pairings?.length || 0)} ${((list.drivers?.length || 0) + (list.pairings?.length || 0)) === 1 ? 'item' : 'items'}`
+                              : list.listType === 'pairings'
+                              ? `${list.pairings?.length || 0} ${(list.pairings?.length || 0) === 1 ? 'pairing' : 'pairings'}`
+                              : `${list.races?.length || 0} ${(list.races?.length || 0) === 1 ? 'race' : 'races'}`
+                            }
                           </p>
                         </div>
                         {alreadyAdded && (

@@ -4,11 +4,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RaceCard } from "@/components/RaceCard";
 import { AddRaceToListDialog } from "@/components/AddRaceToListDialog";
+import { AddDriverToListDialog } from "@/components/AddDriverToListDialog";
+import { AddPairingToListDialog } from "@/components/AddPairingToListDialog";
 import { EditListDialog } from "@/components/EditListDialog";
 import { Heart, MessageSquare, Share2, Edit, Trash2, Lock, Globe, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getListById, deleteList, removeRaceFromList, likeList, unlikeList, isListLiked, updateList } from "@/services/lists";
+import { getListById, deleteList, removeRaceFromList, removeDriverFromList, removePairingFromList, likeList, unlikeList, isListLiked, updateList } from "@/services/lists";
 import { getRacesBySeason as getFirestoreRacesBySeason } from "@/services/f1Calendar";
 import { getCountryFlag } from "@/services/f1Api";
 import { auth } from "@/lib/firebase";
@@ -34,6 +36,7 @@ const ListDetail = () => {
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const loadList = async () => {
     if (!listId) {
@@ -171,38 +174,161 @@ const ListDetail = () => {
     }
   };
 
+  const handleRemoveDriver = async (driverIndex: number, driverName: string) => {
+    if (!listId) return;
+
+    try {
+      await removeDriverFromList(listId, driverIndex);
+      toast({
+        title: "Driver removed",
+        description: `${driverName} has been removed from the list`
+      });
+      await loadList(); // Reload the list to show updated drivers
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRemovePairing = async (pairingIndex: number, pairingName: string) => {
+    if (!listId) return;
+
+    try {
+      await removePairingFromList(listId, pairingIndex);
+      toast({
+        title: "Pairing removed",
+        description: `${pairingName} has been removed from the list`
+      });
+      await loadList(); // Reload the list to show updated pairings
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, index?: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    if (index !== undefined) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
   };
 
   const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
+    setDragOverIndex(null);
     if (draggedIndex === null || draggedIndex === dropIndex || !listId) return;
 
-    const newRaces = [...list.races];
-    const [movedRace] = newRaces.splice(draggedIndex, 1);
-    newRaces.splice(dropIndex, 0, movedRace);
-
-    // Update order property
-    const reorderedRaces = newRaces.map((race, index) => ({
-      ...race,
-      order: index
-    }));
-
     try {
-      await updateList(listId, { races: reorderedRaces });
-      setList({ ...list, races: reorderedRaces });
-      setDraggedIndex(null);
+      // Special handling for drivers list - create pairing when dragging one driver onto another
+      if (list.listType === 'drivers') {
+        const driver1 = list.drivers[draggedIndex];
+        const driver2 = list.drivers[dropIndex];
+
+        // Check if pairing already exists
+        const existingPairings = list.pairings || [];
+        const isDuplicate = existingPairings.some(
+          (p: any) =>
+            (p.driver1Id === driver1.driverId && p.driver2Id === driver2.driverId) ||
+            (p.driver1Id === driver2.driverId && p.driver2Id === driver1.driverId)
+        );
+
+        if (isDuplicate) {
+          toast({
+            title: "Pairing already exists",
+            description: `${driver1.driverName} & ${driver2.driverName} is already paired`,
+            variant: "destructive"
+          });
+          setDraggedIndex(null);
+          return;
+        }
+
+        // Create pairing
+        const newPairing = {
+          driver1Id: driver1.driverId,
+          driver1Name: driver1.driverName,
+          driver2Id: driver2.driverId,
+          driver2Name: driver2.driverName,
+          order: existingPairings.length,
+          note: ''
+        };
+
+        const updatedPairings = [...existingPairings, newPairing];
+
+        // Remove both drivers from the drivers list
+        const updatedDrivers = list.drivers.filter(
+          (_: any, idx: number) => idx !== draggedIndex && idx !== dropIndex
+        ).map((driver: any, index: number) => ({
+          ...driver,
+          order: index
+        }));
+
+        await updateList(listId, {
+          drivers: updatedDrivers,
+          pairings: updatedPairings
+        });
+
+        setList({
+          ...list,
+          drivers: updatedDrivers,
+          pairings: updatedPairings
+        });
+
+        toast({
+          title: "Pairing created!",
+          description: `${driver1.driverName} & ${driver2.driverName}`
+        });
+
+        setDraggedIndex(null);
+      } else if (list.listType === 'pairings') {
+        const newPairings = [...list.pairings];
+        const [movedPairing] = newPairings.splice(draggedIndex, 1);
+        newPairings.splice(dropIndex, 0, movedPairing);
+
+        // Update order property
+        const reorderedPairings = newPairings.map((pairing, index) => ({
+          ...pairing,
+          order: index
+        }));
+
+        await updateList(listId, { pairings: reorderedPairings });
+        setList({ ...list, pairings: reorderedPairings });
+        setDraggedIndex(null);
+      } else {
+        // Races list - just reorder
+        const newRaces = [...list.races];
+        const [movedRace] = newRaces.splice(draggedIndex, 1);
+        newRaces.splice(dropIndex, 0, movedRace);
+
+        // Update order property
+        const reorderedRaces = newRaces.map((race, index) => ({
+          ...race,
+          order: index
+        }));
+
+        await updateList(listId, { races: reorderedRaces });
+        setList({ ...list, races: reorderedRaces });
+        setDraggedIndex(null);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to reorder races",
+        description: `Failed to reorder ${list.listType}`,
         variant: "destructive"
       });
     }
@@ -311,9 +437,9 @@ const ListDetail = () => {
                   className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 flex items-center justify-center overflow-hidden cursor-pointer hover:border-racing-red transition-colors"
                   onClick={() => navigate(`/user/${list.userId}`)}
                 >
-                  {list.userAvatar ? (
+                  {list.userProfileImageUrl ? (
                     <img
-                      src={list.userAvatar}
+                      src={list.userProfileImageUrl}
                       alt={list.username}
                       className="w-full h-full object-cover"
                     />
@@ -333,7 +459,10 @@ const ListDetail = () => {
                     </span>
                     <span className="text-gray-500 text-xs">•</span>
                     <span className="text-gray-400 text-xs">
-                      {list.races?.length || 0} {list.races?.length === 1 ? 'race' : 'races'}
+                      {list.listType === 'drivers'
+                        ? `${list.drivers?.length || 0} ${list.drivers?.length === 1 ? 'driver' : 'drivers'}`
+                        : `${list.races?.length || 0} ${list.races?.length === 1 ? 'race' : 'races'}`
+                      }
                     </span>
                     {list.isPublic ? (
                       <>
@@ -414,17 +543,30 @@ const ListDetail = () => {
               </div>
 
               <div className="flex gap-1.5">
-                {isOwner && listId && (
-                  <AddRaceToListDialog
-                    listId={listId}
-                    onSuccess={loadList}
-                    trigger={
-                      <Button size="sm" className="gap-1.5 bg-racing-red hover:bg-red-600 text-white text-xs h-8">
-                        <Plus className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Add Race</span>
-                      </Button>
-                    }
-                  />
+                {isOwner && listId && list.listType !== 'pairings' && (
+                  list.listType === 'drivers' ? (
+                    <AddDriverToListDialog
+                      listId={listId}
+                      onSuccess={loadList}
+                      trigger={
+                        <Button size="sm" className="gap-1.5 bg-racing-red hover:bg-red-600 text-white text-xs h-8">
+                          <Plus className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Add Driver</span>
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <AddRaceToListDialog
+                      listId={listId}
+                      onSuccess={loadList}
+                      trigger={
+                        <Button size="sm" className="gap-1.5 bg-racing-red hover:bg-red-600 text-white text-xs h-8">
+                          <Plus className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Add Race</span>
+                        </Button>
+                      }
+                    />
+                  )
                 )}
 
                 <Button variant="outline" size="sm" onClick={handleShare} className="bg-black/60 border border-gray-700 text-white hover:bg-black/80 hover:text-racing-red hover:border-racing-red h-8 w-8 p-0">
@@ -474,63 +616,154 @@ const ListDetail = () => {
           </div>
         </Card>
 
-        {/* Races List */}
-        {list.races && list.races.length > 0 ? (
+        {/* Drivers List - Shows both unpaired drivers and pairings */}
+        {list.listType === 'drivers' && (
+          <>
+            {/* Unpaired Drivers Section */}
+            {list.drivers && list.drivers.length > 0 && (
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white">
+                    Drivers
+                  </h2>
+                  <p className="text-xs text-gray-400 font-medium">Drag one driver onto another to create a pairing</p>
+                </div>
+                <div className="space-y-2">
+                  {list.drivers
+                    .sort((a: any, b: any) => a.order - b.order)
+                    .map((driver: any, idx: number) => (
+                      <Card
+                        key={idx}
+                        draggable={isOwner}
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragOver={(e) => handleDragOver(e, idx)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, idx)}
+                        className={`relative bg-black/90 border-2 transition-all ${isOwner ? 'cursor-move' : ''} group/item ${
+                          draggedIndex === idx
+                            ? 'opacity-50'
+                            : dragOverIndex === idx && draggedIndex !== null && draggedIndex !== idx
+                            ? 'border-racing-red bg-racing-red/10 scale-105'
+                            : 'border-red-900/40 hover:border-racing-red'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-white text-sm sm:text-base group-hover/item:text-racing-red transition-colors truncate">
+                              {driver.driverName}
+                            </h3>
+                            {driver.note && (
+                              <p className="text-xs text-gray-500 mt-1 font-medium line-clamp-1">{driver.note}</p>
+                            )}
+                          </div>
+                          {isOwner && (
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveDriver(idx, driver.driverName);
+                              }}
+                              className="w-8 h-8 sm:w-9 sm:h-9 bg-black/90 hover:bg-red-600 text-white border-2 border-gray-700 hover:border-red-400 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pairings Section - only show if there are pairings */}
+            {list.pairings && list.pairings.length > 0 && (
+              <div>
+                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white mb-4 sm:mb-6">
+                  Pairings
+                </h2>
+                <div className="space-y-2">
+                  {list.pairings
+                    .sort((a: any, b: any) => a.order - b.order)
+                    .map((pairing: any, idx: number) => (
+                      <Card
+                        key={idx}
+                        draggable={isOwner}
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, idx)}
+                        className={`relative bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all ${isOwner ? 'cursor-move' : ''} group/item ${draggedIndex === idx ? 'opacity-50' : ''}`}
+                      >
+                        <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
+                          {/* Pairing Info */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-white text-sm sm:text-base group-hover/item:text-racing-red transition-colors">
+                              {pairing.driver1Name} <span className="text-gray-500 font-normal">&</span> {pairing.driver2Name}
+                            </h3>
+                            {pairing.note && (
+                              <p className="text-xs text-gray-500 mt-1 font-medium line-clamp-1">{pairing.note}</p>
+                            )}
+                          </div>
+
+                          {/* Remove Button */}
+                          {isOwner && (
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemovePairing(idx, `${pairing.driver1Name} & ${pairing.driver2Name}`);
+                              }}
+                              className="w-8 h-8 sm:w-9 sm:h-9 bg-black/90 hover:bg-red-600 text-white border-2 border-gray-700 hover:border-red-400 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Pairings-only List */}
+        {list.listType === 'pairings' && list.pairings && list.pairings.length > 0 && (
           <div>
-            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white mb-4 sm:mb-6">Races in this list</h2>
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white mb-4 sm:mb-6">
+              Pairings
+            </h2>
             <div className="space-y-2">
-              {list.races
+              {list.pairings
                 .sort((a: any, b: any) => a.order - b.order)
-                .map((race: any, idx: number) => (
+                .map((pairing: any, idx: number) => (
                   <Card
                     key={idx}
                     draggable={isOwner}
                     onDragStart={(e) => handleDragStart(e, idx)}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, idx)}
-                    className={`relative bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all ${isOwner ? 'cursor-move' : 'cursor-pointer'} group/race ${draggedIndex === idx ? 'opacity-50' : ''}`}
-                    onClick={() => navigate(`/race/${race.raceYear}/${race.round || 1}`)}
+                    className={`relative bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all ${isOwner ? 'cursor-move' : ''} group/item ${draggedIndex === idx ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
-                      {/* Country Flag */}
-                      {race.countryCode && (
-                        <div className="w-16 h-10 sm:w-20 sm:h-12 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex-shrink-0">
-                          <img
-                            src={getCountryFlag(race.countryCode)}
-                            alt={race.countryCode}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Race Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-white text-sm sm:text-base group-hover/race:text-racing-red transition-colors truncate">
-                          {race.raceName}
+                        <h3 className="font-bold text-white text-sm sm:text-base group-hover/item:text-racing-red transition-colors">
+                          {pairing.driver1Name} <span className="text-gray-500 font-normal">&</span> {pairing.driver2Name}
                         </h3>
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400 font-medium">
-                          <span>{race.raceYear}</span>
-                          <span>•</span>
-                          <span className="truncate">{race.raceLocation}</span>
-                        </div>
-                        {race.note && (
-                          <p className="text-xs text-gray-500 mt-1 font-medium line-clamp-1">{race.note}</p>
+                        {pairing.note && (
+                          <p className="text-xs text-gray-500 mt-1 font-medium line-clamp-1">{pairing.note}</p>
                         )}
                       </div>
-
-                      {/* Remove Button */}
                       {isOwner && (
                         <Button
                           size="icon"
                           variant="secondary"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleRemoveRace(idx, race.raceName);
+                            handleRemovePairing(idx, `${pairing.driver1Name} & ${pairing.driver2Name}`);
                           }}
-                          className="w-8 h-8 sm:w-9 sm:h-9 bg-black/90 hover:bg-red-600 text-white border-2 border-gray-700 hover:border-red-400 opacity-0 group-hover/race:opacity-100 transition-opacity flex-shrink-0"
+                          className="w-8 h-8 sm:w-9 sm:h-9 bg-black/90 hover:bg-red-600 text-white border-2 border-gray-700 hover:border-red-400 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0"
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -540,32 +773,76 @@ const ListDetail = () => {
                 ))}
             </div>
           </div>
-        ) : (
-          <Card className="p-8 sm:p-12 text-center border-dashed border-2 border-gray-700 bg-black/40">
-            <div className="max-w-md mx-auto">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black/60 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-racing-red/40">
-                <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-racing-red" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-black uppercase tracking-wider text-white mb-2">No races yet</h3>
-              <p className="text-sm sm:text-base text-gray-400 mb-6 font-medium">
-                {isOwner
-                  ? "Start adding races to build your collection"
-                  : "This list doesn't have any races yet"}
-              </p>
-              {isOwner && listId && (
-                <AddRaceToListDialog
-                  listId={listId}
-                  onSuccess={loadList}
-                  trigger={
-                    <Button size="lg" className="gap-2 bg-racing-red hover:bg-red-600 text-white font-black uppercase tracking-wider border-2 border-red-400 shadow-lg shadow-red-500/30">
-                      <Plus className="w-5 h-5" />
-                      Add Your First Race
-                    </Button>
-                  }
-                />
-              )}
+        )}
+
+        {/* Races List */}
+        {list.listType === 'races' && list.races && list.races.length > 0 && (
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-white mb-4 sm:mb-6">
+              Races in this list
+            </h2>
+            <div className="space-y-2">
+              {list.races
+                    .sort((a: any, b: any) => a.order - b.order)
+                    .map((race: any, idx: number) => (
+                      <Card
+                        key={idx}
+                        draggable={isOwner}
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, idx)}
+                        className={`relative bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all ${isOwner ? 'cursor-move' : 'cursor-pointer'} group/item ${draggedIndex === idx ? 'opacity-50' : ''}`}
+                        onClick={() => navigate(`/race/${race.raceYear}/${race.round || 1}`)}
+                      >
+                        <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
+                          {/* Country Flag */}
+                          {race.countryCode && (
+                            <div className="w-16 h-10 sm:w-20 sm:h-12 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex-shrink-0">
+                              <img
+                                src={getCountryFlag(race.countryCode)}
+                                alt={race.countryCode}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {/* Race Info */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-white text-sm sm:text-base group-hover/item:text-racing-red transition-colors truncate">
+                              {race.raceName}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400 font-medium">
+                              <span>{race.raceYear}</span>
+                              <span>•</span>
+                              <span className="truncate">{race.raceLocation}</span>
+                            </div>
+                            {race.note && (
+                              <p className="text-xs text-gray-500 mt-1 font-medium line-clamp-1">{race.note}</p>
+                            )}
+                          </div>
+
+                          {/* Remove Button */}
+                          {isOwner && (
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveRace(idx, race.raceName);
+                              }}
+                              className="w-8 h-8 sm:w-9 sm:h-9 bg-black/90 hover:bg-red-600 text-white border-2 border-gray-700 hover:border-red-400 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
             </div>
-          </Card>
+          </div>
         )}
       </main>
     </div>

@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { createList } from "@/services/lists";
 import { getUserProfile } from "@/services/auth";
 import { useToast } from "@/hooks/use-toast";
+import { ImagePlus } from "lucide-react";
 
 interface CreateListDialogProps {
   trigger?: React.ReactNode;
@@ -18,9 +19,11 @@ interface CreateListDialogProps {
 
 export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) => {
   const [open, setOpen] = useState(false);
+  const [listType, setListType] = useState<'races' | 'drivers' | 'pairings'>('races');
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
+  const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { user } = useAuth();
@@ -44,16 +47,31 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
       const username = profile?.username || profile?.name || user.displayName || 'User';
       const userProfileImageUrl = profile?.photoURL || user.photoURL || '';
 
-      const listId = await createList({
+      const listData: any = {
         userId: user.uid,
         username,
         userProfileImageUrl,
         title,
         description,
-        races: [],
+        listType,
         isPublic,
         tags: [],
-      });
+      };
+
+      if (imageUrl) {
+        listData.listImageUrl = imageUrl;
+      }
+
+      if (listType === 'races') {
+        listData.races = [];
+      } else if (listType === 'drivers') {
+        listData.drivers = [];
+        listData.pairings = []; // Initialize pairings array for driver lists
+      } else {
+        listData.pairings = [];
+      }
+
+      const listId = await createList(listData);
 
       toast({ title: "List created successfully!" });
       setOpen(false);
@@ -61,6 +79,8 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
       setTitle("");
       setDescription("");
       setIsPublic(true);
+      setImageUrl("");
+      setListType('races');
 
       // Navigate to the created list or call onSuccess callback
       if (onSuccess) {
@@ -90,11 +110,86 @@ export const CreateListDialog = ({ trigger, onSuccess }: CreateListDialogProps) 
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* List Type Selection */}
+          <div className="space-y-2">
+            <Label className="text-white font-bold uppercase tracking-wider text-sm">List Type *</Label>
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setListType('races')}
+                className={`relative group p-4 rounded-lg border-2 transition-all ${
+                  listType === 'races'
+                    ? 'border-racing-red bg-racing-red/10'
+                    : 'border-red-900/50 bg-black/60 hover:border-racing-red/50'
+                }`}
+              >
+                <span className={`text-sm font-bold uppercase tracking-wider ${
+                  listType === 'races' ? 'text-white' : 'text-gray-400'
+                }`}>
+                  Races
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setListType('drivers')}
+                className={`relative group p-4 rounded-lg border-2 transition-all ${
+                  listType === 'drivers'
+                    ? 'border-racing-red bg-racing-red/10'
+                    : 'border-red-900/50 bg-black/60 hover:border-racing-red/50'
+                }`}
+              >
+                <span className={`text-sm font-bold uppercase tracking-wider ${
+                  listType === 'drivers' ? 'text-white' : 'text-gray-400'
+                }`}>
+                  Drivers
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setListType('pairings')}
+                className={`relative group p-4 rounded-lg border-2 transition-all ${
+                  listType === 'pairings'
+                    ? 'border-racing-red bg-racing-red/10'
+                    : 'border-red-900/50 bg-black/60 hover:border-racing-red/50'
+                }`}
+              >
+                <span className={`text-sm font-bold uppercase tracking-wider ${
+                  listType === 'pairings' ? 'text-white' : 'text-gray-400'
+                }`}>
+                  Pairings
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* List Image */}
+          <div className="space-y-2">
+            <Label htmlFor="imageUrl" className="text-white font-bold uppercase tracking-wider text-sm">Cover Image URL (Optional)</Label>
+            <div className="relative">
+              <ImagePlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Input
+                id="imageUrl"
+                placeholder="https://example.com/image.jpg"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="pl-10 bg-black/60 border-2 border-red-900/50 text-white placeholder:text-gray-500 focus:border-racing-red"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="title" className="text-white font-bold uppercase tracking-wider text-sm">Title *</Label>
             <Input
               id="title"
-              placeholder="Best Races of 2024"
+              placeholder={
+                listType === 'races'
+                  ? "Best Races of 2024"
+                  : listType === 'drivers'
+                  ? "Top Drivers of All Time"
+                  : "Best Driver Pairings"
+              }
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="bg-black/60 border-2 border-red-900/50 text-white placeholder:text-gray-500 focus:border-racing-red"

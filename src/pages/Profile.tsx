@@ -1044,7 +1044,22 @@ const Profile = () => {
                       )}
                       <div className="flex items-center gap-3 text-xs">
                         <span className="text-gray-400 font-bold">
-                          <span className="text-white">{list.races?.length || 0}</span> {list.races?.length === 1 ? 'race' : 'races'}
+                          {list.listType === 'drivers' ? (
+                            <>
+                              <span className="text-white">{(list.drivers?.length || 0) + (list.pairings?.length || 0)}</span>{' '}
+                              {((list.drivers?.length || 0) + (list.pairings?.length || 0)) === 1 ? 'item' : 'items'}
+                            </>
+                          ) : list.listType === 'pairings' ? (
+                            <>
+                              <span className="text-white">{list.pairings?.length || 0}</span>{' '}
+                              {(list.pairings?.length || 0) === 1 ? 'pairing' : 'pairings'}
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-white">{list.races?.length || 0}</span>{' '}
+                              {(list.races?.length || 0) === 1 ? 'race' : 'races'}
+                            </>
+                          )}
                         </span>
                         <span className="text-gray-600">•</span>
                         <span className="text-gray-500 font-medium">

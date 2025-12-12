@@ -25,6 +25,24 @@ export interface RaceListItem {
   note: string;
 }
 
+export interface DriverListItem {
+  driverId: string;
+  driverName: string;
+  team: string;
+  year: number;
+  order: number;
+  note: string;
+}
+
+export interface PairingListItem {
+  driver1Id: string;
+  driver1Name: string;
+  driver2Id: string;
+  driver2Name: string;
+  order: number;
+  note: string;
+}
+
 export interface RaceList {
   id?: string;
   userId: string;
@@ -33,7 +51,10 @@ export interface RaceList {
   listImageUrl?: string;
   title: string;
   description: string;
-  races: RaceListItem[];
+  listType: 'races' | 'drivers' | 'pairings';
+  races?: RaceListItem[];
+  drivers?: DriverListItem[];
+  pairings?: PairingListItem[];
   isPublic: boolean;
   tags: string[];
   createdAt: Date;
@@ -105,6 +126,12 @@ export const getUserLists = async (userId: string) => {
 
     const lists = snapshot.docs.map(doc => {
       const data = doc.data();
+
+      // Ensure driver lists have pairings array initialized
+      if (data.listType === 'drivers' && !data.pairings) {
+        data.pairings = [];
+      }
+
       console.log('[getUserLists] List data:', { id: doc.id, ...data });
       return { id: doc.id, ...data } as RaceList;
     });
@@ -130,7 +157,14 @@ export const getListById = async (listId: string) => {
   const docRef = doc(db, 'lists', listId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as RaceList;
+    const data = docSnap.data();
+
+    // Ensure driver lists have pairings array initialized
+    if (data.listType === 'drivers' && !data.pairings) {
+      data.pairings = [];
+    }
+
+    return { id: docSnap.id, ...data } as RaceList;
   }
   return null;
 };
@@ -169,6 +203,38 @@ export const removeRaceFromList = async (listId: string, raceIndex: number) => {
 
   const updatedRaces = listDoc.races?.filter((_, idx) => idx !== raceIndex) || [];
   await updateList(listId, { races: updatedRaces });
+};
+
+export const addDriverToList = async (listId: string, driver: DriverListItem) => {
+  const listDoc = await getListById(listId);
+  if (!listDoc) throw new Error('List not found');
+
+  const updatedDrivers = [...(listDoc.drivers || []), { ...driver, order: listDoc.drivers?.length || 0 }];
+  await updateList(listId, { drivers: updatedDrivers });
+};
+
+export const removeDriverFromList = async (listId: string, driverIndex: number) => {
+  const listDoc = await getListById(listId);
+  if (!listDoc) throw new Error('List not found');
+
+  const updatedDrivers = listDoc.drivers?.filter((_, idx) => idx !== driverIndex) || [];
+  await updateList(listId, { drivers: updatedDrivers });
+};
+
+export const addPairingToList = async (listId: string, pairing: PairingListItem) => {
+  const listDoc = await getListById(listId);
+  if (!listDoc) throw new Error('List not found');
+
+  const updatedPairings = [...(listDoc.pairings || []), { ...pairing, order: listDoc.pairings?.length || 0 }];
+  await updateList(listId, { pairings: updatedPairings });
+};
+
+export const removePairingFromList = async (listId: string, pairingIndex: number) => {
+  const listDoc = await getListById(listId);
+  if (!listDoc) throw new Error('List not found');
+
+  const updatedPairings = listDoc.pairings?.filter((_, idx) => idx !== pairingIndex) || [];
+  await updateList(listId, { pairings: updatedPairings });
 };
 
 export const likeList = async (listId: string) => {
