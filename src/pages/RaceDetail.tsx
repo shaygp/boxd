@@ -63,44 +63,37 @@ const RaceDetail = () => {
   const { toast } = useToast();
 
   const loadRaceData = async () => {
-    // console.log('[RaceDetail] Starting data load...');
-
     try {
       if (id) {
-        // console.log('[RaceDetail] Loading by ID:', id);
         const log = await getRaceLogById(id);
-        // console.log('[RaceDetail] Race log by ID:', log);
 
         if (log) {
           setRaceLog(log);
+          setLoading(false); // Show content immediately with log data
 
           const user = auth.currentUser;
           if (user) {
             setIsLiked(log.likedBy?.includes(user.uid) || false);
           }
 
-          // Load race-specific logs and race info in parallel
-          const parallelTasks = [
-            getRaceLogsByRace(log.raceName, log.raceYear).catch(err => {
-              console.warn('[RaceDetail] Failed to load race-specific logs:', err);
-              return [];
-            })
-          ];
+          // Load additional data in background
+          const parallelTasks = [];
+
+          // Load race-specific logs
+          parallelTasks.push(
+            getRaceLogsByRace(log.raceName, log.raceYear).catch(() => [])
+          );
 
           // Add race info fetch if we have year and round
           if (log.raceYear && log.round) {
             parallelTasks.push(
-              getFirestoreRaceByYearAndRound(log.raceYear, log.round).catch(err => {
-                console.warn('[RaceDetail] Could not load race info for log:', err);
-                return null;
-              })
+              getFirestoreRaceByYearAndRound(log.raceYear, log.round).catch(() => null)
             );
           }
 
           const [raceLogs, firestoreRace] = await Promise.all(parallelTasks);
 
-          // console.log('[RaceDetail] Loaded', raceLogs.length, 'race-specific logs');
-          setAllRaceLogs(raceLogs);
+          setAllRaceLogs(raceLogs || []);
 
           if (firestoreRace) {
             const raceData = {
@@ -118,16 +111,10 @@ const RaceDetail = () => {
           }
         }
       } else if (year && round) {
-        console.log('[RaceDetail] Loading by year/round:', year, round);
-
-        // Fetch race info from Firestore
-        console.log('[RaceDetail] Fetching from Firestore: year=', parseInt(year), 'round=', parseInt(round));
+        // Fetch race info from Firestore first and show immediately
         const firestoreRace = await getFirestoreRaceByYearAndRound(parseInt(year), parseInt(round));
-        console.log('[RaceDetail] Firestore returned:', firestoreRace);
 
         if (firestoreRace) {
-          console.log('[RaceDetail] ✅ Found race in Firestore:', firestoreRace);
-          // Convert Firestore format to expected format
           const raceData = {
             meeting_key: firestoreRace.round,
             year: firestoreRace.year,
@@ -141,51 +128,39 @@ const RaceDetail = () => {
           };
 
           setRaceInfo(raceData);
+          setLoading(false); // Show content immediately
 
-          // Load race-specific logs
-          try {
-            const raceLogs = await getRaceLogsByRace(firestoreRace.raceName, firestoreRace.year);
-            console.log('[RaceDetail] Loaded', raceLogs.length, 'race-specific logs for year/round');
-            setAllRaceLogs(raceLogs);
+          // Load logs and Yuki tribute in parallel
+          const parallelTasks = [
+            getRaceLogsByRace(firestoreRace.raceName, firestoreRace.year).catch(() => [])
+          ];
 
-            // Load Yuki tribute count for Abu Dhabi 2025
-            if (firestoreRace.raceName.toLowerCase().includes('abu dhabi') && firestoreRace.year === 2025) {
-              try {
-                const count = await getWeGotYouYukiCount(firestoreRace.raceName, firestoreRace.year);
-                setYukiTributeCount(count);
-                console.log('[RaceDetail] Loaded Yuki tribute count:', count);
-              } catch (error) {
-                console.warn('[RaceDetail] Failed to load Yuki tribute count:', error);
-              }
-            }
-          } catch (error) {
-            console.warn('[RaceDetail] Failed to load race-specific logs:', error);
-            setAllRaceLogs([]);
+          // Load Yuki tribute count for Abu Dhabi 2025
+          if (firestoreRace.raceName.toLowerCase().includes('abu dhabi') && firestoreRace.year === 2025) {
+            parallelTasks.push(
+              getWeGotYouYukiCount(firestoreRace.raceName, firestoreRace.year).catch(() => 0)
+            );
           }
 
-          // Winner will be stored in Firestore in the future
-          // For now, we don't fetch from external APIs
-          console.log('[RaceDetail] Race data loaded successfully from Firestore');
+          const results = await Promise.all(parallelTasks);
+          setAllRaceLogs(results[0] || []);
+          if (results[1] !== undefined) {
+            setYukiTributeCount(results[1]);
+          }
         } else {
-          console.error('[RaceDetail] ❌ Race not found in Firestore for year:', year, 'round:', round);
-          console.error('[RaceDetail] This race may not be seeded in the database yet.');
+          setLoading(false);
         }
-      } else {
-        console.error('[RaceDetail] No id, year, or round found in URL params!');
       }
     } catch (error) {
       console.error('[RaceDetail] Error loading race data:', error);
-    } finally {
       setLoading(false);
-      console.log('[RaceDetail] Loading complete');
     }
   };
 
   useEffect(() => {
-    console.log('[RaceDetail] useEffect triggered with:', { id, year, round });
     setLoading(true);
     loadRaceData();
-  }, [id, season, round]); // Use 'season' instead of 'year' to avoid stale closure
+  }, [id, season, round]);
 
   // Auto-expand reviews when there's a highlight parameter
   useEffect(() => {
@@ -197,9 +172,33 @@ const RaceDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] racing-grid">
+      <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
         <Header />
-        <div className="container py-8 text-center text-white font-black uppercase tracking-wider">Loading...</div>
+        <main className="container px-4 sm:px-6 py-6 sm:py-8">
+          {/* Loading Skeleton */}
+          <div className="animate-pulse">
+            {/* Title Skeleton */}
+            <div className="h-8 bg-gray-800/50 rounded w-3/4 mb-4"></div>
+            <div className="h-4 bg-gray-800/30 rounded w-1/2 mb-8"></div>
+
+            {/* Hero Image Skeleton */}
+            <div className="w-full h-64 bg-gray-800/30 rounded-lg mb-6"></div>
+
+            {/* Stats Skeleton */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="h-20 bg-gray-800/30 rounded-lg"></div>
+              <div className="h-20 bg-gray-800/30 rounded-lg"></div>
+              <div className="h-20 bg-gray-800/30 rounded-lg"></div>
+            </div>
+
+            {/* Content Skeleton */}
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-800/30 rounded w-full"></div>
+              <div className="h-4 bg-gray-800/30 rounded w-5/6"></div>
+              <div className="h-4 bg-gray-800/30 rounded w-4/6"></div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -222,7 +221,6 @@ const RaceDetail = () => {
   };
 
   if (raceLog) {
-    console.log('Using race log data:', raceLog);
     const { avgRating, totalRatings } = calculateAverageRating(raceLog.raceName, raceLog.raceYear);
     race = {
       season: raceLog.raceYear,
@@ -237,7 +235,6 @@ const RaceDetail = () => {
       watched: allRaceLogs.filter(l => l.raceName === raceLog.raceName && l.raceYear === raceLog.raceYear).length,
     };
   } else if (raceInfo) {
-    console.log('Using F1 API data:', raceInfo);
     const { avgRating, totalRatings } = calculateAverageRating(raceInfo.meeting_name, raceInfo.year);
     race = {
       season: raceInfo.year,
@@ -252,8 +249,6 @@ const RaceDetail = () => {
       watched: allRaceLogs.filter(l => l.raceName === raceInfo.meeting_name && l.raceYear === raceInfo.year).length,
     };
   }
-
-  console.log('Final race object:', race);
 
   if (!race) {
     return (

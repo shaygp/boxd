@@ -31,8 +31,6 @@ const racesCollection = collection(db, 'f1_races');
 
 // Get all races for a specific season
 export const getRacesBySeason = async (year: number): Promise<F1Race[]> => {
-  console.log(`[F1Calendar] Fetching races for year ${year} from Firestore`);
-
   const q = query(
     racesCollection,
     where('year', '==', year),
@@ -40,7 +38,6 @@ export const getRacesBySeason = async (year: number): Promise<F1Race[]> => {
   );
 
   const snapshot = await getDocs(q);
-  console.log(`[F1Calendar] Found ${snapshot.docs.length} races for ${year}`);
 
   return snapshot.docs.map(doc => {
     const data = doc.data();
@@ -61,23 +58,17 @@ export const getCurrentSeasonRaces = async (): Promise<F1Race[]> => {
 
 // Get a specific race by year and round
 export const getRaceByYearAndRound = async (year: number, round: number): Promise<F1Race | null> => {
-  console.log(`[F1Calendar] getRaceByYearAndRound: year=${year}, round=${round}`);
-
-  // Use document ID directly: year-round (e.g., "2025-2")
   const docId = `${year}-${round}`;
-  console.log(`[F1Calendar] Looking up document ID: ${docId}`);
 
   try {
     const docRef = doc(racesCollection, docId);
     const docSnapshot = await getDoc(docRef);
 
     if (!docSnapshot.exists()) {
-      console.log(`[F1Calendar] Document ${docId} not found`);
       return null;
     }
 
     const data = docSnapshot.data();
-    console.log(`[F1Calendar] Found document ${docId}:`, data);
 
     return {
       id: docSnapshot.id,

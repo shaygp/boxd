@@ -389,7 +389,28 @@ const ListDetail = () => {
       <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
         <Header />
         <main className="container px-4 sm:px-6 py-6 sm:py-8 max-w-7xl mx-auto">
-          <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
+          {/* Loading Skeleton */}
+          <div className="animate-pulse">
+            {/* Cover Image Skeleton */}
+            <div className="w-full h-48 bg-gray-800/30 rounded-lg mb-6"></div>
+
+            {/* Title Skeleton */}
+            <div className="h-8 bg-gray-800/50 rounded w-2/3 mb-2"></div>
+            <div className="h-4 bg-gray-800/30 rounded w-1/3 mb-6"></div>
+
+            {/* Stats Skeleton */}
+            <div className="flex gap-4 mb-8">
+              <div className="h-6 bg-gray-800/30 rounded w-20"></div>
+              <div className="h-6 bg-gray-800/30 rounded w-20"></div>
+            </div>
+
+            {/* Grid Skeleton */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="aspect-[2/3] bg-gray-800/30 rounded-lg"></div>
+              ))}
+            </div>
+          </div>
         </main>
       </div>
     );
