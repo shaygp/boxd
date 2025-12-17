@@ -7,6 +7,7 @@ import { PredictionBox } from "@/components/PredictionBox";
 import { StarRating } from "@/components/StarRating";
 import { AddToListDialog } from "@/components/AddToListDialog";
 import { RaceHighlightsDialog } from "@/components/RaceHighlightsDialog";
+import { FriendsRatings } from "@/components/FriendsRatings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Heart, Bookmark, Share2, Eye, Star, MessageSquare, List, Edit, Trash2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -561,6 +562,13 @@ const RaceDetail = () => {
                     size="sm"
                   />
                 </div>
+
+                {/* Friends' Ratings */}
+                <FriendsRatings
+                  raceName={race.gpName}
+                  raceYear={race.season}
+                  allRaceLogs={allRaceLogs}
+                />
 
                 {/* Small info boxes */}
                 <div className="flex gap-2 text-xs text-gray-400 justify-center md:justify-start flex-wrap">
