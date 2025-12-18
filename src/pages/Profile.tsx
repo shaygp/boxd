@@ -8,11 +8,12 @@ import { EmptyState } from "@/components/EmptyState";
 import { LogRaceDialog } from "@/components/LogRaceDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight, Ban, Edit, Trash2 } from "lucide-react";
+import { UserPlus, UserMinus, Settings, Heart, List, Calendar, Star, Users, Eye, MessageCircle, Plus, ArrowRight, Ban, Edit, Trash2, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { getUserProfile, getUserRaceLogs, deleteRaceLog } from "@/services/raceLogs";
 import { followUser, unfollowUser, isFollowing, getFollowers, getFollowing } from "@/services/follows";
+import { toggleLike } from "@/services/likes";
 import { getUserLists } from "@/services/lists";
 import { getCountryCodeFromGPName, getCountryFlag } from "@/services/f1Api";
 import { getUserWatchlist } from "@/services/watchlist";
@@ -24,6 +25,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { blockUser, unblockUser, isUserBlocked } from "@/services/reports";
+import { CreateChallengeDialog } from "@/components/CreateChallengeDialog";
+import { ChallengesSection } from "@/components/ChallengesSection";
 import { getRacesBySeason } from "@/services/f1Calendar";
 import { setFavoriteRace } from "@/services/auth";
 
@@ -40,10 +43,12 @@ const Profile = () => {
     lists: 0,
     followers: 0,
     following: 0,
+    challengePoints: 0,
   });
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [followingUser, setFollowingUser] = useState(false);
+  const [followsBack, setFollowsBack] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [followers, setFollowers] = useState<any[]>([]);
   const [following, setFollowing] = useState<any[]>([]);
@@ -105,13 +110,22 @@ const Profile = () => {
       setStatsDoc(userStatsDoc);
       const statsData = userStatsDoc.exists() ? userStatsDoc.data() : {};
 
+      // Ensure all numeric fields are actual numbers, not Firestore increment objects
+      const getNumericValue = (value: any): number => {
+        if (typeof value === 'number') return value;
+        if (value === null || value === undefined) return 0;
+        // If it's an object (like increment), return 0 as fallback
+        return 0;
+      };
+
       setStats({
         racesWatched: userLogs.length,
         hoursSpent: 0,
         reviews: reviewsCount,
-        lists: statsData.listsCount || 0,
-        followers: statsData.followersCount || 0,
-        following: statsData.followingCount || 0,
+        lists: getNumericValue(statsData.listsCount),
+        followers: getNumericValue(statsData.followersCount),
+        following: getNumericValue(statsData.followingCount),
+        challengePoints: getNumericValue(statsData.challengePoints),
       });
 
       setLogs(userLogs.map(log => ({
@@ -147,7 +161,17 @@ const Profile = () => {
       if (currentUser && targetUserId !== currentUser.uid) {
         additionalTasks.push(
           isFollowing(targetUserId),
-          isUserBlocked(targetUserId)
+          isUserBlocked(targetUserId),
+          // Check if they follow us back
+          (async () => {
+            const followsBackQuery = query(
+              collection(db, 'follows'),
+              where('followerId', '==', targetUserId),
+              where('followingId', '==', currentUser.uid)
+            );
+            const followsBackSnapshot = await getDocs(followsBackQuery);
+            return !followsBackSnapshot.empty;
+          })()
         );
       }
 
@@ -199,10 +223,12 @@ const Profile = () => {
       if (currentUser && targetUserId !== currentUser.uid) {
         const following = results[4];
         const blocked = results[5];
-        const likedLogs = results[6];
+        const followsBack = results[6];
+        const likedLogs = results[7];
 
         setFollowingUser(following);
         setIsBlocked(blocked);
+        setFollowsBack(followsBack);
         setLikes(likedLogs);
       } else {
         const likedLogs = results[4];
@@ -267,7 +293,47 @@ const Profile = () => {
     }
   };
 
-  const handleShowLikes = async (log: any) => {
+  const handleToggleLike = async (log: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!currentUser) {
+      toast({ title: 'Please log in to like reviews' });
+      return;
+    }
+
+    try {
+      await toggleLike(log.id);
+
+      // Update local state optimistically
+      setFullLogs(prevLogs =>
+        prevLogs.map(l => {
+          if (l.id === log.id) {
+            const isLiked = l.likedBy?.includes(currentUser.uid);
+            return {
+              ...l,
+              likedBy: isLiked
+                ? l.likedBy.filter((id: string) => id !== currentUser.uid)
+                : [...(l.likedBy || []), currentUser.uid],
+              likesCount: isLiked ? (l.likesCount || 1) - 1 : (l.likesCount || 0) + 1
+            };
+          }
+          return l;
+        })
+      );
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleShowLikes = async (log: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
     if (!log.likedBy || log.likedBy.length === 0) {
       toast({ title: 'No likes yet' });
       return;
@@ -395,12 +461,67 @@ const Profile = () => {
               {/* Name and Username */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-1">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-                    {profile?.name || 'Loading...'}
-                  </h1>
-                  {currentUser?.uid === (userId || currentUser?.uid) && (
-                    <EditProfileDialog profile={profile} onSuccess={loadProfile} />
-                  )}
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
+                      {profile?.name || 'Loading...'}
+                    </h1>
+
+                    {/* Challenge button - VS text - Next to name - Only show if mutual followers */}
+                    {!isOwnProfile && currentUser && followingUser && followsBack && (
+                      <CreateChallengeDialog
+                        challengedUserId={targetUserId || ''}
+                        challengedUserName={profile?.username || profile?.name || 'User'}
+                        challengedUserAvatar={profile?.photoURL}
+                        trigger={
+                          <Button
+                            size="sm"
+                            className="w-7 h-7 p-0 rounded-full bg-racing-red/20 border border-racing-red text-racing-red hover:bg-racing-red hover:text-white font-black text-[10px] transition-all"
+                            title="Challenge"
+                          >
+                            VS
+                          </Button>
+                        }
+                      />
+                    )}
+                  </div>
+
+                  {/* Action Buttons - Top right */}
+                  <div className="flex items-center gap-2">
+                    {isOwnProfile ? (
+                      <EditProfileDialog profile={profile} onSuccess={loadProfile} />
+                    ) : currentUser && (
+                      <>
+                        {/* Block button - Icon only */}
+                        <Button
+                          onClick={handleBlockToggle}
+                          disabled={blockLoading}
+                          size="sm"
+                          variant="ghost"
+                          className={`p-2 h-8 w-8 ${isBlocked
+                            ? "text-orange-500 hover:bg-orange-900/20"
+                            : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                          }`}
+                          title={isBlocked ? "Unblock" : "Block"}
+                        >
+                          <Ban className="w-4 h-4" />
+                        </Button>
+
+                        {/* Follow/Unfollow button */}
+                        <Button
+                          onClick={handleFollowToggle}
+                          disabled={followLoading || isBlocked}
+                          size="sm"
+                          variant={followingUser ? "outline" : "default"}
+                          className={`text-xs px-4 py-1 h-8 font-bold ${followingUser
+                            ? "border border-gray-600 bg-transparent text-white hover:bg-gray-800 hover:border-gray-500"
+                            : "bg-white hover:bg-gray-200 text-black"
+                          }`}
+                        >
+                          {followingUser ? "Following" : "Follow"}
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm sm:text-base text-gray-400">
                   @{profile?.username || 'user'}
@@ -427,6 +548,13 @@ const Profile = () => {
                   <span className="font-semibold text-white">{stats.following}</span>{' '}
                   <span className="text-gray-400">following</span>
                 </button>
+                {stats.challengePoints > 0 && (
+                  <div className="flex items-center gap-1.5 hover:text-yellow-400 transition-colors">
+                    <Trophy className="w-4 h-4 text-yellow-400" />
+                    <span className="font-semibold text-white">{stats.challengePoints}</span>{' '}
+                    <span className="text-gray-400">points</span>
+                  </div>
+                )}
               </div>
 
               {/* Bio */}
@@ -434,57 +562,6 @@ const Profile = () => {
                 <p className="text-sm sm:text-base text-gray-300 leading-relaxed mb-4">
                   {profile.description}
                 </p>
-              )}
-
-              {/* Action Buttons - Only for other users' profiles */}
-              {currentUser?.uid !== (userId || currentUser?.uid) && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Button
-                    onClick={handleFollowToggle}
-                    disabled={followLoading || isBlocked}
-                    size="sm"
-                    variant={followingUser ? "outline" : "default"}
-                    className={followingUser
-                      ? "border border-gray-600 bg-transparent text-white hover:bg-gray-800 hover:border-gray-500"
-                      : "bg-racing-red hover:bg-red-600 text-white"
-                    }
-                  >
-                    {followingUser ? (
-                      <>
-                        <UserMinus className="w-4 h-4 mr-2" />
-                        Unfollow
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Follow
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    onClick={handleBlockToggle}
-                    disabled={blockLoading}
-                    size="sm"
-                    variant="outline"
-                    className={isBlocked
-                      ? "border border-orange-600 bg-transparent text-orange-500 hover:bg-orange-900/20 hover:border-orange-500"
-                      : "border border-gray-600 bg-transparent text-white hover:bg-gray-800 hover:border-gray-500"
-                    }
-                  >
-                    {isBlocked ? (
-                      <>
-                        <Ban className="w-4 h-4 mr-2" />
-                        Unblock
-                      </>
-                    ) : (
-                      <>
-                        <Ban className="w-4 h-4 mr-2" />
-                        Block
-                      </>
-                    )}
-                  </Button>
-                </div>
               )}
             </div>
           </div>
@@ -627,6 +704,12 @@ const Profile = () => {
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
               >
                 Watchlist
+              </TabsTrigger>
+              <TabsTrigger
+                value="challenges"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-4 py-3 font-medium text-sm"
+              >
+                Challenges
               </TabsTrigger>
             </TabsList>
           </div>
@@ -944,18 +1027,22 @@ const Profile = () => {
                             {/* Engagement bar - Twitter style */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4 sm:gap-6">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    handleShowLikes(log);
-                                  }}
-                                  onMouseDown={(e) => e.stopPropagation()}
-                                  className="flex items-center gap-2 hover:text-racing-red transition-colors group cursor-pointer select-none"
-                                >
-                                  <Heart className={`w-[18px] h-[18px] ${log.likedBy?.includes(currentUser?.uid || '') ? 'fill-racing-red text-racing-red' : 'text-gray-600 group-hover:text-racing-red'}`} />
-                                  <span className="text-sm font-medium text-gray-500 group-hover:text-racing-red">{log.likesCount || 0}</span>
-                                </button>
+                                <div className="flex items-center gap-2 select-none">
+                                  <button
+                                    onClick={(e) => handleToggleLike(log, e)}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    className="hover:text-racing-red transition-colors group cursor-pointer"
+                                  >
+                                    <Heart className={`w-[18px] h-[18px] ${log.likedBy?.includes(currentUser?.uid || '') ? 'fill-racing-red text-racing-red' : 'text-gray-600 group-hover:text-racing-red'}`} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleShowLikes(log, e)}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    className="text-sm font-medium text-gray-500 hover:text-racing-red transition-colors cursor-pointer"
+                                  >
+                                    {log.likesCount || 0}
+                                  </button>
+                                </div>
                               </div>
 
                               {/* Edit button */}
@@ -1114,6 +1201,13 @@ const Profile = () => {
                 description="Add races to your watchlist to keep track of what you want to watch"
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="challenges">
+            <ChallengesSection
+              userId={targetUserId || ''}
+              isOwnProfile={isOwnProfile}
+            />
           </TabsContent>
         </Tabs>
       </main>
