@@ -104,11 +104,15 @@ export const GrillLeaderboard = ({ challengeId }: GrillLeaderboardProps) => {
                 <span className="font-bold text-sm sm:text-base text-gray-200 truncate group-hover:text-white transition-colors">{entry.userName}</span>
               </div>
 
-              {/* Stats */}
+              {/* Rank */}
               <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
-                <div className="text-right bg-black/40 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded border border-racing-red/20">
-                  <div className="text-xs sm:text-sm font-black text-white">{entry.score}<span className="text-gray-500 text-2xs sm:text-xs">/26</span></div>
-                  <div className="text-2xs sm:text-xs text-gray-400 font-bold">{formatTime(entry.timeUsed)}</div>
+                <div className="text-right">
+                  <div className={`text-2xl sm:text-3xl font-black ${
+                    entry.rank === 1 ? 'text-yellow-500' :
+                    entry.rank === 2 ? 'text-gray-400' :
+                    entry.rank === 3 ? 'text-orange-500' :
+                    'text-racing-red'
+                  }`}>#{entry.rank}</div>
                 </div>
               </div>
             </div>

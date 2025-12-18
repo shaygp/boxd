@@ -365,9 +365,6 @@ export const GrillTheGrid = () => {
                   <h3 className="text-2xl sm:text-3xl font-black text-white mb-3 uppercase">
                     Already Completed
                   </h3>
-                  <p className="text-sm sm:text-base text-gray-300 mb-6">
-                    You've already completed this challenge. Each driver can only compete once!
-                  </p>
 
                   {previousScore !== null && previousTime !== null && (
                     <div className="bg-black/40 backdrop-blur-sm border-2 border-white/20 rounded-lg p-4 mb-6">
@@ -388,12 +385,43 @@ export const GrillTheGrid = () => {
                     </div>
                   )}
 
-                  <Button
-                    onClick={() => navigate('/grill-leaderboard')}
-                    className="bg-racing-red hover:bg-red-700 text-white font-black text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-4 uppercase tracking-wider"
-                  >
-                    View Leaderboard
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+                    <Button
+                      onClick={async () => {
+                        if (previousScore === null || previousTime === null) return;
+
+                        // Set score and timeUsed temporarily to generate the share image
+                        const tempScore = previousScore;
+                        const tempTime = previousTime;
+                        setScore(tempScore);
+                        setTimeUsed(tempTime);
+
+                        // Wait a bit for state to update
+                        await new Promise(resolve => setTimeout(resolve, 100));
+
+                        // Call share function
+                        await handleShare();
+
+                        // Reset
+                        setScore(null);
+                        setTimeUsed(0);
+                      }}
+                      disabled={previousScore === null || previousTime === null}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-black text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-4 uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Share Your Result
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/grill-leaderboard')}
+                      className="bg-racing-red hover:bg-red-700 text-white font-black text-sm sm:text-base px-6 sm:px-8 py-3 sm:px-4 uppercase tracking-wider"
+                    >
+                      View Leaderboard
+                    </Button>
+                  </div>
+
+                  <p className="text-sm sm:text-base text-gray-400">
+                    You've already completed this challenge. Each driver can only compete once!
+                  </p>
                 </Card>
               ) : (
                 /* Instructions Card */

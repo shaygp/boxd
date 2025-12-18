@@ -158,23 +158,31 @@ export const submitAttempt = async (
   const userData = userDoc.data();
 
   // Score the attempt
-  const scoredAnswers = answers.map(answer => {
+  const scoredAnswers = await Promise.all(answers.map(async answer => {
     const question = challenge.questions.find(q => q.id === answer.questionId);
     if (!question) return { ...answer, isCorrect: false };
 
-    // Check if answer is correct (case-insensitive, trimmed)
-    const userAns = answer.userAnswer.trim().toLowerCase();
-    const correctAns = Array.isArray(question.correctAnswer)
-      ? question.correctAnswer.map(a => a.toLowerCase())
-      : [question.correctAnswer.toLowerCase()];
+    let isCorrect = false;
 
-    const isCorrect = correctAns.some(ans => ans === userAns);
+    // For A-Z challenge, use dynamic driver validation
+    if (challenge.type === 'az') {
+      const { isValidDriverSurname } = await import('@/utils/grillDrivers');
+      isCorrect = isValidDriverSurname(answer.userAnswer, answer.questionId);
+    } else {
+      // For other challenges, check against correctAnswer array
+      const userAns = answer.userAnswer.trim().toLowerCase();
+      const correctAns = Array.isArray(question.correctAnswer)
+        ? question.correctAnswer.map(a => a.toLowerCase())
+        : [question.correctAnswer.toLowerCase()];
+
+      isCorrect = correctAns.some(ans => ans === userAns);
+    }
 
     return {
       ...answer,
       isCorrect,
     };
-  });
+  }));
 
   const score = scoredAnswers.filter(a => a.isCorrect).length;
 
