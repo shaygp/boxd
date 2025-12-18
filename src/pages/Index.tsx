@@ -255,6 +255,62 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Grill the Grid Section */}
+        <section
+          className="relative overflow-hidden rounded-2xl border-2 border-white/60 bg-gradient-to-br from-white/10 via-black to-black cursor-pointer group hover:border-white transition-all duration-300"
+          onClick={() => navigate('/grill-the-grid')}
+        >
+          {/* Animated background effects */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-0 left-0 w-full h-1 bg-white animate-pulse" />
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-white animate-pulse" />
+          </div>
+
+          {/* Racing grid pattern */}
+          <div className="absolute inset-0 opacity-5" style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(255, 255, 255, 0.1) 49px, rgba(255, 255, 255, 0.1) 50px), repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(255, 255, 255, 0.1) 49px, rgba(255, 255, 255, 0.1) 50px)'
+          }} />
+
+          <div className="relative z-10 p-6 sm:p-10 text-center space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-full mb-2">
+              <span className="text-white font-black text-xs tracking-widest">CHALLENGE MODE</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
+              GRILL THE <span className="text-racing-red drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]">GRID</span>
+            </h2>
+
+            <p className="text-sm sm:text-base text-gray-300 max-w-2xl mx-auto font-bold">
+              Name an F1 driver surname for every letter of the alphabet. 3 minutes. Can you get them all?
+            </p>
+
+            <div className="flex gap-4 justify-center my-4">
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-black text-racing-red">26</div>
+                <div className="text-xs text-gray-400 font-bold uppercase">Letters</div>
+              </div>
+              <div className="w-px bg-white/20"></div>
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-black text-racing-red">3:00</div>
+                <div className="text-xs text-gray-400 font-bold uppercase">Time Limit</div>
+              </div>
+              <div className="w-px bg-white/20"></div>
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-black text-white">ALL</div>
+                <div className="text-xs text-gray-400 font-bold uppercase">F1 History</div>
+              </div>
+            </div>
+
+            <Button
+              size="lg"
+              className="gap-2 bg-white hover:bg-gray-200 text-black shadow-xl shadow-white/20 border-2 border-white font-black uppercase tracking-wider group-hover:scale-105 transition-transform"
+            >
+              PLAY CHALLENGE
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+          </div>
+        </section>
+
         {tagFilter && (
           <div className="flex flex-wrap items-center gap-2 p-3 sm:p-4 bg-racing-red/10 border border-racing-red/20 rounded-lg">
             <span className="text-xs sm:text-sm font-medium">Filtering by tag:</span>

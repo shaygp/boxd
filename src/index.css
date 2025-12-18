@@ -293,3 +293,11 @@ All colors MUST be HSL.
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
+/* Custom text sizes for Grill the Grid */
+@layer utilities {
+  .text-2xs {
+    font-size: 0.625rem;
+    line-height: 0.875rem;
+  }
+}

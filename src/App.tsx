@@ -27,6 +27,8 @@ import Settings from "./pages/Settings";
 import Support from "./pages/Support";
 import SeedData from "./pages/SeedData";
 import { FormulaWrapped } from "./pages/FormulaWrapped";
+import { GrillTheGrid } from "./pages/GrillTheGrid";
+import { GrillLeaderboardPage } from "./pages/GrillLeaderboard";
 import LiveChatPage from "./pages/LiveChatPage";
 import DeleteActivity from "./pages/DeleteActivity";
 
@@ -91,6 +93,8 @@ const App = () => (
               <Route path="/support" element={<Support />} />
               <Route path="/seed-data" element={<ProtectedRoute><SeedData /></ProtectedRoute>} />
               <Route path="/wrapped" element={<ProtectedRoute><FormulaWrapped /></ProtectedRoute>} />
+              <Route path="/grill-the-grid" element={<ProtectedRoute><GrillTheGrid /></ProtectedRoute>} />
+              <Route path="/grill-leaderboard" element={<ProtectedRoute><GrillLeaderboardPage /></ProtectedRoute>} />
               <Route path="/delete-activity" element={<ProtectedRoute><DeleteActivity /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
