@@ -58,8 +58,8 @@ export const PersonalActivityFeed = () => {
         userLogs.map(log => `${log.raceYear}-${log.raceName}`)
       );
 
-      // Get all public community logs (fetch a lot more)
-      const allCommunityLogs = await getPublicRaceLogs(200);
+      // Get all public community logs (fetch MASSIVE pool for variety)
+      const allCommunityLogs = await getPublicRaceLogs(1000);
 
       // Filter to only show logs for races the user has already watched
       // exclude the user's own logs, blocked users, and only show reviews with written content
@@ -70,74 +70,70 @@ export const PersonalActivityFeed = () => {
         log.review && log.review.trim().length > 0
       );
 
-      // Twitter-style "For You" algorithm
-      // Mix of engagement, recency, and HEAVY randomness for variety
+      // Twitter-style algorithm: Different candidates selected each time!
+      // Use time-based random seed to ensure different selection each reload
       const now = Date.now();
 
-      // Calculate relevance score for each log (Twitter-style)
-      const scoredLogs = spoilerFreeLogs.map(log => {
-        // Engagement score (likes count heavily)
-        const engagementScore = (log.likesCount || 0) * 10;
+      // Seeded random number generator using current timestamp
+      let seed = now;
+      const seededRandom = () => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      };
 
-        // Recency score (newer content gets boost)
-        const ageInHours = (now - log.createdAt.getTime()) / (1000 * 60 * 60);
-        const recencyScore = Math.max(0, 100 - ageInHours); // Decay over time
+      // Score each review with heavy random component (changes each reload)
+      const scoredReviews = spoilerFreeLogs.map(log => {
+        const engagementScore = (log.likesCount || 0) * 5;
+        const ratingScore = log.rating * 3;
 
-        // Rating bonus (high ratings = quality content)
-        const ratingScore = log.rating * 5;
+        // Time-based decay (newer content slightly preferred)
+        const ageInDays = (now - log.createdAt.getTime()) / (1000 * 60 * 60 * 24);
+        const recencyScore = Math.max(0, 30 - ageInDays);
 
-        // Review length bonus (longer reviews = more effort)
-        const reviewLength = log.review?.length || 0;
-        const contentScore = Math.min(reviewLength / 10, 50); // Cap at 50
+        // MASSIVE time-based random factor - changes every millisecond!
+        const randomScore = seededRandom() * 500;
 
-        // STRONG random factor for maximum variety on each reload
-        const randomness = Math.random() * 200; // Increased from 30 to 200!
-
-        // Combined score
-        const totalScore = engagementScore + recencyScore + ratingScore + contentScore + randomness;
+        const totalScore = engagementScore + ratingScore + recencyScore + randomScore;
 
         return { log, score: totalScore };
       });
 
-      // Sort by score (highest first)
-      scoredLogs.sort((a, b) => b.score - a.score);
+      // Sort by score
+      scoredReviews.sort((a, b) => b.score - a.score);
 
-      // Apply diversity: prevent same user from dominating feed
-      const diversifiedFeed: typeof scoredLogs = [];
+      // Apply diversity: max 3 per user
+      const selectedReviews: RaceLog[] = [];
       const userFrequency = new Map<string, number>();
-      const maxPerUser = 3; // Max 3 reviews per user in top 100
+      const maxPerUser = 3;
 
-      for (const item of scoredLogs) {
+      for (const item of scoredReviews) {
         const userCount = userFrequency.get(item.log.userId) || 0;
 
         if (userCount < maxPerUser) {
-          diversifiedFeed.push(item);
+          selectedReviews.push(item.log);
           userFrequency.set(item.log.userId, userCount + 1);
         }
 
-        if (diversifiedFeed.length >= 100) break;
+        if (selectedReviews.length >= 100) break;
       }
 
-      // If we don't have enough, add remaining items
-      if (diversifiedFeed.length < 100) {
-        for (const item of scoredLogs) {
-          if (!diversifiedFeed.includes(item)) {
-            diversifiedFeed.push(item);
-            if (diversifiedFeed.length >= 100) break;
+      // Fill remaining if needed
+      if (selectedReviews.length < 100) {
+        for (const item of scoredReviews) {
+          if (!selectedReviews.includes(item.log)) {
+            selectedReviews.push(item.log);
+            if (selectedReviews.length >= 100) break;
           }
         }
       }
 
-      // Extract logs and apply aggressive shuffling
-      const finalFeed = diversifiedFeed.map(item => item.log);
+      // Add final randomization using current time
+      const finalShuffle = [...selectedReviews].sort(() => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return (seed / 233280) - 0.5;
+      });
 
-      // Fisher-Yates shuffle the ENTIRE feed for maximum variety
-      for (let i = finalFeed.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [finalFeed[i], finalFeed[j]] = [finalFeed[j], finalFeed[i]];
-      }
-
-      setCommunityLogs(finalFeed);
+      setCommunityLogs(finalShuffle);
     } catch (error) {
       console.error('Error loading community activity:', error);
     } finally {
