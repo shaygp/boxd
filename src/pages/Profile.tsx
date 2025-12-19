@@ -919,12 +919,12 @@ const Profile = () => {
                             navigate(`/race/${log.id}?highlight=${log.id}`);
                           }
                         }}
-                        className="border-b border-gray-800/60 hover:bg-black/20 transition-all cursor-pointer px-4 py-3"
+                        className="border-b border-gray-800 hover:bg-gray-900/30 transition-colors cursor-pointer p-4"
                       >
                         <div className="flex gap-3">
                           {/* Avatar */}
                           <div className="flex-shrink-0">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 flex items-center justify-center overflow-hidden hover:border-gray-600 transition-colors">
+                            <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden">
                               {profile?.photoURL ? (
                                 <img
                                   src={profile.photoURL}
@@ -932,7 +932,7 @@ const Profile = () => {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <span className="text-sm font-black text-gray-300">
+                                <span className="text-base font-black text-racing-red">
                                   {(profile?.name || profile?.username || 'U').charAt(0).toUpperCase()}
                                 </span>
                               )}
@@ -942,107 +942,82 @@ const Profile = () => {
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             {/* Header - Twitter style */}
-                            <div className="flex items-center gap-1.5 mb-1.5">
-                              <span className="font-medium text-white text-base hover:underline cursor-pointer">
-                                {profile?.name || 'User'}
-                              </span>
-                              <span className="text-gray-500 text-sm font-medium">
-                                @{profile?.username || 'user'}
-                              </span>
-                              <span className="text-gray-600">·</span>
-                              <span className="text-gray-500 text-sm hover:underline">
-                                {log.dateWatched instanceof Date
-                                  ? log.dateWatched.toLocaleDateString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric'
-                                    })
-                                  : log.createdAt instanceof Date
-                                    ? log.createdAt.toLocaleDateString('en-US', {
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-white hover:underline text-sm sm:text-base">
+                                  {profile?.name || 'User'}
+                                </span>
+                                <span className="text-gray-500 text-xs sm:text-sm">
+                                  · {log.dateWatched instanceof Date
+                                    ? log.dateWatched.toLocaleDateString('en-US', {
                                         month: 'short',
                                         day: 'numeric'
                                       })
-                                    : 'Recently'}
-                              </span>
+                                    : log.createdAt instanceof Date
+                                      ? log.createdAt.toLocaleDateString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric'
+                                        })
+                                      : 'Recently'}
+                                </span>
+                              </div>
                             </div>
 
-                            {/* Race info card - Compact - SHOWN FIRST */}
-                            <div className="bg-black/40 border border-racing-red/20 rounded-lg p-3 mb-3 hover:border-racing-red/40 transition-colors">
-                              <div className="flex items-center justify-between gap-3 flex-wrap">
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-black text-racing-red text-sm">
-                                    {log.raceName.replace('Grand Prix', 'GP')} <span className="text-gray-400 font-medium">{log.raceYear}</span>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  {/* Session Badge */}
-                                  {log.sessionType && (
-                                    <Badge variant="outline" className={`text-[10px] font-black uppercase tracking-wider rounded-sm px-2 py-0.5 ${
-                                      log.sessionType === 'race' ? 'border-racing-red/60 text-racing-red bg-racing-red/10' :
-                                      log.sessionType === 'sprint' ? 'border-orange-500/60 text-orange-500 bg-orange-500/10' :
-                                      log.sessionType === 'qualifying' ? 'border-blue-500/60 text-blue-500 bg-blue-500/10' :
-                                      log.sessionType === 'sprintQualifying' ? 'border-purple-500/60 text-purple-500 bg-purple-500/10' :
-                                      'border-gray-500/60 text-gray-500 bg-gray-500/10'
-                                    }`}>
-                                      {log.sessionType === 'race' ? '🏁 RACE' :
-                                       log.sessionType === 'sprint' ? '⚡ SPRINT' :
-                                       log.sessionType === 'qualifying' ? '🏎️ QUALI' :
-                                       log.sessionType === 'sprintQualifying' ? '⚡ SQ' :
-                                       log.sessionType}
-                                    </Badge>
-                                  )}
-
-                                  {/* Rating */}
-                                  {log.rating && (
-                                    <div className="flex items-center gap-0.5 bg-yellow-500/10 border border-yellow-500/30 rounded-sm px-2 py-1">
-                                      {[...Array(5)].map((_, i) => (
+                            {/* Race info - Simple Twitter style */}
+                            <div className="mb-2">
+                              <h3 className="font-bold text-white text-sm sm:text-base mb-1">
+                                {log.raceName}
+                              </h3>
+                              <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                                <span>{log.raceLocation}</span>
+                                <span>•</span>
+                                <span>{log.raceYear}</span>
+                                {log.rating && (
+                                  <>
+                                    <span>•</span>
+                                    <div className="flex items-center gap-0.5">
+                                      {[1, 2, 3, 4, 5].map((star) => (
                                         <Star
-                                          key={i}
-                                          className={`w-2.5 h-2.5 ${
-                                            i < log.rating!
-                                              ? 'fill-yellow-400 text-yellow-400'
-                                              : 'fill-gray-700 text-gray-700'
+                                          key={star}
+                                          className={`w-3.5 h-3.5 ${
+                                            star <= log.rating
+                                              ? 'fill-racing-red text-racing-red'
+                                              : 'text-gray-700'
                                           }`}
                                         />
                                       ))}
                                     </div>
-                                  )}
-                                </div>
+                                  </>
+                                )}
                               </div>
-
-                              {/* Driver of the Day */}
-                              {log.driverOfTheDay && (
-                                <div className="mt-2 pt-2 border-t border-gray-800 text-xs">
-                                  <span className="text-gray-500 font-medium">DOTD:</span>{' '}
-                                  <span className="text-white font-bold">{log.driverOfTheDay}</span>
-                                </div>
-                              )}
                             </div>
 
-                            {/* Review text - Shown AFTER the GP card */}
-                            <p className="text-white text-[14px] leading-relaxed whitespace-pre-wrap break-words mb-3">
-                              {log.review}
-                            </p>
+                            {/* Review text */}
+                            {log.review && (
+                              <p className="text-sm sm:text-base text-gray-200 mb-3 whitespace-pre-wrap">
+                                {log.review}
+                              </p>
+                            )}
 
                             {/* Engagement bar - Twitter style */}
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4 sm:gap-6">
-                                <div className="flex items-center gap-2 select-none">
-                                  <button
-                                    onClick={(e) => handleToggleLike(log, e)}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    className="hover:text-racing-red transition-colors group cursor-pointer"
-                                  >
-                                    <Heart className={`w-[18px] h-[18px] ${log.likedBy?.includes(currentUser?.uid || '') ? 'fill-racing-red text-racing-red' : 'text-gray-600 group-hover:text-racing-red'}`} />
-                                  </button>
-                                  <button
-                                    onClick={(e) => handleShowLikes(log, e)}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    className="text-sm font-medium text-gray-500 hover:text-racing-red transition-colors cursor-pointer"
-                                  >
+                              <div className="flex items-center gap-6 text-gray-500 text-xs sm:text-sm">
+                                <button
+                                  className={`flex items-center gap-1.5 transition-colors group ${
+                                    log.likedBy?.includes(currentUser?.uid || '') ? 'text-racing-red' : 'hover:text-racing-red'
+                                  }`}
+                                  onClick={(e) => handleToggleLike(log, e)}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                >
+                                  <Heart className={`w-4 h-4 transition-all ${
+                                    log.likedBy?.includes(currentUser?.uid || '')
+                                      ? 'fill-racing-red text-racing-red scale-110'
+                                      : 'group-hover:fill-racing-red/10 group-hover:scale-110'
+                                  }`} />
+                                  <span className={log.likedBy?.includes(currentUser?.uid || '') ? 'text-racing-red font-bold' : ''}>
                                     {log.likesCount || 0}
-                                  </button>
-                                </div>
+                                  </span>
+                                </button>
                               </div>
 
                               {/* Edit button */}
