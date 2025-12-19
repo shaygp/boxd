@@ -223,9 +223,6 @@ export const PersonalActivityFeed = () => {
               >
                 {log.username}
               </span>
-              <span className="text-gray-500 text-xs sm:text-sm">
-                · {formatDistanceToNow(log.createdAt, { addSuffix: true })}
-              </span>
             </div>
           </div>
 
