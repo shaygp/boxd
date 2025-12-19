@@ -116,17 +116,23 @@ export const unblockUser = async (blockedUserId: string) => {
 
 export const getBlockedUsers = async (): Promise<string[]> => {
   const user = auth.currentUser;
-  if (!user) return [];
+  if (!user) return ['5vQUKZJb49aAQ1XtixFefb6nznq1']; // Always block this user globally
 
   const userStatsRef = doc(db, 'userStats', user.uid);
   const userStats = await getDoc(userStatsRef);
 
+  // Always include the globally blocked user
+  const globallyBlockedUsers = ['5vQUKZJb49aAQ1XtixFefb6nznq1'];
+
   if (userStats.exists()) {
     const data = userStats.data();
-    return data.blockedUsers || [];
+    const userBlockedList = data.blockedUsers || [];
+
+    // Combine user's blocked list with globally blocked users (no duplicates)
+    return [...new Set([...globallyBlockedUsers, ...userBlockedList])];
   }
 
-  return [];
+  return globallyBlockedUsers;
 };
 
 export const isUserBlocked = async (userId: string): Promise<boolean> => {

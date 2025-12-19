@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { RaceCard } from "@/components/RaceCard";
+import { PersonalActivityFeed } from "@/components/PersonalActivityFeed";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -185,9 +186,27 @@ const Index = () => {
     <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
       <Header />
 
-      <main className="container px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-10 space-y-8 sm:space-y-12 md:space-y-16">
-        {/* Hero Section */}
-        <section className="relative text-center space-y-4 py-12 sm:py-20 md:py-24 px-3 sm:px-6 md:px-8 rounded-2xl overflow-hidden">
+      <main className="container px-0 sm:px-4 md:px-8 py-0 sm:py-6 md:py-10 space-y-0 sm:space-y-8 md:space-y-16">
+        {/* Support Banner - Top on mobile */}
+        <section className="sm:hidden relative text-center py-3 px-4 border-b border-gray-800 bg-black/60">
+          <div className="space-y-2">
+            <h2 className="text-xs font-black text-white tracking-tight">
+              How to support <span className="text-racing-red">BoxBoxd</span>
+            </h2>
+            <a
+              href="https://buymeacoffee.com/shaygrandpx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-500 hover:from-yellow-400 hover:via-yellow-300 hover:to-yellow-400 text-black font-bold rounded-lg transition-all duration-300 text-xs"
+            >
+              <span>☕</span>
+              <span>Buy me a coffee</span>
+            </a>
+          </div>
+        </section>
+
+        {/* Hero Section - Desktop only */}
+        <section className="hidden sm:block relative text-center space-y-4 py-12 sm:py-20 md:py-24 px-3 sm:px-6 md:px-8 rounded-2xl overflow-hidden">
           {/* Background Image */}
           <div
             className="absolute inset-0 z-0"
@@ -234,8 +253,8 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Support Section */}
-        <section className="relative text-center py-6 sm:py-8 px-4 sm:px-6 rounded-xl border-2 border-racing-red/30 bg-black/40 backdrop-blur-sm">
+        {/* Support Section - Desktop only - Moved before feed */}
+        <section className="hidden sm:block relative text-center py-6 sm:py-8 px-4 sm:px-6 rounded-xl border-2 border-racing-red/30 bg-black/40 backdrop-blur-sm">
           <div className="space-y-3">
             <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight">
               How to support <span className="text-racing-red">BoxBoxd</span>
@@ -255,58 +274,51 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Grill the Grid Section */}
+        {/* Community Feed - Spoiler-free */}
+        <section className="sm:px-4">
+          <div className="max-w-2xl mx-auto">
+            <PersonalActivityFeed />
+          </div>
+        </section>
+
+        {/* Grill the Grid Banner - Bottom on mobile */}
         <section
-          className="relative overflow-hidden rounded-2xl border-2 border-white/60 bg-gradient-to-br from-white/10 via-black to-black cursor-pointer group hover:border-white transition-all duration-300"
+          className="sm:hidden relative overflow-hidden border-t border-gray-800 bg-gradient-to-br from-white/5 via-black to-black cursor-pointer hover:bg-white/10 transition-all duration-300"
           onClick={() => navigate('/grill-the-grid')}
         >
-          {/* Animated background effects */}
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 left-0 w-full h-1 bg-white animate-pulse" />
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-white animate-pulse" />
+          <div className="relative z-10 p-4 text-center space-y-2">
+            <h2 className="text-lg font-black text-white tracking-tight">
+              GRILL THE <span className="text-racing-red">GRID</span>
+            </h2>
+            <p className="text-xs text-gray-400 font-bold">
+              Name an F1 driver surname for every letter. 3 min!
+            </p>
+            <button className="mt-1 px-4 py-1.5 bg-white hover:bg-gray-200 text-black text-xs font-black uppercase tracking-wider rounded">
+              PLAY
+            </button>
           </div>
+        </section>
 
-          {/* Racing grid pattern */}
-          <div className="absolute inset-0 opacity-5" style={{
-            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(255, 255, 255, 0.1) 49px, rgba(255, 255, 255, 0.1) 50px), repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(255, 255, 255, 0.1) 49px, rgba(255, 255, 255, 0.1) 50px)'
-          }} />
-
-          <div className="relative z-10 p-6 sm:p-10 text-center space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-full mb-2">
-              <span className="text-white font-black text-xs tracking-widest">CHALLENGE MODE</span>
-            </div>
-
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
-              GRILL THE <span className="text-racing-red drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]">GRID</span>
+        {/* Grill the Grid Section - Desktop only (compact) */}
+        <section
+          className="hidden sm:block relative overflow-hidden rounded-xl border-2 border-white/60 bg-gradient-to-br from-white/10 via-black to-black cursor-pointer group hover:border-white transition-all duration-300"
+          onClick={() => navigate('/grill-the-grid')}
+        >
+          <div className="relative z-10 p-6 text-center space-y-3">
+            <h2 className="text-2xl font-black text-white tracking-tight">
+              GRILL THE <span className="text-racing-red">GRID</span>
             </h2>
 
-            <p className="text-sm sm:text-base text-gray-300 max-w-2xl mx-auto font-bold">
-              Name an F1 driver surname for every letter of the alphabet. 3 minutes. Can you get them all?
+            <p className="text-sm text-gray-400 font-bold">
+              Name an F1 driver surname for every letter. 3 minutes!
             </p>
 
-            <div className="flex gap-4 justify-center my-4">
-              <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-black text-racing-red">26</div>
-                <div className="text-xs text-gray-400 font-bold uppercase">Letters</div>
-              </div>
-              <div className="w-px bg-white/20"></div>
-              <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-black text-racing-red">3:00</div>
-                <div className="text-xs text-gray-400 font-bold uppercase">Time Limit</div>
-              </div>
-              <div className="w-px bg-white/20"></div>
-              <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-black text-white">ALL</div>
-                <div className="text-xs text-gray-400 font-bold uppercase">F1 History</div>
-              </div>
-            </div>
-
             <Button
-              size="lg"
-              className="gap-2 bg-white hover:bg-gray-200 text-black shadow-xl shadow-white/20 border-2 border-white font-black uppercase tracking-wider group-hover:scale-105 transition-transform"
+              size="sm"
+              className="gap-2 bg-white hover:bg-gray-200 text-black font-black uppercase tracking-wider"
             >
               PLAY CHALLENGE
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
         </section>
@@ -329,7 +341,9 @@ const Index = () => {
           </div>
         )}
 
-        <section className="space-y-6">
+        {/* Latest Races - Removed from desktop */}
+        {false && (
+        <section className="hidden sm:block space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b-2 border-red-900/50">
             <div>
               <div className="inline-block px-4 py-1 bg-black/60 backdrop-blur-sm border-2 border-racing-red rounded-full mb-2">
@@ -378,10 +392,11 @@ const Index = () => {
             <div className="text-center py-12 text-gray-400 font-black uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">No races available</div>
           )}
         </section>
+        )}
 
-        {/* Season Leaderboard */}
-        {!tagFilter && seasonRatings.filter(s => s.count > 0).length > 0 && (
-          <section className="space-y-6 bg-gradient-to-b from-black/80 via-racing-red/5 to-black/80 p-6 rounded-xl border-2 border-racing-red/20 backdrop-blur-sm shadow-[0_0_40px_rgba(220,38,38,0.1)]">
+        {/* Season Leaderboard - Removed */}
+        {false && !tagFilter && seasonRatings.filter(s => s.count > 0).length > 0 && (
+          <section className="hidden sm:block space-y-6 bg-gradient-to-b from-black/80 via-racing-red/5 to-black/80 p-6 rounded-xl border-2 border-racing-red/20 backdrop-blur-sm shadow-[0_0_40px_rgba(220,38,38,0.1)]">
             {/* Section Header with Racing Flair */}
             <div className="relative overflow-hidden bg-gradient-to-r from-black via-racing-red/10 to-black p-4 rounded-lg border-2 border-racing-red/30">
               <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(220,38,38,0.05)_10px,rgba(220,38,38,0.05)_20px)]" />
@@ -603,9 +618,10 @@ const Index = () => {
           </section>
         )}
 
-        {/* Formula Wrapped Section */}
+        {/* Formula Wrapped Section - Hidden on desktop */}
+        {false && (
         <section
-          className="relative overflow-hidden rounded-2xl border-2 border-racing-red/60 bg-gradient-to-br from-racing-red/20 via-black to-black cursor-pointer group hover:border-racing-red transition-all duration-300"
+          className="hidden sm:block relative overflow-hidden rounded-2xl border-2 border-racing-red/60 bg-gradient-to-br from-racing-red/20 via-black to-black cursor-pointer group hover:border-racing-red transition-all duration-300"
           onClick={() => navigate('/wrapped')}
         >
           {/* Animated background effects */}
@@ -653,6 +669,7 @@ const Index = () => {
             </Button>
           </div>
         </section>
+        )}
 
         {tagFilter && (
           <section className="space-y-6">
