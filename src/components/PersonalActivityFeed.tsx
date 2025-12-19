@@ -52,21 +52,14 @@ export const PersonalActivityFeed = () => {
       // Get blocked users list (includes globally blocked users)
       const blockedUserIds = await getBlockedUsers();
 
-      // Get user's watched races to prevent spoilers
-      const userLogs = await getUserRaceLogs(user.uid);
-      const watchedRaces = new Set(
-        userLogs.map(log => `${log.raceYear}-${log.raceName}`)
-      );
-
       // Get all public community logs (fetch MASSIVE pool for variety)
       const allCommunityLogs = await getPublicRaceLogs(1000);
 
-      // Filter to only show logs for races the user has already watched
-      // exclude the user's own logs, blocked users, and only show reviews with written content
+      // Show all community reviews (no spoiler filter)
+      // Just exclude user's own logs, blocked users, and only show reviews with written content
       const spoilerFreeLogs = allCommunityLogs.filter(log =>
         log.userId !== user.uid &&
         !blockedUserIds.includes(log.userId) &&
-        watchedRaces.has(`${log.raceYear}-${log.raceName}`) &&
         log.review && log.review.trim().length > 0
       );
 
@@ -297,9 +290,8 @@ export const PersonalActivityFeed = () => {
     return (
       <div className="bg-black/90 border-y sm:border-2 border-gray-800 sm:rounded-xl">
         <div className="p-8 text-center">
-          <div className="text-5xl mb-3">🏁</div>
           <p className="text-gray-400 font-bold mb-1">No community activity yet</p>
-          <p className="text-gray-600 text-sm">Log races to discover what others are saying!</p>
+          <p className="text-gray-600 text-sm">Check back later for reviews!</p>
         </div>
       </div>
     );
