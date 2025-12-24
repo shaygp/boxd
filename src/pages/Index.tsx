@@ -274,6 +274,40 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Secret Santa Banner */}
+        <section
+          className="relative overflow-hidden border border-gray-800 hover:border-racing-red rounded-lg cursor-pointer group mb-6 transition-all duration-300"
+          onClick={() => navigate('/secret-santa')}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-gray-900 to-black"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(220,38,38,0.15),transparent_60%)]"></div>
+
+          <div className="relative z-10 p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="inline-block px-3 py-1 bg-racing-red/20 border border-racing-red rounded mb-2">
+                  <span className="text-racing-red font-bold text-xs tracking-wider uppercase">New</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
+                  F1 Secret Santa 2026
+                </h2>
+                <p className="text-sm text-gray-400 font-medium mb-4">
+                  Get assigned a random driver, pick a gift, and share with the community
+                </p>
+                <button className="px-6 py-2.5 bg-racing-red hover:bg-red-600 text-white text-sm font-bold uppercase tracking-wide rounded transition-all">
+                  Participate Now
+                </button>
+              </div>
+
+              <div className="hidden sm:block flex-shrink-0">
+                <div className="text-6xl opacity-30 group-hover:opacity-50 transition-opacity">
+                  🎁
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Community Feed - Spoiler-free */}
         <section className="sm:px-4">
           <div className="max-w-2xl mx-auto">

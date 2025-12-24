@@ -31,6 +31,13 @@ import { GrillTheGrid } from "./pages/GrillTheGrid";
 import { GrillLeaderboardPage } from "./pages/GrillLeaderboard";
 import LiveChatPage from "./pages/LiveChatPage";
 import DeleteActivity from "./pages/DeleteActivity";
+import { SecretSanta } from "./pages/SecretSanta";
+import { SecretSantaSubmit } from "./pages/SecretSantaSubmit";
+import { SecretSantaGiftSent } from "./pages/SecretSantaGiftSent";
+import { SecretSantaGiftView } from "./pages/SecretSantaGiftView";
+import { SecretSantaGallery } from "./pages/SecretSantaGallery";
+import { SecretSantaLeaderboard } from "./pages/SecretSantaLeaderboard";
+import { SecretSantaOGImage } from "./pages/SecretSantaOGImage";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +103,14 @@ const App = () => (
               <Route path="/grill-the-grid" element={<ProtectedRoute><GrillTheGrid /></ProtectedRoute>} />
               <Route path="/grill-leaderboard" element={<ProtectedRoute><GrillLeaderboardPage /></ProtectedRoute>} />
               <Route path="/delete-activity" element={<ProtectedRoute><DeleteActivity /></ProtectedRoute>} />
+              <Route path="/secret-santa" element={<ProtectedRoute><SecretSanta /></ProtectedRoute>} />
+              <Route path="/secret-santa/submit" element={<ProtectedRoute><SecretSantaSubmit /></ProtectedRoute>} />
+              <Route path="/secret-santa/gift-sent" element={<ProtectedRoute><SecretSantaGiftSent /></ProtectedRoute>} />
+              <Route path="/secret-santa/my-gift" element={<ProtectedRoute><SecretSantaGiftSent /></ProtectedRoute>} />
+              <Route path="/secret-santa/gift/:id" element={<SecretSantaGiftView />} />
+              <Route path="/secret-santa/og-image/:id" element={<SecretSantaOGImage />} />
+              <Route path="/secret-santa/gallery" element={<ProtectedRoute><SecretSantaGallery /></ProtectedRoute>} />
+              <Route path="/secret-santa/leaderboard" element={<ProtectedRoute><SecretSantaLeaderboard /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
         </BrowserRouter>

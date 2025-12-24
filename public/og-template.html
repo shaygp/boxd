@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'racing-red': '#dc2626',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="m-0 p-0">
+    <div class="w-[1200px] h-[630px] bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-12">
+        <!-- Card Container -->
+        <div class="w-full h-full bg-black border-4 border-racing-red rounded-3xl overflow-hidden flex">
+            <!-- Left Side - Gift Image -->
+            <div class="w-1/2 h-full relative overflow-hidden">
+                <img
+                    id="giftImage"
+                    alt="Gift"
+                    class="w-full h-full object-cover"
+                />
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent to-black/50"></div>
+            </div>
+
+            <!-- Right Side - Text Content -->
+            <div class="w-1/2 h-full flex flex-col justify-center px-12 relative">
+                <!-- Background Glow -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-racing-red/20 rounded-full blur-3xl"></div>
+
+                <!-- Header Badge -->
+                <div class="mb-6">
+                    <div class="inline-block px-6 py-2 bg-racing-red rounded-full">
+                        <span class="font-black text-white text-lg tracking-wider">SECRET SANTA 2026</span>
+                    </div>
+                </div>
+
+                <!-- Gift Title -->
+                <h1 id="giftTitle" class="text-5xl font-black text-white mb-6 tracking-tight leading-tight"></h1>
+
+                <!-- Driver Info -->
+                <div class="mb-8">
+                    <p class="text-gray-500 text-xl mb-2 font-bold">FOR</p>
+                    <p id="driverName" class="text-4xl font-black text-racing-red tracking-wide"></p>
+                </div>
+
+                <!-- User Attribution -->
+                <div class="flex items-center gap-4 pt-6 border-t-2 border-gray-800">
+                    <img
+                        id="userAvatar"
+                        alt="User"
+                        class="w-16 h-16 rounded-full border-2 border-racing-red"
+                    />
+                    <div>
+                        <p id="userName" class="text-white font-black text-xl"></p>
+                        <p class="text-gray-500 font-bold">via @Box_Boxd</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get URL parameters
+        const params = new URLSearchParams(window.location.search);
+
+        document.getElementById('giftImage').src = params.get('image') || '';
+        document.getElementById('giftTitle').textContent = (params.get('title') || '').toUpperCase();
+        document.getElementById('driverName').textContent = (params.get('driver') || '').toUpperCase();
+        document.getElementById('userName').textContent = params.get('user') || '';
+        document.getElementById('userAvatar').src = params.get('avatar') || 'https://via.placeholder.com/64';
+    </script>
+</body>
+</html>

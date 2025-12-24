@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Heart, MessageCircle, List, UserPlus, Eye, Star, ArrowRight } from 'lucide-react';
+import { Heart, MessageCircle, List, UserPlus, Eye, Star, ArrowRight, Gift } from 'lucide-react';
 import { Activity } from '@/services/activity';
 import { Link } from 'react-router-dom';
 import { collection, query, orderBy, limit as firestoreLimit, onSnapshot, where, doc, getDoc } from 'firebase/firestore';
@@ -360,6 +360,8 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
         return <UserPlus className="w-4 h-4" />;
       case 'prediction':
         return <span className="text-sm">🏎️</span>;
+      case 'secretSanta':
+        return <Gift className="w-4 h-4" />;
     }
   };
 
@@ -390,6 +392,8 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
           return activity.content;
         }
         return 'made a prediction';
+      case 'secretSanta':
+        return activity.content || 'participated in Secret Santa';
     }
   };
 
@@ -425,6 +429,8 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
           return `/race/${activity.raceYear}/${activity.round}`;
         }
         return '#';
+      case 'secretSantaGift':
+        return `/secret-santa/gift/${activity.targetId}`;
       default:
         return '#';
     }
@@ -597,6 +603,14 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                         {activity.raceName}
                       </Link>
                     )}
+                    {activity.targetType === 'secretSantaGift' && activity.assignedDriver && (
+                      <Link
+                        to={getActivityLink(activity)}
+                        className="font-semibold text-racing-red hover:underline decoration-2 underline-offset-2"
+                      >
+                        view gift
+                      </Link>
+                    )}
                     {activity.rating && activity.rating > 0 && (
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
@@ -683,10 +697,38 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                 )}
 
                 {/* Simple content for non-reviews */}
-                {activity.content && activity.type !== 'review' && (
+                {activity.content && activity.type !== 'review' && activity.type !== 'secretSanta' && (
                   <p className="text-xs sm:text-sm text-gray-400 italic leading-relaxed">
                     {activity.content}
                   </p>
+                )}
+
+                {/* Secret Santa Gift Display */}
+                {activity.type === 'secretSanta' && activity.giftImageUrl && activity.giftTitle && (
+                  <Link to={getActivityLink(activity)} className="block">
+                    <div className="bg-black/40 rounded-lg border border-gray-800/50 overflow-hidden hover:border-racing-red/50 transition-colors">
+                      <div className="aspect-video relative overflow-hidden">
+                        <img
+                          src={activity.giftImageUrl}
+                          alt={activity.giftTitle}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://via.placeholder.com/600x400?text=Gift';
+                          }}
+                        />
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <p className="text-xs sm:text-sm font-bold text-white mb-1">
+                          {activity.giftTitle}
+                        </p>
+                        {activity.assignedDriver && (
+                          <p className="text-xs text-gray-400">
+                            for {activity.assignedDriver}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
                 )}
 
                 {/* Interaction bar - Letterboxd style */}

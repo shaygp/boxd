@@ -18,9 +18,9 @@ export interface Activity {
   userId: string;
   username: string;
   userAvatar?: string;
-  type: 'log' | 'review' | 'like' | 'list' | 'follow' | 'prediction';
+  type: 'log' | 'review' | 'like' | 'list' | 'follow' | 'prediction' | 'secretSanta';
   targetId: string;
-  targetType: 'raceLog' | 'list' | 'user' | 'prediction';
+  targetType: 'raceLog' | 'list' | 'user' | 'prediction' | 'secretSantaGift';
   content?: string;
   createdAt: Date;
   // Optional race metadata for enhanced display
@@ -31,6 +31,10 @@ export interface Activity {
   rating?: number;
   posterUrl?: string;
   weGotYouYuki?: boolean;
+  // Secret Santa metadata
+  giftTitle?: string;
+  giftImageUrl?: string;
+  assignedDriver?: string;
 }
 
 const activitiesCollection = collection(db, 'activities');
