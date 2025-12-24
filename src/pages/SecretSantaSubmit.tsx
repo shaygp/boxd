@@ -249,15 +249,17 @@ export const SecretSantaSubmit = () => {
 
               <div className="relative">
                 <input
+                  id="imageUpload"
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  className="hidden"
                   disabled={uploading}
                 />
                 <Button
                   type="button"
                   disabled={uploading}
+                  onClick={() => document.getElementById('imageUpload')?.click()}
                   className="w-full sm:w-auto bg-gray-800 hover:bg-gray-700 text-white font-black py-5 sm:py-6 px-6 border-2 border-gray-700"
                 >
                   {uploading ? 'UPLOADING...' : 'UPLOAD'}
@@ -300,7 +302,10 @@ export const SecretSantaSubmit = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 sm:pt-8">
             <Button
               type="button"
-              onClick={() => navigate('/secret-santa')}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/secret-santa');
+              }}
               className="flex-1 bg-gray-800 hover:bg-gray-700 text-white border-2 border-gray-700 font-black py-5 sm:py-6 text-base sm:text-lg tracking-wider"
             >
               CANCEL
