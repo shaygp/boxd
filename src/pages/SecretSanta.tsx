@@ -68,11 +68,11 @@ export const SecretSanta = () => {
   return (
     <div className="min-h-screen bg-black">
       {/* Back Button */}
-      <div className="border-b border-gray-800">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+      <div className="border-b border-gray-800 pt-4">
+        <div className="max-w-6xl mx-auto px-4 pb-4">
           <button
             onClick={() => navigate('/')}
-            className="text-gray-400 hover:text-white transition-colors font-bold tracking-wider"
+            className="text-gray-400 hover:text-white transition-colors font-bold tracking-wider min-h-[44px] flex items-center text-sm sm:text-base"
           >
             ← BACK TO HOME
           </button>

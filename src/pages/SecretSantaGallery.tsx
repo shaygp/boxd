@@ -198,13 +198,13 @@ export const SecretSantaGallery = () => {
   return (
     <div className="min-h-screen bg-black pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-b from-racing-red/20 to-black border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="bg-gradient-to-b from-racing-red/20 to-black border-b border-gray-800 pt-4">
+        <div className="max-w-7xl mx-auto px-4 pb-6">
           <button
             onClick={handleBack}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6 font-bold tracking-wider"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6 font-bold tracking-wider min-h-[44px] text-sm sm:text-base"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>BACK</span>
           </button>
 

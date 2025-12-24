@@ -53,6 +53,23 @@ service cloud.firestore {
       allow delete: if false; // Season ratings can't be deleted, only updated to 0
     }
 
+    // Secret Santa submissions - publicly readable for sharing
+    match /secretSantaSubmissions/{submissionId} {
+      allow read: if true; // Public for sharing links
+      allow create, update: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Secret Santa assignments - only readable by the assigned user
+    match /secretSantaAssignments/{assignmentId} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     // Default: require authentication for all other operations
     match /{document=**} {
       allow read, write: if request.auth != null;
