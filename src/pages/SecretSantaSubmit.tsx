@@ -61,6 +61,8 @@ export const SecretSantaSubmit = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log('File selected:', { name: file.name, type: file.type, size: file.size });
+
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
@@ -71,8 +73,11 @@ export const SecretSantaSubmit = () => {
       return;
     }
 
-    // Check file type
-    if (!file.type.startsWith('image/')) {
+    // Check file type - more lenient for mobile browsers
+    const isImage = file.type.startsWith('image/') ||
+                    /\.(jpg|jpeg|png|gif|webp|heic|heif)$/i.test(file.name);
+
+    if (!isImage) {
       toast({
         title: 'Invalid file type',
         description: 'Please choose an image file',
@@ -87,19 +92,23 @@ export const SecretSantaSubmit = () => {
       // Upload to Firebase Storage
       const fileName = `secret-santa/${user?.uid}/${Date.now()}_${file.name}`;
       const storageRef = ref(storage, fileName);
+
+      console.log('Uploading to:', fileName);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
+      console.log('Upload successful, URL:', url);
 
       setGiftImageUrl(url);
       toast({
         title: 'Image uploaded',
         description: 'Your image has been uploaded successfully',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading image:', error);
+      console.error('Error details:', error.code, error.message);
       toast({
         title: 'Upload failed',
-        description: 'Failed to upload image. Please try again.',
+        description: error.message || 'Failed to upload image. Please try again.',
         variant: 'destructive',
       });
     } finally {

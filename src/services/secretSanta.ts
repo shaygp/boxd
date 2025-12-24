@@ -189,7 +189,7 @@ export const submitSecretSantaGift = async (
   const userDoc = await getDoc(doc(db, 'users', user.uid));
   const userData = userDoc.data();
 
-  const submission: Omit<SecretSantaSubmission, 'id'> = {
+  const submission: any = {
     userId: user.uid,
     userName: userData?.username || userData?.name || 'User',
     userAvatar: userData?.photoURL,
@@ -198,19 +198,22 @@ export const submitSecretSantaGift = async (
     driverTeam: driver.team,
     driverNumber: driver.number,
 
-    ...giftData,
+    giftTitle: giftData.giftTitle,
+    giftImageUrl: giftData.giftImageUrl,
 
     likes: 0,
     likedBy: [],
 
-    createdAt: new Date(),
+    createdAt: Timestamp.now(),
     year: 2026,
   };
 
-  const docRef = await addDoc(submissionsCollection, {
-    ...submission,
-    createdAt: Timestamp.now(),
-  });
+  // Only add productLink if it exists
+  if (giftData.productLink) {
+    submission.productLink = giftData.productLink;
+  }
+
+  const docRef = await addDoc(submissionsCollection, submission);
 
   // Create activity for the feed
   try {
