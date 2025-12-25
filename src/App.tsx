@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ScrollRestoration } from "./components/ScrollRestoration";
+import { SwipeBack } from "./components/SwipeBack";
 
 // Import main pages directly (no lazy loading for frequently used pages)
 import Landing from "./pages/Landing";
@@ -77,6 +78,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ScrollRestoration />
+          <SwipeBack />
           <Routes>
               <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />

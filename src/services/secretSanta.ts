@@ -31,7 +31,7 @@ export const DRIVERS_2026 = [
   { name: 'Alex Albon', team: 'Williams', number: 23, image: 'https://www.formula1.com/content/dam/fom-website/drivers/A/ALEALB01_Alex_Albon/alealb01.png.transform/2col-retina/image.png' },
   { name: 'Carlos Sainz', team: 'Williams', number: 55, image: 'https://www.formula1.com/content/dam/fom-website/drivers/C/CARSAI01_Carlos_Sainz/carsai01.png.transform/2col-retina/image.png' },
   { name: 'Liam Lawson', team: 'Racing Bulls', number: 30, image: 'https://www.formula1.com/content/dam/fom-website/drivers/L/LIALAW01_Liam_Lawson/lialaw01.png.transform/2col-retina/image.png' },
-  { name: 'Arvid Lindblad', team: 'Racing Bulls', number: 45, image: 'https://placehold.co/600x800/1a1a1a/6692ff?text=45&font=montserrat' },
+  { name: 'Arvid Lindblad', team: 'Racing Bulls', number: 41, image: 'https://placehold.co/600x800/1a1a1a/6692ff?text=41&font=montserrat' },
   { name: 'Fernando Alonso', team: 'Aston Martin', number: 14, image: 'https://www.formula1.com/content/dam/fom-website/drivers/F/FERALO01_Fernando_Alonso/feralo01.png.transform/2col-retina/image.png' },
   { name: 'Lance Stroll', team: 'Aston Martin', number: 18, image: 'https://www.formula1.com/content/dam/fom-website/drivers/L/LANSTR01_Lance_Stroll/lanstr01.png.transform/2col-retina/image.png' },
   { name: 'Esteban Ocon', team: 'Haas', number: 31, image: 'https://www.formula1.com/content/dam/fom-website/drivers/E/ESTOCO01_Esteban_Ocon/estoco01.png.transform/2col-retina/image.png' },
