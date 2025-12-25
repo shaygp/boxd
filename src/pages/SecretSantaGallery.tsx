@@ -198,7 +198,7 @@ export const SecretSantaGallery = () => {
   return (
     <div className="min-h-screen bg-black pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-b from-racing-red/20 to-black border-b border-gray-800 pt-4">
+      <div className="bg-gradient-to-b from-racing-red/20 to-black border-b border-gray-800 pt-8">
         <div className="max-w-7xl mx-auto px-4 pb-6">
           <button
             onClick={handleBack}

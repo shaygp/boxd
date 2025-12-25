@@ -89,7 +89,7 @@ export const SecretSantaGiftView = () => {
 
       <div className="min-h-screen bg-black">
         {/* Back Button */}
-        <div className="border-b border-gray-800 pt-4">
+        <div className="border-b border-gray-800 pt-8">
           <div className="max-w-4xl mx-auto px-4 pb-4">
             <button
               onClick={() => navigate('/secret-santa')}

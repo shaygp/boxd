@@ -28,7 +28,7 @@ export const DRIVERS_2026 = [
   { name: 'Isack Hadjar', team: 'Red Bull Racing', number: 47, image: 'https://placehold.co/600x800/1a1a1a/0600ef?text=47&font=montserrat' },
   { name: 'Charles Leclerc', team: 'Ferrari', number: 16, image: 'https://www.formula1.com/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/2col-retina/image.png' },
   { name: 'Lewis Hamilton', team: 'Ferrari', number: 44, image: 'https://www.formula1.com/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/2col-retina/image.png' },
-  { name: 'Alex Albon', team: 'Williams', number: 23, image: 'https://www.formula1.com/content/dam/fom-website/drivers/A/ALEALB01_Alex_Albon/alealb01.png.transform/2col-retina/image.png' },
+  { name: 'Alex Albon', team: 'Williams', number: 23, image: 'https://placehold.co/600x800/1a1a1a/005aff?text=23&font=montserrat' },
   { name: 'Carlos Sainz', team: 'Williams', number: 55, image: 'https://www.formula1.com/content/dam/fom-website/drivers/C/CARSAI01_Carlos_Sainz/carsai01.png.transform/2col-retina/image.png' },
   { name: 'Liam Lawson', team: 'Racing Bulls', number: 30, image: 'https://www.formula1.com/content/dam/fom-website/drivers/L/LIALAW01_Liam_Lawson/lialaw01.png.transform/2col-retina/image.png' },
   { name: 'Arvid Lindblad', team: 'Racing Bulls', number: 41, image: 'https://placehold.co/600x800/1a1a1a/6692ff?text=41&font=montserrat' },

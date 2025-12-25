@@ -173,8 +173,8 @@ export const SecretSantaSubmit = () => {
   return (
     <div className="min-h-screen bg-black pb-20">
       {/* Header */}
-      <div className="border-b border-gray-800 pt-safe">
-        <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+      <div className="border-b border-gray-800 pt-8">
+        <div className="max-w-4xl mx-auto px-4 pb-4">
           <button
             onClick={() => navigate('/secret-santa')}
             className="text-gray-400 hover:text-white transition-colors font-bold tracking-wider text-sm sm:text-base min-h-[44px] flex items-center"
