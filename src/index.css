@@ -1,3 +1,33 @@
+/* ========================================
+   iOS WEBVIEW FIX - Prevent checkerboard pattern
+   ======================================== */
+
+/* 1. Force opaque background EVERYWHERE */
+html, body {
+  background-color: #000 !important;
+  min-height: 100%;
+}
+
+/* 2. WebKit GPU acceleration hack - prevents transparency artifacts */
+body {
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* 3. Root container must be opaque */
+#app, #root {
+  background-color: #000 !important;
+  min-height: 100vh;
+}
+
+/* 4. iOS scroll behavior fixes */
+body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
