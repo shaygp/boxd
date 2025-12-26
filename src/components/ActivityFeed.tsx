@@ -513,7 +513,6 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
     return (
       <div className="text-center py-16 px-4">
         <div className="max-w-md mx-auto space-y-3">
-          <div className="text-4xl">🏁</div>
           <h3 className="text-lg font-semibold text-white">
             {feedType === 'following' ? 'No Activity Yet' : 'No Activity Yet'}
           </h3>
@@ -531,14 +530,14 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
   const hasMore = filteredActivities.length > showCount;
 
   return (
-    <div className="space-y-0 max-w-2xl mx-auto">
+    <div className="space-y-0">
       {displayedActivities.map((activity) => (
-        <div key={activity.id} className="group border-b border-gray-800/50 hover:bg-white/[0.02] transition-all duration-200 cursor-pointer">
-          <div className="p-4">
-            <div className="flex gap-3">
+        <div key={activity.id} className="group border-b border-gray-800 hover:bg-white/[0.01] transition-all duration-150">
+          <div className="px-4 py-5">
+            <div className="flex gap-4">
               {/* Avatar Section */}
               <Link to={`/user/${activity.userId}`} className="flex-shrink-0">
-                <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center overflow-hidden ring-1 ring-gray-800 hover:ring-gray-700 transition-all">
+                <div className="w-11 h-11 rounded-full bg-gray-900 flex items-center justify-center overflow-hidden border border-gray-800 hover:border-gray-700 transition-all">
                   {activity.userAvatar ? (
                     <img
                       src={activity.userAvatar}
@@ -546,14 +545,14 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-sm font-black text-racing-red">
+                    <span className="text-sm font-bold text-racing-red">
                       {activity.username.charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
               </Link>
 
-              <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex-1 min-w-0 space-y-2.5">
                 {/* Header - Twitter style action line */}
                 <div>
                   <div className="flex items-center gap-1.5 flex-wrap text-sm leading-snug mb-1">
@@ -675,15 +674,8 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                 {/* Secret Santa Gift Display */}
                 {activity.type === 'secretSanta' && activity.giftImageUrl && activity.giftTitle && (
                   <Link to={getActivityLink(activity)} className="block">
-                    <div className="rounded-lg border border-gray-800/50 overflow-hidden hover:border-gray-700 transition-colors relative">
-                      {/* Checkered F1 Track Pattern Background */}
-                      <div className="absolute inset-0 opacity-5">
-                        <div className="absolute inset-0" style={{
-                          backgroundImage: `repeating-linear-gradient(90deg, #fff 0px, #fff 40px, transparent 40px, transparent 80px)`,
-                        }}></div>
-                      </div>
-
-                      <div className="aspect-video relative overflow-hidden">
+                    <div className="rounded-xl border border-gray-800 overflow-hidden hover:border-gray-700 transition-all mt-2">
+                      <div className="aspect-video relative overflow-hidden bg-black">
                         <img
                           src={activity.giftImageUrl}
                           alt={activity.giftTitle}
@@ -693,8 +685,8 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                           }}
                         />
                       </div>
-                      <div className="p-3 relative">
-                        <p className="text-sm font-bold text-white mb-1">
+                      <div className="p-4 bg-black/60">
+                        <p className="text-sm font-semibold text-white mb-1">
                           {activity.giftTitle}
                         </p>
                         {activity.assignedDriver && (
