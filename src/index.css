@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   iOS WEBVIEW FIX - Prevent checkerboard
+   ======================================== */
+
+/* Force opaque black background */
+html {
+  background-color: #000;
+  min-height: 100%;
+}
+
+body {
+  background-color: #000;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+#root {
+  background-color: #000;
+  min-height: 100vh;
+}
+
 /* iOS Safe Area Support */
 :root {
   --sat: env(safe-area-inset-top);
@@ -23,7 +44,7 @@ html {
 
 body {
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
 }
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 

@@ -2,6 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- iOS WebView fix - prevent flash -->
+    <style>
+      html, body, #root {
+        background-color: #000;
+        min-height: 100%;
+      }
+      body {
+        -webkit-backface-visibility: hidden;
+      }
+    </style>
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

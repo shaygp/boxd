@@ -15,7 +15,6 @@ export const PersonalActivityFeed = () => {
   const { toast } = useToast();
   const [communityLogs, setCommunityLogs] = useState<RaceLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [likingLog, setLikingLog] = useState<string | null>(null);
   const [lastPath, setLastPath] = useState<string>("");
   const [userNames, setUserNames] = useState<Map<string, string>>(new Map());
 
@@ -176,33 +175,45 @@ export const PersonalActivityFeed = () => {
 
     if (!user || !log.id) return;
 
-    setLikingLog(log.id);
+    const isCurrentlyLiked = log.likedBy?.includes(user.uid);
 
+    // Optimistic update - update UI IMMEDIATELY
+    setCommunityLogs(prev => prev.map(l => {
+      if (l.id === log.id) {
+        return {
+          ...l,
+          likesCount: isCurrentlyLiked ? l.likesCount - 1 : l.likesCount + 1,
+          likedBy: isCurrentlyLiked
+            ? l.likedBy.filter(id => id !== user.uid)
+            : [...(l.likedBy || []), user.uid]
+        };
+      }
+      return l;
+    }));
+
+    // Then call API in background
     try {
       await toggleLike(log.id);
-
-      // Update local state
+    } catch (error: any) {
+      // Revert on error
       setCommunityLogs(prev => prev.map(l => {
         if (l.id === log.id) {
-          const isLiked = l.likedBy?.includes(user.uid);
           return {
             ...l,
-            likesCount: isLiked ? l.likesCount - 1 : l.likesCount + 1,
-            likedBy: isLiked
-              ? l.likedBy.filter(id => id !== user.uid)
-              : [...(l.likedBy || []), user.uid]
+            likesCount: isCurrentlyLiked ? l.likesCount + 1 : l.likesCount - 1,
+            likedBy: isCurrentlyLiked
+              ? [...(l.likedBy || []), user.uid]
+              : l.likedBy.filter(id => id !== user.uid)
           };
         }
         return l;
       }));
-    } catch (error: any) {
+
       toast({
         title: "Error",
         description: error.message || "Failed to like review",
         variant: "destructive"
       });
-    } finally {
-      setLikingLog(null);
     }
   };
 
@@ -272,7 +283,6 @@ export const PersonalActivityFeed = () => {
                 isLiked ? 'text-racing-red' : 'hover:text-racing-red'
               }`}
               onClick={(e) => handleLike(log, e)}
-              disabled={likingLog === log.id}
             >
               <div className={`p-1.5 rounded-full transition-all ${
                 isLiked ? '' : 'group-hover:bg-racing-red/10'
