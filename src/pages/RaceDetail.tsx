@@ -499,7 +499,7 @@ const RaceDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black racing-grid pb-20 lg:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-black via-black to-red-950/20 racing-grid pb-20 lg:pb-0">
       <Header />
 
       <main className="container px-4 sm:px-6 py-4 sm:py-6 max-w-full">

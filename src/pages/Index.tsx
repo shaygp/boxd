@@ -189,7 +189,7 @@ const Index = () => {
 
       <main className="container px-0 sm:px-4 md:px-8 py-0 sm:py-4 md:py-6 space-y-0 sm:space-y-4 md:space-y-6">
         {/* Support Banner - Top on mobile - Minimized */}
-        <section className="sm:hidden relative py-2 px-4 border-b border-gray-800/50 bg-black">
+        <section className="home-banner sm:hidden relative py-2 px-4 border-b border-gray-800/50">
           <a
             href="https://buymeacoffee.com/shaygrandpx"
             target="_blank"
@@ -250,7 +250,7 @@ const Index = () => {
         </section>
 
         {/* Support Section - Desktop only - Minimized */}
-        <section className="hidden sm:block relative py-4 px-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5">
+        <section className="home-banner hidden sm:block relative py-4 px-4 rounded-lg border border-yellow-500/20">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
               <p className="text-sm text-gray-300 mb-1">
@@ -272,7 +272,7 @@ const Index = () => {
 
         {/* Secret Santa Banner - Minimized */}
         <section
-          className="relative overflow-hidden border border-gray-800/60 hover:border-racing-red/50 rounded-xl cursor-pointer group transition-all duration-200"
+          className="home-banner relative overflow-hidden border border-gray-800/60 hover:border-racing-red/50 rounded-xl cursor-pointer group transition-all duration-200"
           onClick={() => navigate('/secret-santa')}
         >
           {/* Checkered F1 Track Pattern Background */}

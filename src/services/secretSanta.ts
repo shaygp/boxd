@@ -14,6 +14,8 @@ import {
   arrayUnion,
 } from 'firebase/firestore';
 import { createActivity } from './activity';
+import { createNotification } from './notifications';
+import { getUserProfile } from './auth';
 
 const submissionsCollection = collection(db, 'secretSantaSubmissions');
 const assignmentsCollection = collection(db, 'secretSantaAssignments');
@@ -468,6 +470,24 @@ export const toggleSubmissionLike = async (submissionId: string): Promise<void> 
       likes: (data.likes || 0) + 1,
       likedBy: arrayUnion(user.uid),
     });
+
+    // Create notification for gift owner
+    try {
+      const likerProfile = await getUserProfile(user.uid);
+
+      await createNotification({
+        userId: data.userId, // gift owner
+        type: 'like',
+        actorId: user.uid,
+        actorName: likerProfile?.name || user.displayName || 'Someone',
+        actorPhotoURL: likerProfile?.photoURL || user.photoURL || undefined,
+        content: `liked your Secret Santa gift: ${data.giftTitle}`,
+        linkTo: `/secret-santa/gift/${submissionId}`,
+      });
+    } catch (error) {
+      console.error('Error creating notification for gift like:', error);
+      // Don't fail the like if notification fails
+    }
   }
 };
 

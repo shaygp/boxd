@@ -178,10 +178,10 @@ const RaceCardComponent = ({
     <Card
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
-      className="group relative overflow-hidden bg-black border border-gray-800/60 hover:border-gray-700 hover:scale-[1.02] transition-all duration-300 cursor-pointer touch-manipulation"
+      className="group relative overflow-hidden bg-gradient-to-br from-black via-black to-red-950/20 border border-gray-800/60 hover:border-racing-red/50 hover:scale-[1.02] transition-all duration-300 cursor-pointer touch-manipulation"
     >
       {/* Poster */}
-      <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+      <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-red-950/30">
         {/* Letterboxd-style hover overlay - only on desktop */}
         <div className="hidden md:block absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none" />
 
@@ -281,7 +281,7 @@ const RaceCardComponent = ({
       </div>
 
       {/* Info */}
-      <div className="p-3 bg-black border-t border-gray-800/60">
+      <div className="p-3 bg-gradient-to-br from-black via-black to-red-950/10 border-t border-gray-800/60">
         <h3 className="font-bold text-sm line-clamp-1 text-white mb-1">{gpName}</h3>
         <p className="text-xs text-gray-500">{season}</p>
       </div>

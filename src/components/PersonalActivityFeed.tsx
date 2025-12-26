@@ -128,11 +128,14 @@ export const PersonalActivityFeed = () => {
 
       setCommunityLogs(finalShuffle);
 
-      // Fetch user display names for all users in the feed
+      // Show feed immediately, stop loading
+      setLoading(false);
+
+      // Fetch user display names in background (don't block UI)
       const uniqueUserIds = [...new Set(finalShuffle.map(log => log.userId))];
       const nameMap = new Map<string, string>();
 
-      await Promise.all(
+      Promise.all(
         uniqueUserIds.map(async (userId) => {
           try {
             const profile = await getUserProfile(userId);
@@ -143,14 +146,32 @@ export const PersonalActivityFeed = () => {
             console.error(`Failed to fetch profile for user ${userId}:`, error);
           }
         })
-      );
-
-      setUserNames(nameMap);
+      ).then(() => {
+        setUserNames(nameMap);
+      });
     } catch (error) {
       console.error('Error loading community activity:', error);
-    } finally {
       setLoading(false);
     }
+  };
+
+  const getTimeAgo = (date: Date) => {
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d`;
+    const weeks = Math.floor(days / 7);
+    if (weeks < 4) return `${weeks}w`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months}mo`;
+    const years = Math.floor(days / 365);
+    return `${years}y`;
   };
 
   const renderStars = (rating: number) => {
@@ -224,7 +245,7 @@ export const PersonalActivityFeed = () => {
     return (
     <div
       onClick={() => navigate(`/race/${log.raceYear}/${log.round || 1}`)}
-      className="cursor-pointer border-b border-gray-800/50 hover:bg-white/[0.02] transition-all duration-200 px-4 py-3"
+      className="cursor-pointer border-b border-gray-800 hover:bg-white/[0.02] transition-all duration-200 px-4 py-3"
     >
       <div className="flex gap-3">
         {/* Avatar */}

@@ -6,7 +6,7 @@
    iOS WEBVIEW FIX - Prevent checkerboard
    ======================================== */
 
-/* Force opaque black background */
+/* Pure Black with Premium Separation */
 html {
   background-color: #000;
   min-height: 100%;
@@ -23,14 +23,108 @@ body {
   min-height: 100vh;
 }
 
-/* Force all page containers to have opaque backgrounds */
-main {
+/* Page backgrounds - Pure black */
+main, .min-h-screen {
   background-color: #000;
 }
 
-/* Fix iOS checkerboard on any element with min-h-screen */
-.min-h-screen {
+/* Premium Elevation System - Using borders & subtle tints */
+
+/* Headers/Banners - Very slight blue tint */
+.border-b.border-gray-800,
+.border-t.border-gray-800 {
   background-color: #000;
+  border-color: #1a1f2e;
+}
+
+/* Primary cards - Pure black with strong borders */
+.bg-black,
+.bg-black\/90,
+.bg-black\/95 {
+  background-color: #000;
+  border-color: #2a2a2a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Nested elements - Very subtle red tint */
+.bg-black\/80,
+.bg-black\/60 {
+  background-color: rgba(10, 5, 5, 0.95);
+}
+
+/* Elevated/hover - Lighter borders */
+.bg-black\/50,
+.bg-black\/40 {
+  background-color: rgba(15, 10, 10, 0.9);
+}
+
+
+/* Racing red accents - More visible */
+.bg-racing-red\/20,
+.bg-racing-red\/10,
+.bg-racing-red\/5 {
+  background-color: rgba(220, 38, 38, 0.12);
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+/* Borders - Strong contrast on black */
+.border,
+.border-t,
+.border-b,
+.border-l,
+.border-r,
+.border-y,
+.border-x {
+  border-color: #1a1a1a;
+}
+
+.border-gray-800,
+.border-gray-800\/60,
+.border-gray-800\/50,
+.border-gray-800\/40,
+[class*="border-gray"] {
+  border-color: #2a2a2a;
+}
+
+.border-2 {
+  border-width: 2px;
+  border-color: #3a3a3a;
+}
+
+/* Racing red borders - Brighter */
+.border-racing-red,
+.border-racing-red\/50,
+.border-racing-red\/30,
+[class*="border-red"] {
+  border-color: rgba(220, 38, 38, 0.6);
+}
+
+/* Hover states - More visible */
+.hover\:border-racing-red:hover {
+  border-color: rgba(220, 38, 38, 1);
+}
+
+.hover\:border-gray-700:hover {
+  border-color: #4a4a4a;
+}
+
+.hover\:bg-white\/\[0\.02\]:hover,
+.hover\:bg-gray-950:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Racing grid - Subtle red tint */
+.racing-grid {
+  background-color: #000;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(220, 38, 38, 0.03) 49px, rgba(220, 38, 38, 0.03) 50px),
+    repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(220, 38, 38, 0.03) 49px, rgba(220, 38, 38, 0.03) 50px);
+}
+
+/* Home Feed Banners - Special background color for demarcation */
+.home-banner {
+  background: linear-gradient(135deg, rgba(20, 5, 5, 0.95) 0%, rgba(10, 2, 2, 0.98) 100%);
+  border-color: rgba(220, 38, 38, 0.2);
 }
 
 /* iOS Safe Area Support */

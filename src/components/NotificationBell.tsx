@@ -51,17 +51,14 @@ export const NotificationBell = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Automatically mark all notifications as read when the popover opens
-  useEffect(() => {
-    if (open && unreadCount > 0) {
-      handleMarkAllAsRead();
-    }
-  }, [open]);
-
   const handleNotificationClick = async (notification: Notification) => {
-    if (!notification.isRead) {
-      await markNotificationAsRead(notification.id!);
+    if (!notification.isRead && notification.id) {
+      await markNotificationAsRead(notification.id);
       setUnreadCount(prev => Math.max(0, prev - 1));
+      // Update the notification in the list to show as read
+      setNotifications(prev =>
+        prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
+      );
     }
 
     if (notification.linkTo) {
