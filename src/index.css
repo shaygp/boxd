@@ -23,6 +23,16 @@ body {
   min-height: 100vh;
 }
 
+/* Force all page containers to have opaque backgrounds */
+main {
+  background-color: #000;
+}
+
+/* Fix iOS checkerboard on any element with min-h-screen */
+.min-h-screen {
+  background-color: #000;
+}
+
 /* iOS Safe Area Support */
 :root {
   --sat: env(safe-area-inset-top);
@@ -274,6 +284,7 @@ All colors MUST be HSL.
 
   /* Racing grid background */
   .racing-grid {
+    background-color: #000 !important;
     background-image:
       repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(220, 38, 38, 0.03) 49px, rgba(220, 38, 38, 0.03) 50px),
       repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(220, 38, 38, 0.03) 49px, rgba(220, 38, 38, 0.03) 50px);

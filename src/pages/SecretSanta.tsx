@@ -45,11 +45,15 @@ export const SecretSanta = () => {
   const handleGetAssignment = async () => {
     setRevealing(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get driver assignment ASAP (removed artificial delays)
       const driver = await assignDriverToUser();
       setAssignedDriver(driver);
-      await new Promise(resolve => setTimeout(resolve, 500));
       setShowReveal(true);
+
+      // Check if already submitted in parallel (don't wait)
+      hasUserSubmitted().then(submitted => {
+        setAlreadySubmitted(submitted);
+      });
     } catch (error) {
       console.error('Error assigning driver:', error);
     } finally {
