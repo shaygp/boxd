@@ -118,15 +118,15 @@ export const Header = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b-2 border-racing-red/20 bg-black/90 backdrop-blur-xl shadow-lg shadow-red-900/10">
-        <div className="container flex h-28 md:h-32 items-end pb-2 px-4 md:px-6 lg:px-8">
-          <div className="flex items-end gap-4 sm:gap-6 md:gap-8 flex-1 pb-2">
+      <header className="sticky top-0 z-50 w-full border-b border-gray-800/60 bg-black/95 backdrop-blur-xl">
+        <div className="container flex h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-6 flex-1">
             {/* Back button - show on specific pages */}
             {!['/home', '/login', '/'].includes(location.pathname) && (
               <Button
                 size="icon"
                 variant="ghost"
-                className="text-white hover:text-racing-red hover:bg-racing-red/10 w-12 h-12 mb-1"
+                className="text-white hover:text-racing-red hover:bg-white/5 w-9 h-9"
                 onClick={() => {
                   if (window.history.length > 1) {
                     navigate(-1);
@@ -135,43 +135,40 @@ export const Header = () => {
                   }
                 }}
               >
-                <ArrowLeft className="w-6 h-6" />
+                <ArrowLeft className="w-5 h-5" />
               </Button>
             )}
 
-            <a href="/home" className="flex items-center pb-1">
-              <div className="text-3xl sm:text-4xl font-black tracking-tighter">
+            <a href="/home" className="flex items-center">
+              <div className="text-xl font-black tracking-tight">
                 <span className="text-white">BOX</span>
                 <span className="text-racing-red">BOXD</span>
               </div>
             </a>
 
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-black uppercase tracking-wider ml-4 lg:ml-6 pb-1">
-            <a href="/home" className="text-white hover:text-racing-red transition-colors">
+          <nav className="hidden lg:flex items-center gap-8 text-sm ml-8">
+            <a href="/home" className={`transition-colors ${isActivePath('/home') ? 'text-white font-bold' : 'text-gray-400 hover:text-gray-200'}`}>
               Home
             </a>
-            <a href="/explore" className="text-gray-400 hover:text-racing-red transition-colors">
+            <a href="/explore" className={`transition-colors ${isActivePath('/explore') ? 'text-white font-bold' : 'text-gray-400 hover:text-gray-200'}`}>
               Explore
             </a>
-            <a href="/lists" className="text-gray-400 hover:text-racing-red transition-colors">
-              Activity
-            </a>
-            <a href="/diary" className="text-gray-400 hover:text-racing-red transition-colors">
+            <a href="/diary" className={`transition-colors ${isActivePath('/diary') ? 'text-white font-bold' : 'text-gray-400 hover:text-gray-200'}`}>
               Diary
             </a>
-            <a href="/watchlist" className="text-gray-400 hover:text-racing-red transition-colors">
+            <a href="/watchlist" className={`transition-colors ${isActivePath('/watchlist') ? 'text-white font-bold' : 'text-gray-400 hover:text-gray-200'}`}>
               Watchlist
             </a>
           </nav>
         </div>
 
-        <div className="flex items-end gap-3 md:gap-4 flex-shrink-0 pb-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <form onSubmit={handleSearch} className="relative hidden lg:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 lg:w-6 lg:h-6 text-white" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <Input
               type="search"
-              placeholder="Search races, users..."
-              className="pl-10 lg:pl-12 w-48 xl:w-64 bg-black/60 border-2 border-red-900/50 !text-white placeholder:text-gray-400 focus:border-racing-red h-12 lg:h-14 text-base"
+              placeholder="Search..."
+              className="pl-10 w-56 bg-gray-900 border border-gray-800 !text-white placeholder:text-gray-500 focus:border-gray-700 h-9 text-sm rounded-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -180,17 +177,17 @@ export const Header = () => {
           <Button
             size="icon"
             variant="ghost"
-            className="lg:hidden text-white hover:text-white w-12 h-12"
+            className="lg:hidden text-gray-400 hover:text-white hover:bg-white/5 w-9 h-9"
             onClick={() => navigate('/search')}
           >
-            <Search className="w-6 h-6 !text-white" />
+            <Search className="w-5 h-5" />
           </Button>
 
           <LogRaceDialog
             trigger={
-              <Button size="sm" className="gap-2 bg-racing-red hover:bg-red-600 shadow-lg shadow-red-500/30 border-2 border-red-400 font-black uppercase tracking-wider md:h-11 md:px-6 hidden lg:flex">
-                <Plus className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="hidden sm:inline">Log</span>
+              <Button size="sm" className="gap-1.5 bg-racing-red hover:bg-red-600 font-semibold h-9 px-4 hidden lg:flex rounded-full">
+                <Plus className="w-4 h-4" />
+                <span>Log</span>
               </Button>
             }
             open={logDialogOpen}
@@ -199,10 +196,10 @@ export const Header = () => {
 
           <DropdownMenu modal={false} open={notificationsOpen} onOpenChange={setNotificationsOpen}>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="relative w-12 h-12 md:w-14 md:h-14">
-                <Bell className="w-6 h-6 md:w-7 md:h-7 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />
+              <Button size="icon" variant="ghost" className="relative w-9 h-9 hover:bg-white/5">
+                <Bell className="w-5 h-5 text-gray-400" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-6 h-6 bg-racing-red text-white text-xs rounded-full flex items-center justify-center font-black shadow-lg shadow-red-500/50">
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-racing-red text-white text-[10px] rounded-full flex items-center justify-center font-bold">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -272,50 +269,49 @@ export const Header = () => {
               <Button
                 size="icon"
                 variant="ghost"
-                className="relative rounded-full w-12 h-12 md:w-14 md:h-14 touch-manipulation cursor-pointer"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                className="relative rounded-full w-9 h-9 hover:bg-white/5"
               >
                 {userPhotoURL ? (
                   <img
                     src={userPhotoURL}
                     alt="Profile"
-                    className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover pointer-events-none"
+                    className="w-8 h-8 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-racing-red/20 flex items-center justify-center text-racing-red font-bold text-lg md:text-xl pointer-events-none">
+                  <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white font-semibold text-sm">
                     {(user?.displayName || user?.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="touch-manipulation min-w-[220px] bg-black/95 border-2 border-red-900/40 backdrop-blur-xl" sideOffset={20}>
+            <DropdownMenuContent align="end" className="min-w-[200px] bg-black border border-gray-800 backdrop-blur-xl" sideOffset={8}>
               <DropdownMenuItem
                 onClick={() => navigate('/profile')}
-                className="cursor-pointer py-3 px-4 text-base font-bold text-white hover:bg-racing-red/10 hover:text-racing-red focus:bg-racing-red/10 focus:text-racing-red uppercase tracking-wider"
+                className="cursor-pointer py-2.5 px-3 text-sm text-white hover:bg-white/5 focus:bg-white/5"
               >
-                <User className="w-5 h-5 mr-3" />
+                <User className="w-4 h-4 mr-2.5 text-gray-400" />
                 Profile
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigate('/wrapped')}
-                className="cursor-pointer py-3 px-4 text-base bg-gradient-to-r from-racing-red/20 to-transparent hover:from-racing-red/30 focus:from-racing-red/30 border-l-2 border-racing-red"
+                className="cursor-pointer py-2.5 px-3 text-sm text-white hover:bg-white/5 focus:bg-white/5"
               >
-                <Sparkles className="w-5 h-5 mr-3 text-racing-red" />
-                <span className="font-black text-racing-red uppercase tracking-wider">Formula Wrapped</span>
+                <Sparkles className="w-4 h-4 mr-2.5 text-racing-red" />
+                Formula Wrapped
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigate('/settings')}
-                className="cursor-pointer py-3 px-4 text-base font-bold text-white hover:bg-racing-red/10 hover:text-racing-red focus:bg-racing-red/10 focus:text-racing-red uppercase tracking-wider"
+                className="cursor-pointer py-2.5 px-3 text-sm text-white hover:bg-white/5 focus:bg-white/5"
               >
-                <Settings className="w-5 h-5 mr-3" />
+                <Settings className="w-4 h-4 mr-2.5 text-gray-400" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-red-900/40" />
+              <DropdownMenuSeparator className="bg-gray-800" />
               <DropdownMenuItem
                 onClick={handleSignOut}
-                className="cursor-pointer py-3 px-4 text-base font-bold text-gray-400 hover:bg-red-900/20 hover:text-white focus:bg-red-900/20 focus:text-white uppercase tracking-wider"
+                className="cursor-pointer py-2.5 px-3 text-sm text-gray-400 hover:bg-white/5 hover:text-white focus:bg-white/5 focus:text-white"
               >
-                <LogOut className="w-5 h-5 mr-3" />
+                <LogOut className="w-4 h-4 mr-2.5" />
                 Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>

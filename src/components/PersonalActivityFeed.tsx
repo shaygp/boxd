@@ -3,10 +3,10 @@ import { getUserRaceLogs, getPublicRaceLogs, RaceLog } from "@/services/raceLogs
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Star, Heart } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { toggleLike } from "@/services/likes";
 import { useToast } from "@/hooks/use-toast";
 import { getBlockedUsers } from "@/services/reports";
+import { getUserProfile } from "@/services/auth";
 
 export const PersonalActivityFeed = () => {
   const { user } = useAuth();
@@ -17,6 +17,7 @@ export const PersonalActivityFeed = () => {
   const [loading, setLoading] = useState(true);
   const [likingLog, setLikingLog] = useState<string | null>(null);
   const [lastPath, setLastPath] = useState<string>("");
+  const [userNames, setUserNames] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (!user) return;
@@ -127,6 +128,25 @@ export const PersonalActivityFeed = () => {
       });
 
       setCommunityLogs(finalShuffle);
+
+      // Fetch user display names for all users in the feed
+      const uniqueUserIds = [...new Set(finalShuffle.map(log => log.userId))];
+      const nameMap = new Map<string, string>();
+
+      await Promise.all(
+        uniqueUserIds.map(async (userId) => {
+          try {
+            const profile = await getUserProfile(userId);
+            if (profile?.name) {
+              nameMap.set(userId, profile.name);
+            }
+          } catch (error) {
+            console.error(`Failed to fetch profile for user ${userId}:`, error);
+          }
+        })
+      );
+
+      setUserNames(nameMap);
     } catch (error) {
       console.error('Error loading community activity:', error);
     } finally {
@@ -140,10 +160,10 @@ export const PersonalActivityFeed = () => {
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`w-3.5 h-3.5 ${
+            className={`w-3 h-3 ${
               star <= rating
                 ? 'fill-racing-red text-racing-red'
-                : 'text-gray-700'
+                : 'text-gray-800 fill-gray-800'
             }`}
           />
         ))}
@@ -188,16 +208,17 @@ export const PersonalActivityFeed = () => {
 
   const FeedCard = ({ log }: { log: RaceLog }) => {
     const isLiked = log.likedBy?.includes(user?.uid || '');
+    const displayName = userNames.get(log.userId) || log.username;
 
     return (
     <div
       onClick={() => navigate(`/race/${log.raceYear}/${log.round || 1}`)}
-      className="cursor-pointer border-b border-gray-800 hover:bg-gray-900/30 transition-colors p-4"
+      className="cursor-pointer border-b border-gray-800/50 hover:bg-white/[0.02] transition-all duration-200 px-4 py-3"
     >
       <div className="flex gap-3">
         {/* Avatar */}
         <div
-          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden flex-shrink-0"
+          className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center overflow-hidden flex-shrink-0 ring-1 ring-gray-800 hover:ring-gray-700 transition-all"
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/user/${log.userId}`);
@@ -206,63 +227,64 @@ export const PersonalActivityFeed = () => {
           {log.userAvatar ? (
             <img src={log.userAvatar} alt={log.username} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-base font-black text-racing-red">{log.username.charAt(0).toUpperCase()}</span>
+            <span className="text-sm font-black text-racing-red">{displayName.charAt(0).toUpperCase()}</span>
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className="font-bold text-white hover:underline text-sm sm:text-base"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/user/${log.userId}`);
-                }}
-              >
-                {log.username}
-              </span>
-            </div>
+          {/* Header - Twitter style */}
+          <div className="flex items-center gap-1 mb-0.5">
+            <span
+              className="font-bold text-white text-sm hover:underline cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/user/${log.userId}`);
+              }}
+            >
+              {displayName}
+            </span>
+            <span className="text-gray-500 text-sm">@{log.username}</span>
           </div>
 
           {/* Race info */}
           <div className="mb-2">
-            <h3 className="font-bold text-white text-sm sm:text-base mb-1">
-              {log.raceName}
-            </h3>
-            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-              <span>{log.raceLocation}</span>
-              <span>•</span>
-              <span>{log.raceYear}</span>
-              <span>•</span>
+            <div className="flex items-center gap-1.5 text-[13px] text-gray-400 mb-1.5">
+              <span className="font-medium text-gray-300 truncate max-w-[200px]" title={log.raceName}>{log.raceName}</span>
+              <span className="text-gray-700">·</span>
+              <span className="text-gray-500">{log.raceYear}</span>
+            </div>
+            <div className="flex items-center gap-1">
               {renderStars(log.rating)}
             </div>
           </div>
 
           {/* Review text */}
           {log.review && (
-            <p className="text-sm sm:text-base text-gray-200 mb-3 whitespace-pre-wrap">
+            <p className="text-sm leading-relaxed text-gray-100 mb-3 whitespace-pre-wrap">
               {log.review}
             </p>
           )}
 
           {/* Actions bar (Twitter-style) */}
-          <div className="flex items-center gap-6 text-gray-500 text-xs sm:text-sm">
+          <div className="flex items-center gap-8 text-gray-600">
             <button
-              className={`flex items-center gap-1.5 transition-colors group ${
+              className={`flex items-center gap-1.5 transition-all group ${
                 isLiked ? 'text-racing-red' : 'hover:text-racing-red'
               }`}
               onClick={(e) => handleLike(log, e)}
               disabled={likingLog === log.id}
             >
-              <Heart className={`w-4 h-4 transition-all ${
-                isLiked
-                  ? 'fill-racing-red text-racing-red scale-110'
-                  : 'group-hover:fill-racing-red/10 group-hover:scale-110'
-              }`} />
-              <span className={isLiked ? 'text-racing-red font-bold' : ''}>
-                {log.likesCount || 0}
+              <div className={`p-1.5 rounded-full transition-all ${
+                isLiked ? '' : 'group-hover:bg-racing-red/10'
+              }`}>
+                <Heart className={`w-[18px] h-[18px] transition-all ${
+                  isLiked
+                    ? 'fill-racing-red text-racing-red'
+                    : 'group-hover:scale-110'
+                }`} />
+              </div>
+              <span className={`text-[13px] ${isLiked ? 'text-racing-red font-semibold' : 'group-hover:text-racing-red'}`}>
+                {log.likesCount > 0 ? log.likesCount : ''}
               </span>
             </button>
           </div>
@@ -274,10 +296,9 @@ export const PersonalActivityFeed = () => {
 
   if (loading) {
     return (
-      <div className="bg-black/90 border-y sm:border-2 border-gray-800 sm:rounded-xl">
-        <div className="p-6 flex items-center justify-center gap-2">
-          <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse"></div>
-          <p className="text-gray-400 text-sm">Loading feed...</p>
+      <div className="bg-black border-y sm:border-x border-gray-800/60">
+        <div className="p-8 flex items-center justify-center">
+          <div className="w-1.5 h-1.5 bg-racing-red rounded-full animate-pulse"></div>
         </div>
       </div>
     );
@@ -285,24 +306,19 @@ export const PersonalActivityFeed = () => {
 
   if (communityLogs.length === 0) {
     return (
-      <div className="bg-black/90 border-y sm:border-2 border-gray-800 sm:rounded-xl">
-        <div className="p-8 text-center">
-          <p className="text-gray-400 font-bold mb-1">No community activity yet</p>
-          <p className="text-gray-600 text-sm">Check back later for reviews!</p>
+      <div className="bg-black border-y sm:border-x border-gray-800/60">
+        <div className="p-12 text-center">
+          <p className="text-gray-500 text-sm mb-1">No reviews yet</p>
+          <p className="text-gray-700 text-xs">Check back soon</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-black/90 border-y sm:border-x border-gray-800 overflow-hidden">
-      {/* Header - Twitter style */}
-      <div className="sticky top-0 z-10 backdrop-blur-md bg-black/80 border-b border-gray-800 px-4 py-3">
-        <h2 className="text-lg sm:text-xl font-bold text-white">Home</h2>
-      </div>
-
+    <div className="bg-black border-y sm:border-x border-gray-800/60 overflow-hidden">
       {/* Feed Stream */}
-      <div className="divide-y divide-gray-800">
+      <div>
         {communityLogs.map((log) => (
           <FeedCard key={log.id} log={log} />
         ))}

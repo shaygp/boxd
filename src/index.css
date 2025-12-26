@@ -16,7 +16,11 @@ html {
   text-size-adjust: 100%;
 }
 
-/* Smooth scrolling for iOS */
+/* Smooth scrolling everywhere */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: none;
@@ -299,5 +303,41 @@ All colors MUST be HSL.
   .text-2xs {
     font-size: 0.625rem;
     line-height: 0.875rem;
+  }
+
+  /* Smooth transitions for all interactive elements */
+  .transition-smooth {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Micro-interactions */
+  .hover-lift {
+    transition: transform 0.2s ease-out;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  .hover-scale {
+    transition: transform 0.2s ease-out;
+  }
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+  /* Twitter-style fade in */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
   }
 }

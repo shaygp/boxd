@@ -161,11 +161,7 @@ export const SecretSantaSubmit = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse"></div>
-      </div>
-    );
+    return <div className="min-h-screen bg-black"></div>;
   }
 
   if (!assignedDriver) return null;

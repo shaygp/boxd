@@ -713,15 +713,7 @@ export const FormulaWrapped = () => {
   ];
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-racing-red via-black to-racing-red flex flex-col items-center justify-center gap-4 px-4">
-        <div className="text-white text-2xl sm:text-3xl md:text-5xl font-black animate-pulse text-center">LOADING YOUR</div>
-        <div className="text-racing-red text-3xl sm:text-4xl md:text-6xl font-black animate-pulse text-center">FORMULA WRAPPED</div>
-        <div className="mt-4">
-          <div className="w-16 h-16 border-4 border-racing-red border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-black"></div>;
   }
 
   if (logs.length === 0) {

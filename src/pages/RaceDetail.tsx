@@ -499,151 +499,147 @@ const RaceDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
+    <div className="min-h-screen bg-black racing-grid pb-20 lg:pb-0">
       <Header />
 
-      <main className="container px-4 sm:px-6 py-6 sm:py-8 max-w-full">
-        <div className="max-w-5xl mx-auto">
+      <main className="container px-4 sm:px-6 py-4 sm:py-6 max-w-full">
+        <div className="max-w-4xl mx-auto">
           {/* Main Content */}
           <div className="space-y-6">
-            {/* Poster & Info */}
-            <div className="flex flex-col md:flex-row gap-4 md:gap-6 md:items-start">
-              <div className="w-full md:w-auto bg-black/95 overflow-hidden relative flex-shrink-0">
-                {/* Racing stripe accent at top */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-racing-red to-transparent"></div>
-                {/* Checkered flag pattern overlay */}
-                <div className="absolute top-0 right-0 w-16 h-16 opacity-10" style={{
-                  backgroundImage: 'repeating-conic-gradient(#000 0% 25%, #fff 0% 50%)',
-                  backgroundPosition: '0 0, 8px 8px',
-                  backgroundSize: '16px 16px'
-                }}></div>
-
-                <div className="flex flex-row items-center justify-start p-4 md:p-6 gap-4 md:gap-6 bg-gradient-to-br from-racing-red/5 via-transparent to-transparent relative">
-                  {/* Vertical racing red accent line */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent"></div>
-
-                  <div className="w-24 h-16 md:w-32 md:h-20 overflow-hidden border-2 border-racing-red shadow-xl shadow-racing-red/50 flex-shrink-0 ml-2">
-                    <img
-                      src={flagUrl}
-                      alt={race.country}
-                      className="w-full h-full object-cover"
-                      loading="eager"
-                      fetchpriority="high"
-                    />
-                  </div>
-                  <div className="flex flex-col items-start justify-center flex-1 space-y-1 min-w-0">
-                    <div className="text-2xl md:text-3xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)] tracking-tight uppercase">{race.season}</div>
-                    <div className="text-sm md:text-base font-black uppercase tracking-wider text-racing-red drop-shadow-[0_0_8px_rgba(220,38,38,0.8)] leading-tight">{race.gpName}</div>
-                  </div>
+            {/* Header Section - Cleaner */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-14 overflow-hidden border border-gray-800 rounded flex-shrink-0">
+                  <img
+                    src={flagUrl}
+                    alt={race.country}
+                    className="w-full h-full object-cover"
+                    loading="eager"
+                    fetchpriority="high"
+                  />
                 </div>
-
-                {/* Bottom racing stripe */}
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-racing-red via-white to-racing-red"></div>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight">
+                    {race.gpName}
+                  </h1>
+                  <p className="text-sm text-gray-500 mt-0.5">{race.season}</p>
+                </div>
               </div>
 
-              <div className="space-y-3 md:space-y-4">
+              {/* Race Info Grid */}
+              <div className="flex items-center gap-6 text-sm text-gray-500">
+                <span>{race.circuit}</span>
+                <span>•</span>
+                <span>{new Date(race.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 {winner && (
-                  <div className="p-4 bg-racing-red/15 border-2 border-racing-red/40 rounded-lg">
-                    <p className="text-sm text-gray-200 mb-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)] text-center md:text-left">Race Winner</p>
-                    <p className="text-base font-black text-racing-red flex items-center justify-center md:justify-start gap-2 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+                  <>
+                    <span>•</span>
+                    <span className="flex items-center gap-1.5 text-racing-red font-semibold">
                       <span>🏆</span>
                       <span>{winner}</span>
-                    </p>
-                  </div>
+                    </span>
+                  </>
                 )}
+              </div>
 
-                {/* MAIN FOCUS: Rating */}
-                <div className="flex justify-center md:justify-start mb-4">
-                  <StarRating
-                    rating={race.rating}
-                    readonly
-                    totalRatings={race.totalRatings}
-                    onClickWhenReadonly={() => setLogDialogOpen(true)}
-                    size="sm"
-                  />
-                </div>
-
-                {/* Friends' Ratings */}
-                <FriendsRatings
-                  raceName={race.gpName}
-                  raceYear={race.season}
-                  allRaceLogs={allRaceLogs}
+              {/* Rating */}
+              <div>
+                <StarRating
+                  rating={race.rating}
+                  readonly
+                  totalRatings={race.totalRatings}
+                  onClickWhenReadonly={() => setLogDialogOpen(true)}
+                  size="sm"
                 />
+              </div>
 
-                {/* Small info boxes */}
-                <div className="flex gap-2 text-xs text-gray-400 justify-center md:justify-start flex-wrap">
-                  <span>{race.circuit}</span>
-                  <span>•</span>
-                  <span>{race.country}</span>
-                  <span>•</span>
-                  <span>{new Date(race.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                </div>
+              {/* Friends' Ratings */}
+              <FriendsRatings
+                raceName={race.gpName}
+                raceYear={race.season}
+                allRaceLogs={allRaceLogs}
+              />
 
-                {/* Action Icons */}
-                <div className="flex gap-2 flex-wrap justify-center md:justify-start mt-4">
-                  <LogRaceDialog
-                    trigger={
-                      <Button size="icon" className="h-9 w-9 bg-racing-red hover:bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/30">
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    }
-                    open={logDialogOpen}
-                    onOpenChange={(open) => {
-                      setLogDialogOpen(open);
-                      if (!open) setEditingReview(null);
-                    }}
-                    onSuccess={() => {
-                      loadRaceData();
-                      setEditingReview(null);
-                    }}
-                    defaultCircuit={race.circuit}
-                    defaultRaceName={race.gpName}
-                    defaultYear={race.season}
-                    defaultCountryCode={race.countryCode}
-                    defaultDate={race.date}
-                    existingLog={editingReview}
-                    editMode={!!editingReview}
-                  />
-                  <AddToListDialog
-                    raceYear={race.season}
-                    raceName={race.gpName}
-                    raceLocation={race.circuit}
-                    countryCode={race.countryCode}
-                    trigger={
-                      <Button size="icon" variant="outline" className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                        <List className="w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />
-                      </Button>
-                    }
-                  />
+              {/* Action Buttons - Minimal */}
+              <div className="flex gap-2 flex-wrap">
+                <LogRaceDialog
+                  trigger={
+                    <Button size="sm" className="gap-1.5 bg-racing-red hover:bg-red-600 font-semibold h-9 px-4 rounded-full">
+                      <Plus className="w-4 h-4" />
+                      <span>Log Race</span>
+                    </Button>
+                  }
+                  open={logDialogOpen}
+                  onOpenChange={(open) => {
+                    setLogDialogOpen(open);
+                    if (!open) setEditingReview(null);
+                  }}
+                  onSuccess={() => {
+                    loadRaceData();
+                    setEditingReview(null);
+                  }}
+                  defaultCircuit={race.circuit}
+                  defaultRaceName={race.gpName}
+                  defaultYear={race.season}
+                  defaultCountryCode={race.countryCode}
+                  defaultDate={race.date}
+                  existingLog={editingReview}
+                  editMode={!!editingReview}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 text-gray-400 hover:text-racing-red hover:bg-white/5"
+                  onClick={handleWatchlistToggle}
+                >
+                  <Eye className={`w-4 h-4 ${isInWatchlist ? 'fill-current text-racing-red' : ''}`} />
+                </Button>
+                {id && (
                   <Button
                     size="icon"
-                    variant="outline"
-                    className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]"
-                    onClick={handleWatchlistToggle}
+                    variant="ghost"
+                    className="h-9 w-9 text-gray-400 hover:text-racing-red hover:bg-white/5"
+                    onClick={handleLikeRace}
                   >
-                    <Eye className={`w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${isInWatchlist ? 'fill-current' : ''}`} />
+                    <Heart className={`w-4 h-4 ${isLiked ? 'fill-racing-red text-racing-red' : ''}`} />
                   </Button>
-                  {id && (
-                    <Button size="icon" variant="outline" className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" onClick={handleLikeRace}>
-                      <Heart className={`w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${isLiked ? 'fill-racing-red text-racing-red' : ''}`} />
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-gray-400 hover:text-white hover:bg-white/5"
+                  onClick={handleBookmark}
+                >
+                  <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+                </Button>
+                <AddToListDialog
+                  raceYear={race.season}
+                  raceName={race.gpName}
+                  raceLocation={race.circuit}
+                  countryCode={race.countryCode}
+                  trigger={
+                    <Button size="icon" variant="ghost" className="h-9 w-9 text-gray-400 hover:text-white hover:bg-white/5">
+                      <List className="w-4 h-4" />
                     </Button>
-                  )}
-                  <Button variant="outline" size="icon" className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" onClick={handleBookmark}>
-                    <Bookmark className={`w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${isBookmarked ? 'fill-current' : ''}`} />
-                  </Button>
-                  <Button variant="outline" size="icon" className="h-9 w-9 border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" onClick={handleShare}>
-                    <Share2 className="w-4 h-4 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" />
-                  </Button>
-                </div>
+                  }
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-gray-400 hover:text-white hover:bg-white/5"
+                  onClick={handleShare}
+                >
+                  <Share2 className="w-4 h-4" />
+                </Button>
+              </div>
 
-                {/* What Happened Button */}
-                <div className="mt-4 flex justify-center md:justify-start">
-                  <RaceHighlightsDialog
-                    year={race.season}
-                    round={race.round}
-                    raceName={race.gpName}
-                  />
-                </div>
+              {/* What Happened Button */}
+              <div>
+                <RaceHighlightsDialog
+                  year={race.season}
+                  round={race.round}
+                  raceName={race.gpName}
+                />
               </div>
             </div>
 

@@ -184,26 +184,21 @@ const Index = () => {
   }, [tagFilter]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
+    <div className="min-h-screen bg-black racing-grid pb-20 lg:pb-0">
       <Header />
 
-      <main className="container px-0 sm:px-4 md:px-8 py-0 sm:py-6 md:py-10 space-y-0 sm:space-y-8 md:space-y-16">
-        {/* Support Banner - Top on mobile */}
-        <section className="sm:hidden relative text-center py-3 px-4 border-b border-gray-800 bg-black/60">
-          <div className="space-y-2">
-            <h2 className="text-xs font-black text-white tracking-tight">
-              How to support <span className="text-racing-red">BoxBoxd</span>
-            </h2>
-            <a
-              href="https://buymeacoffee.com/shaygrandpx"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-500 hover:from-yellow-400 hover:via-yellow-300 hover:to-yellow-400 text-black font-bold rounded-lg transition-all duration-300 text-xs"
-            >
-              <span>☕</span>
-              <span>Buy me a coffee</span>
-            </a>
-          </div>
+      <main className="container px-0 sm:px-4 md:px-8 py-0 sm:py-4 md:py-6 space-y-0 sm:space-y-4 md:space-y-6">
+        {/* Support Banner - Top on mobile - Minimized */}
+        <section className="sm:hidden relative py-2 px-4 border-b border-gray-800/50 bg-black">
+          <a
+            href="https://buymeacoffee.com/shaygrandpx"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 text-xs text-gray-400 hover:text-yellow-500 transition-colors"
+          >
+            <span>☕</span>
+            <span className="font-medium">Support BoxBoxd</span>
+          </a>
         </section>
 
         {/* Hero Section - Desktop only */}
@@ -254,55 +249,47 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Support Section - Desktop only - Moved before feed */}
-        <section className="hidden sm:block relative text-center py-6 sm:py-8 px-4 sm:px-6 rounded-xl border-2 border-racing-red/30 bg-black/40 backdrop-blur-sm">
-          <div className="space-y-3">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight">
-              How to support <span className="text-racing-red">BoxBoxd</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-400 max-w-xl mx-auto">
-              Help us keep the lights on and keep BoxBoxd ad free
-            </p>
+        {/* Support Section - Desktop only - Minimized */}
+        <section className="hidden sm:block relative py-4 px-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-sm text-gray-300 mb-1">
+                Help us keep <span className="text-white font-semibold">BoxBoxd</span> free
+              </p>
+              <p className="text-xs text-gray-500">No ads, no premium features</p>
+            </div>
             <a
               href="https://buymeacoffee.com/shaygrandpx"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-500 hover:from-yellow-400 hover:via-yellow-300 hover:to-yellow-400 text-black font-bold rounded-lg transition-all duration-300 shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50 text-sm sm:text-base"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-semibold rounded-lg transition-all duration-200 text-sm flex-shrink-0"
             >
               <span>☕</span>
-              <span>Buy me a coffee</span>
+              <span>Support</span>
             </a>
           </div>
         </section>
 
-        {/* Secret Santa Banner */}
+        {/* Secret Santa Banner - Minimized */}
         <section
-          className="relative overflow-hidden border border-gray-800 hover:border-racing-red rounded-lg cursor-pointer group mb-6 transition-all duration-300"
+          className="relative overflow-hidden border border-gray-800/60 hover:border-racing-red/50 rounded-xl cursor-pointer group transition-all duration-200"
           onClick={() => navigate('/secret-santa')}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-gray-900 to-black"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(220,38,38,0.15),transparent_60%)]"></div>
-
-          <div className="relative z-10 p-6">
+          <div className="relative z-10 p-5 sm:p-6">
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1">
-                <div className="inline-block px-3 py-1 bg-racing-red/20 border border-racing-red rounded mb-2">
-                  <span className="text-racing-red font-bold text-xs tracking-wider uppercase">New</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 bg-racing-red/10 border border-racing-red/30 rounded text-racing-red font-semibold text-xs tracking-wide">NEW</span>
+                  <span className="text-2xl">🎁</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-1.5">
                   F1 Secret Santa 2026
                 </h2>
-                <p className="text-sm text-gray-400 font-medium mb-4">
-                  Get assigned a random driver, pick a gift, and share with the community
+                <p className="text-sm text-gray-400 mb-3">
+                  Get assigned a random driver, pick a gift, share with the community
                 </p>
-                <button className="px-6 py-2.5 bg-racing-red hover:bg-red-600 text-white text-sm font-bold uppercase tracking-wide rounded transition-all">
-                  Participate Now
-                </button>
-              </div>
-
-              <div className="hidden sm:block flex-shrink-0">
-                <div className="text-6xl opacity-30 group-hover:opacity-50 transition-opacity">
-                  🎁
+                <div className="text-sm text-racing-red font-semibold group-hover:underline">
+                  Participate →
                 </div>
               </div>
             </div>
@@ -316,45 +303,29 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Grill the Grid Banner - Bottom on mobile */}
+        {/* Grill the Grid Banner - Minimized */}
         <section
-          className="sm:hidden relative overflow-hidden border-t border-gray-800 bg-gradient-to-br from-white/5 via-black to-black cursor-pointer hover:bg-white/10 transition-all duration-300"
+          className="relative overflow-hidden border border-gray-800/60 hover:border-white/50 rounded-xl cursor-pointer group transition-all duration-200"
           onClick={() => navigate('/grill-the-grid')}
         >
-          <div className="relative z-10 p-4 text-center space-y-2">
-            <h2 className="text-lg font-black text-white tracking-tight">
-              GRILL THE <span className="text-racing-red">GRID</span>
-            </h2>
-            <p className="text-xs text-gray-400 font-bold">
-              Name an F1 driver surname for every letter. 3 min!
-            </p>
-            <button className="mt-1 px-4 py-1.5 bg-white hover:bg-gray-200 text-black text-xs font-black uppercase tracking-wider rounded">
-              PLAY
-            </button>
-          </div>
-        </section>
-
-        {/* Grill the Grid Section - Desktop only (compact) */}
-        <section
-          className="hidden sm:block relative overflow-hidden rounded-xl border-2 border-white/60 bg-gradient-to-br from-white/10 via-black to-black cursor-pointer group hover:border-white transition-all duration-300"
-          onClick={() => navigate('/grill-the-grid')}
-        >
-          <div className="relative z-10 p-6 text-center space-y-3">
-            <h2 className="text-2xl font-black text-white tracking-tight">
-              GRILL THE <span className="text-racing-red">GRID</span>
-            </h2>
-
-            <p className="text-sm text-gray-400 font-bold">
-              Name an F1 driver surname for every letter. 3 minutes!
-            </p>
-
-            <Button
-              size="sm"
-              className="gap-2 bg-white hover:bg-gray-200 text-black font-black uppercase tracking-wider"
-            >
-              PLAY CHALLENGE
-              <ArrowRight className="w-4 h-4" />
-            </Button>
+          <div className="relative z-10 p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">🏁</span>
+                  <span className="px-2 py-0.5 bg-white/10 border border-white/20 rounded text-white font-semibold text-xs tracking-wide">CHALLENGE</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-1.5">
+                  Grill the Grid
+                </h2>
+                <p className="text-sm text-gray-400 mb-3">
+                  Name an F1 driver surname for every letter. 3 minutes!
+                </p>
+                <div className="text-sm text-white font-semibold group-hover:underline">
+                  Play Challenge →
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

@@ -178,15 +178,18 @@ const RaceCardComponent = ({
     <Card
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
-      className="group relative overflow-hidden bg-black/90 border-2 border-red-900/40 hover:border-racing-red hover:ring-2 hover:ring-racing-red hover:shadow-xl hover:shadow-red-500/30 transition-all duration-200 cursor-pointer touch-manipulation backdrop-blur-sm"
+      className="group relative overflow-hidden bg-black border border-gray-800/60 hover:border-gray-700 hover:scale-[1.02] transition-all duration-300 cursor-pointer touch-manipulation"
     >
       {/* Poster */}
-      <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-racing-red/30 to-black/90">
+      <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+        {/* Letterboxd-style hover overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
+
         {posterUrl ? (
           <img
             src={posterUrl}
             alt={`${season} ${gpName}`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center p-2 sm:p-3 space-y-1.5 sm:space-y-2 bg-gradient-to-b from-transparent via-black/30 to-black/70">
@@ -233,22 +236,22 @@ const RaceCardComponent = ({
 
         {/* Rating overlay */}
         {rating && (
-          <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-black/90 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded border border-yellow-500/50 flex items-center gap-0.5 sm:gap-1">
-            <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-yellow-500 text-yellow-500 drop-shadow-[0_0_4px_rgba(234,179,8,0.8)]" />
-            <span className="text-[10px] sm:text-xs font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{rating.toFixed(1)}</span>
+          <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded flex items-center gap-1 z-20">
+            <Star className="w-3 h-3 fill-racing-red text-racing-red" />
+            <span className="text-xs font-bold text-white">{rating.toFixed(1)}</span>
           </div>
         )}
 
         {/* Watched indicator */}
         {watched && (
-          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-racing-red/90 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[10px] sm:text-xs font-black uppercase tracking-wider border border-red-400">
-            Logged
+          <div className="absolute top-2 right-2 bg-racing-red/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold z-20">
+            ✓ Logged
           </div>
         )}
 
-        {/* Action buttons */}
+        {/* Action buttons - Show on hover (Letterboxd style) */}
         {showWatchlistButton && !watched && (
-          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 flex gap-1">
+          <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
             <LogRaceDialog
               defaultCircuit={circuit}
               defaultRaceName={gpName}
@@ -258,30 +261,29 @@ const RaceCardComponent = ({
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="min-h-[44px] min-w-[44px] h-11 w-11 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm touch-manipulation border border-red-900/50 text-white"
+                  className="h-9 w-9 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm border border-gray-700 text-white"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Plus className="w-4 h-4" />
                 </Button>
               }
             />
             <Button
               size="icon"
               variant="secondary"
-              className="min-h-[44px] min-w-[44px] h-11 w-11 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm touch-manipulation border border-red-900/50 text-white"
+              className="h-9 w-9 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm border border-gray-700 text-white"
               onClick={handleWatchlistToggle}
             >
-              <Eye className={`w-4 h-4 sm:w-5 sm:h-5 ${isInWatchlist ? 'fill-white' : ''}`} />
+              <Eye className={`w-4 h-4 ${isInWatchlist ? 'fill-white' : ''}`} />
             </Button>
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div className="p-1.5 sm:p-2 text-center sm:text-left bg-gradient-to-b from-black/90 to-black border-t-2 border-red-900/40">
-        <h3 className="font-black text-xs sm:text-sm line-clamp-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</h3>
-        <p className="text-[10px] sm:text-xs text-gray-300 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,1)] mt-0.5">{season} • R{round}</p>
-        <p className="text-[10px] sm:text-xs text-gray-400 line-clamp-1 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{circuit}</p>
+      <div className="p-3 bg-black border-t border-gray-800/60">
+        <h3 className="font-bold text-sm line-clamp-1 text-white mb-1">{gpName}</h3>
+        <p className="text-xs text-gray-500">{season}</p>
       </div>
     </Card>
   );

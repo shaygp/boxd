@@ -149,10 +149,8 @@ const Profile = () => {
         sessionType: log.sessionType,
       })));
 
-      // Prepare all remaining async tasks
+      // Prepare remaining async tasks (SKIP followers/following - load lazily)
       const additionalTasks = [
-        getFollowers(targetUserId),
-        getFollowing(targetUserId),
         getUserLists(targetUserId).catch(() => []),
         getUserWatchlist(targetUserId).catch(() => []),
       ];
@@ -209,29 +207,25 @@ const Profile = () => {
       // Execute all remaining tasks in parallel
       const results = await Promise.all(additionalTasks);
 
-      // Unpack results
-      const followersList = results[0];
-      const followingList = results[1];
-      const userLists = results[2];
-      const userWatchlist = results[3];
+      // Unpack results (NO followers/following here - loaded lazily)
+      const userLists = results[0];
+      const userWatchlist = results[1];
 
-      setFollowers(followersList);
-      setFollowing(followingList);
       setLists(userLists);
       setWatchlist(userWatchlist);
 
       if (currentUser && targetUserId !== currentUser.uid) {
-        const following = results[4];
-        const blocked = results[5];
-        const followsBack = results[6];
-        const likedLogs = results[7];
+        const following = results[2];
+        const blocked = results[3];
+        const followsBack = results[4];
+        const likedLogs = results[5];
 
         setFollowingUser(following);
         setIsBlocked(blocked);
         setFollowsBack(followsBack);
         setLikes(likedLogs);
       } else {
-        const likedLogs = results[4];
+        const likedLogs = results[2];
         setLikes(likedLogs);
       }
     } catch (error) {
@@ -427,12 +421,44 @@ const Profile = () => {
     }
   };
 
+  // Lazy load followers when dialog opens
+  const handleOpenFollowersDialog = async () => {
+    setFollowersDialogOpen(true);
+    if (followers.length === 0 && targetUserId) {
+      setFollowersLoading(true);
+      try {
+        const followersList = await getFollowers(targetUserId);
+        setFollowers(followersList);
+      } catch (error) {
+        console.error('Error loading followers:', error);
+      } finally {
+        setFollowersLoading(false);
+      }
+    }
+  };
+
+  // Lazy load following when dialog opens
+  const handleOpenFollowingDialog = async () => {
+    setFollowingDialogOpen(true);
+    if (following.length === 0 && targetUserId) {
+      setFollowersLoading(true);
+      try {
+        const followingList = await getFollowing(targetUserId);
+        setFollowing(followingList);
+      } catch (error) {
+        console.error('Error loading following:', error);
+      } finally {
+        setFollowersLoading(false);
+      }
+    }
+  };
+
   useEffect(() => {
     loadProfile();
   }, [userId]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
+    <div className="min-h-screen bg-black racing-grid pb-20 lg:pb-0">
       <Header />
 
       <main className="container px-4 sm:px-6 py-6 sm:py-8 max-w-5xl mx-auto">
@@ -536,14 +562,14 @@ const Profile = () => {
                 </button>
                 <button
                   className="hover:text-racing-red transition-colors"
-                  onClick={() => setFollowersDialogOpen(true)}
+                  onClick={handleOpenFollowersDialog}
                 >
                   <span className="font-semibold text-white">{stats.followers}</span>{' '}
                   <span className="text-gray-400">followers</span>
                 </button>
                 <button
                   className="hover:text-racing-red transition-colors"
-                  onClick={() => setFollowingDialogOpen(true)}
+                  onClick={handleOpenFollowingDialog}
                 >
                   <span className="font-semibold text-white">{stats.following}</span>{' '}
                   <span className="text-gray-400">following</span>
@@ -587,7 +613,7 @@ const Profile = () => {
                 )}
               </div>
               {profile?.favoriteRace ? (
-                <div className="flex items-center gap-3 p-3 rounded-lg border-2 border-racing-red/30 bg-black/40">
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-800/60 hover:border-gray-700 bg-black/40 transition-all">
                   <div className="w-14 h-10 flex-shrink-0 rounded overflow-hidden">
                     <img
                       src={getCountryFlag(profile.favoriteRace.countryCode)}
@@ -602,7 +628,7 @@ const Profile = () => {
                     <p className="text-xs text-gray-400 truncate">{profile.favoriteRace.raceLocation}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="text-lg font-black text-racing-red">{profile.favoriteRace.raceYear}</div>
+                    <div className="text-sm font-bold text-racing-red">{profile.favoriteRace.raceYear}</div>
                     <div className="text-xs text-gray-500">Round {profile.favoriteRace.round || 1}</div>
                   </div>
                 </div>
@@ -612,11 +638,11 @@ const Profile = () => {
                     loadAllRaces();
                     setSelectFavoriteDialogOpen(true);
                   }}
-                  className="border-2 border-dashed border-racing-red/30 rounded-lg p-4 text-center bg-black/40 hover:bg-black/60 hover:border-racing-red/50 transition-all cursor-pointer"
+                  className="border border-dashed border-gray-800/60 rounded-lg p-4 text-center bg-black/40 hover:bg-black/60 hover:border-gray-700 transition-all cursor-pointer"
                 >
                   <div className="flex items-center justify-center gap-3">
-                    <Star className="w-5 h-5 text-racing-red/50" />
-                    <span className="text-sm font-bold text-gray-400">Click to add your top race</span>
+                    <Star className="w-5 h-5 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-400">Click to add your top race</span>
                   </div>
                 </div>
               )}
@@ -625,7 +651,7 @@ const Profile = () => {
           {profile?.favoriteRace && profile?.id !== currentUser?.uid && (
             <div className="mt-6 pt-6 border-t border-gray-800">
               <h3 className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Top Race</h3>
-              <div className="flex items-center gap-3 p-3 rounded-lg border-2 border-racing-red/30 bg-black/40">
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-800/60 hover:border-gray-700 bg-black/40 transition-all">
                 <div className="w-14 h-10 flex-shrink-0 rounded overflow-hidden">
                   <img
                     src={getCountryFlag(profile.favoriteRace.countryCode)}
@@ -640,7 +666,7 @@ const Profile = () => {
                   <p className="text-xs text-gray-400 truncate">{profile.favoriteRace.raceLocation}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <div className="text-lg font-black text-racing-red">{profile.favoriteRace.raceYear}</div>
+                  <div className="text-sm font-bold text-racing-red">{profile.favoriteRace.raceYear}</div>
                   <div className="text-xs text-gray-500">Round {profile.favoriteRace.round || 1}</div>
                 </div>
               </div>
@@ -780,11 +806,9 @@ const Profile = () => {
                       return (
                         <Card
                           key={log.id}
-                          className="p-3 sm:p-4 md:p-5 hover:border-racing-red transition-all cursor-pointer group relative overflow-hidden bg-black/90 border-2 border-red-900/40 hover:shadow-xl hover:shadow-red-500/30 backdrop-blur-sm"
+                          className="p-3 sm:p-4 md:p-5 hover:border-gray-700 transition-all cursor-pointer group relative overflow-hidden bg-black border border-gray-800/60"
                           onClick={() => navigate(`/race/${log.id}`)}
                         >
-                          {/* Racing stripe */}
-                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
 
                           {/* Delete button - Only show on own profile */}
                           {isOwnProfile && (
@@ -1068,7 +1092,7 @@ const Profile = () => {
                   <Card
                     key={list.id}
                     onClick={() => navigate(`/list/${list.id}`)}
-                    className="overflow-hidden border-2 border-red-900/40 bg-black/60 hover:bg-black/80 backdrop-blur cursor-pointer hover:border-racing-red hover:shadow-lg hover:shadow-red-500/20 transition-all group"
+                    className="overflow-hidden border border-gray-800/60 bg-black hover:bg-gray-950 cursor-pointer hover:border-gray-700 transition-all group"
                   >
                     {/* Cover Image */}
                     {list.listImageUrl && (
@@ -1189,12 +1213,14 @@ const Profile = () => {
 
       {/* Followers Dialog */}
       <Dialog open={followersDialogOpen} onOpenChange={setFollowersDialogOpen}>
-        <DialogContent className="max-w-md bg-black/95 border-2 border-racing-red">
+        <DialogContent className="max-w-md bg-black border border-gray-800">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black uppercase tracking-wider text-racing-red">Followers ({followers.length})</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-white">Followers ({followers.length})</DialogTitle>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto">
-            {followers.length > 0 ? (
+            {followersLoading ? (
+              <div className="text-center py-8 text-gray-400">Loading...</div>
+            ) : followers.length > 0 ? (
               <div className="space-y-2">
                 {followers.map((follower) => (
                   <div
@@ -1230,12 +1256,14 @@ const Profile = () => {
 
       {/* Following Dialog */}
       <Dialog open={followingDialogOpen} onOpenChange={setFollowingDialogOpen}>
-        <DialogContent className="max-w-md bg-black/95 border-2 border-racing-red">
+        <DialogContent className="max-w-md bg-black border border-gray-800">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black uppercase tracking-wider text-racing-red">Following ({following.length})</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-white">Following ({following.length})</DialogTitle>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto">
-            {following.length > 0 ? (
+            {followersLoading ? (
+              <div className="text-center py-8 text-gray-400">Loading...</div>
+            ) : following.length > 0 ? (
               <div className="space-y-2">
                 {following.map((followedUser) => (
                   <div
@@ -1292,9 +1320,9 @@ const Profile = () => {
 
       {/* Select Favorite Race Dialog */}
       <Dialog open={selectFavoriteDialogOpen} onOpenChange={setSelectFavoriteDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-black/95 border-2 border-racing-red">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-black border border-gray-800">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black uppercase tracking-wider text-racing-red">
+            <DialogTitle className="text-lg font-bold text-white">
               Select Your Top Race
             </DialogTitle>
           </DialogHeader>
@@ -1330,7 +1358,7 @@ const Profile = () => {
 
       {/* Likes Dialog */}
       <Dialog open={likesDialogOpen} onOpenChange={setLikesDialogOpen}>
-        <DialogContent className="max-w-md bg-black border-2 border-racing-red/40">
+        <DialogContent className="max-w-md bg-black border border-gray-800">
           <DialogHeader>
             <DialogTitle className="text-white">Liked by</DialogTitle>
           </DialogHeader>

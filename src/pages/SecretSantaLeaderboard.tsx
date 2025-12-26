@@ -133,14 +133,7 @@ export const SecretSantaLeaderboard = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse"></div>
-          <p className="text-gray-400 text-sm">Loading leaderboard...</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-black"></div>;
   }
 
   return (
