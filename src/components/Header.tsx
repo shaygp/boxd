@@ -24,11 +24,33 @@ export const Header = () => {
   const [userPhotoURL, setUserPhotoURL] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logDialogOpen, setLogDialogOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
   };
+
+  // Handle scroll to hide/show header
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        // Scrolling down & past threshold - hide header
+        setScrolled(true);
+      } else {
+        // Scrolling up or at top - show header
+        setScrolled(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +140,7 @@ export const Header = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-gray-800/60 bg-black/95 backdrop-blur-xl">
+      <header className={`sticky top-0 z-50 w-full border-b border-gray-800/60 bg-black/95 backdrop-blur-xl transition-transform duration-300 ${scrolled ? '-translate-y-full' : 'translate-y-0'}`}>
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-6 flex-1">
             {/* Back button - show on specific pages */}
