@@ -119,26 +119,20 @@ export const assignDriverToUser = async (): Promise<Driver> => {
     const assignedAt = assignmentData.assignedAt?.toDate();
     const now = new Date();
 
-    // Get start of today (midnight)
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    // Check if assignment is from before today OR if 24 hours passed
-    const needsNewDriver = !assignedAt ||
-                          assignedAt < todayStart ||
-                          (now.getTime() - assignedAt.getTime()) >= 24 * 60 * 60 * 1000;
+    // Check if it's been 24 hours since last assignment
+    const is24HoursPassed = assignedAt && (now.getTime() - assignedAt.getTime()) >= 24 * 60 * 60 * 1000;
 
     // Check if user has shared on Twitter since their last assignment
     const hasShared = lastSharedAt && assignedAt && lastSharedAt.getTime() > assignedAt.getTime();
 
-    // Only give new driver if time passed AND user shared (or if assignment is old)
-    if (!needsNewDriver || (!hasShared && assignedAt >= todayStart)) {
+    // Only give new driver if BOTH conditions are met: 24h passed AND user shared
+    if (!is24HoursPassed || !hasShared) {
       // Return current driver
       const currentDriver = DRIVERS_2026.find(d => d.name === assignmentData.driverName);
       if (currentDriver) return currentDriver;
     }
 
-    // User is eligible for a new driver!
+    // User is eligible for a new driver! (24h passed + shared on Twitter)
     const availableDrivers = DRIVERS_2026.filter(d => !previousDrivers.includes(d.name) && d.name !== assignmentData.driverName);
 
     if (availableDrivers.length === 0) {

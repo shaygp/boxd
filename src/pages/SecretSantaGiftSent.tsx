@@ -67,9 +67,7 @@ export const SecretSantaGiftSent = () => {
     const shareUrl = `https://boxboxd.fun/secret-santa/gift/${submission.id}`;
     const shareText = `🎁 F1 Secret Santa 2026\n\nI just gifted ${submission.giftTitle} to ${submission.assignedDriver} on @Box_Boxd!\n\nCheck it out:`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-
-    // Use location.href for better iOS compatibility
-    window.location.href = twitterUrl;
+    window.open(twitterUrl, '_blank');
   };
 
   if (loading) {
