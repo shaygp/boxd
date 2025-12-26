@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Footer } from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
@@ -293,38 +294,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t-2 border-red-900/20 py-12 bg-black">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="flex flex-col items-center space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-racing-red rounded flex items-center justify-center">
-                <Flag className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-2xl font-black tracking-tighter">
-                <span className="text-white">BOX</span>
-                <span className="text-racing-red">BOXD</span>
-              </h3>
-            </div>
-            <div className="flex flex-wrap justify-center gap-6 text-sm font-bold">
-              <a href="/support" className="text-gray-400 hover:text-racing-red transition-colors uppercase tracking-wider">
-                Support
-              </a>
-              <span className="text-gray-700">•</span>
-              <a href="/privacy-policy" className="text-gray-400 hover:text-racing-red transition-colors uppercase tracking-wider">
-                Privacy
-              </a>
-              <span className="text-gray-700">•</span>
-              <a href="/terms-of-service" className="text-gray-400 hover:text-racing-red transition-colors uppercase tracking-wider">
-                Terms
-              </a>
-            </div>
-            <p className="text-xs text-gray-600 text-center font-bold uppercase tracking-wider">
-              © 2025 BoxBoxd. Not affiliated with Formula 1®
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       <style>{`
         @keyframes slide {

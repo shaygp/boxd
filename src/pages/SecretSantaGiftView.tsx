@@ -47,22 +47,19 @@ export const SecretSantaGiftView = () => {
 
   if (!submission) return null;
 
-  const pageTitle = `${submission.userName} gifted ${submission.giftTitle} to ${submission.assignedDriver}`;
-  const pageDescription = `${submission.userName} sent ${submission.giftTitle} to ${submission.assignedDriver} in the F1 Secret Santa on BoxBoxd!`;
-  const pageUrl = `${window.location.origin}/secret-santa/gift/${id}`;
+  const pageTitle = `🎁 F1 Secret Santa 2026`;
+  const pageDescription = `${submission.userName} just gifted ${submission.giftTitle} to ${submission.assignedDriver} on @Box_Boxd!`;
+  const pageUrl = `https://boxboxd.fun/secret-santa/gift/${id}`;
 
-  // Create OG image URL using screenshot service
-  const ogTemplateUrl = `${window.location.origin}/og-template.html?` +
-    new URLSearchParams({
-      image: submission.giftImageUrl,
-      title: submission.giftTitle,
-      driver: submission.assignedDriver,
-      user: submission.userName,
-      avatar: submission.userAvatar || 'https://via.placeholder.com/64'
-    }).toString();
+  // Create OG image using Vercel OG Image API with custom template
+  const ogImageParams = new URLSearchParams({
+    title: `🎁 ${submission.giftTitle}`,
+    subtitle: `For ${submission.assignedDriver}`,
+    footer: `by ${submission.userName} • @Box_Boxd`
+  });
 
-  // Use screenshot service for OG image
-  const imageUrl = `https://v1.screenshot.11ty.dev/${encodeURIComponent(ogTemplateUrl)}/opengraph/`;
+  // Use the gift image as OG image for best Twitter preview
+  const imageUrl = submission.giftImageUrl;
 
   return (
     <>

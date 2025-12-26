@@ -1,4 +1,5 @@
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { RaceCard } from "@/components/RaceCard";
 import { PersonalActivityFeed } from "@/components/PersonalActivityFeed";
 import { Button } from "@/components/ui/button";
@@ -749,27 +750,7 @@ const Index = () => {
           </section>
         )}
 
-        {/* Footer */}
-        <footer className="border-t-2 border-red-900/50 mt-16 pt-8 pb-12">
-          <div className="text-center space-y-4">
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <a href="/support" className="text-gray-400 hover:text-racing-red transition-colors font-bold uppercase tracking-wider">
-                Support
-              </a>
-              <span className="text-red-900">•</span>
-              <a href="/privacy-policy" className="text-gray-400 hover:text-racing-red transition-colors font-bold uppercase tracking-wider">
-                Privacy
-              </a>
-              <span className="text-red-900">•</span>
-              <a href="/terms-of-service" className="text-gray-400 hover:text-racing-red transition-colors font-bold uppercase tracking-wider">
-                Terms
-              </a>
-            </div>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">
-              © 2025 BoxBoxd. All rights reserved.
-            </p>
-          </div>
-        </footer>
+        <Footer />
       </main>
     </div>
   );

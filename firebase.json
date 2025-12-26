@@ -1,4 +1,8 @@
 {
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
+  },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
@@ -37,6 +41,10 @@
       }
     ],
     "rewrites": [
+      {
+        "source": "/secret-santa/gift/**",
+        "function": "secretSantaOG"
+      },
       {
         "source": "**",
         "destination": "/index.html"

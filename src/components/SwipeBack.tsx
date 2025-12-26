@@ -12,6 +12,10 @@ export const SwipeBack = ({ onSwipeBack }: SwipeBackProps) => {
   const isSwiping = useRef<boolean>(false);
 
   useEffect(() => {
+    // Get the main app container
+    const appContainer = document.getElementById('root');
+    if (!appContainer) return;
+
     const handleTouchStart = (e: TouchEvent) => {
       touchStartX.current = e.touches[0].clientX;
       touchStartY.current = e.touches[0].clientY;
@@ -31,10 +35,14 @@ export const SwipeBack = ({ onSwipeBack }: SwipeBackProps) => {
       if (Math.abs(diffX) > Math.abs(diffY) && diffX > 20) {
         isSwiping.current = true;
 
-        // Add slide effect - subtle translation
-        const translateAmount = Math.min(diffX * 0.5, 150);
-        document.body.style.transform = `translateX(${translateAmount}px)`;
-        document.body.style.transition = 'none';
+        // Dampen the translation for a more natural feel
+        const progress = Math.min(diffX / 300, 1);
+        const translateAmount = diffX * (0.3 + progress * 0.2);
+
+        // Slide the page with a subtle shadow
+        appContainer.style.transform = `translateX(${translateAmount}px)`;
+        appContainer.style.boxShadow = `-8px 0 24px rgba(0, 0, 0, ${0.5 * progress})`;
+        appContainer.style.transition = 'none';
       }
     };
 
@@ -45,13 +53,14 @@ export const SwipeBack = ({ onSwipeBack }: SwipeBackProps) => {
       const diffX = touchEndX - touchStartX.current;
       const diffY = touchEndY - touchStartY.current;
 
-      // Animate back
-      document.body.style.transition = 'transform 0.2s ease-out';
+      // Smooth spring animation
+      appContainer.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s ease';
 
-      // Swipe right: diffX > 80 and more horizontal than vertical
-      if (diffX > 80 && Math.abs(diffX) > Math.abs(diffY) && isSwiping.current) {
-        // Slide out before navigating
-        document.body.style.transform = 'translateX(100%)';
+      // Swipe right: diffX > 100 and more horizontal than vertical
+      if (diffX > 100 && Math.abs(diffX) > Math.abs(diffY) && isSwiping.current) {
+        // Complete the slide out
+        appContainer.style.transform = 'translateX(100%)';
+        appContainer.style.boxShadow = '-8px 0 24px rgba(0, 0, 0, 0.6)';
 
         setTimeout(() => {
           if (onSwipeBack) {
@@ -62,16 +71,18 @@ export const SwipeBack = ({ onSwipeBack }: SwipeBackProps) => {
 
           // Reset after navigation
           setTimeout(() => {
-            document.body.style.transform = '';
-            document.body.style.transition = '';
+            appContainer.style.transform = '';
+            appContainer.style.boxShadow = '';
+            appContainer.style.transition = '';
           }, 50);
-        }, 200);
+        }, 250);
       } else {
-        // Snap back if not enough swipe
-        document.body.style.transform = '';
+        // Spring back
+        appContainer.style.transform = '';
+        appContainer.style.boxShadow = '';
         setTimeout(() => {
-          document.body.style.transition = '';
-        }, 200);
+          appContainer.style.transition = '';
+        }, 300);
       }
 
       touchStartX.current = 0;
@@ -90,10 +101,11 @@ export const SwipeBack = ({ onSwipeBack }: SwipeBackProps) => {
       document.removeEventListener('touchend', handleTouchEnd);
 
       // Clean up styles
-      document.body.style.transform = '';
-      document.body.style.transition = '';
+      appContainer.style.transform = '';
+      appContainer.style.boxShadow = '';
+      appContainer.style.transition = '';
     };
   }, [navigate, onSwipeBack]);
 
-  return null; // This is a behavior component, no UI
+  return null;
 };

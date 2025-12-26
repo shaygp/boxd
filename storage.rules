@@ -19,5 +19,11 @@ service firebase.storage {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Driver images: publicly readable, admin write only
+    match /driver-images/{fileName} {
+      allow read: if true;
+      allow write: if false; // Only admin can upload via backend
+    }
   }
 }
