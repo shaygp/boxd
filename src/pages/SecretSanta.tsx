@@ -28,11 +28,11 @@ export const SecretSanta = () => {
 
   const loadAssignment = async () => {
     try {
-      const existingDriver = await getUserAssignedDriver();
-      if (existingDriver) {
-        setAssignedDriver(existingDriver);
-        setShowReveal(true);
-      }
+      // Always call assignDriverToUser - it handles the logic of new vs existing
+      const driver = await assignDriverToUser();
+      setAssignedDriver(driver);
+      setShowReveal(true);
+
       const submitted = await hasUserSubmitted();
       setAlreadySubmitted(submitted);
     } catch (error) {

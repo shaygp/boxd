@@ -106,23 +106,23 @@ export const SecretSantaGiftView = () => {
         </div>
 
       {/* Gift Card */}
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border-2 border-racing-red rounded-2xl overflow-hidden">
+      <div className="max-w-lg mx-auto px-4 py-12">
+        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 border border-racing-red/50 rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="bg-racing-red px-6 py-4">
+          <div className="bg-racing-red/10 border-b border-racing-red/30 px-4 py-3">
             <div className="text-center">
-              <span className="font-black text-white text-lg tracking-wider">SECRET SANTA 2026</span>
+              <span className="font-black text-racing-red text-xs tracking-wider">SECRET SANTA 2026</span>
             </div>
           </div>
 
           {/* Content */}
-          <div className="p-6 sm:p-8">
+          <div className="p-5">
             {/* Gift Image */}
-            <div className="mb-6">
+            <div className="mb-4">
               <img
                 src={submission.giftImageUrl}
                 alt={submission.giftTitle}
-                className="w-full h-64 sm:h-80 object-cover rounded-xl"
+                className="w-full h-48 sm:h-56 object-cover rounded-lg"
                 onError={(e) => {
                   e.currentTarget.src = 'https://via.placeholder.com/600x400?text=Gift';
                 }}
@@ -130,28 +130,28 @@ export const SecretSantaGiftView = () => {
             </div>
 
             {/* Gift Info */}
-            <div className="text-center mb-6">
-              <p className="text-gray-500 text-sm mb-2">GIFT</p>
-              <h2 className="text-2xl sm:text-3xl font-black text-white mb-4 tracking-tight">
+            <div className="text-center mb-4">
+              <p className="text-gray-500 text-xs mb-1 font-semibold">GIFT</p>
+              <h2 className="text-lg sm:text-xl font-black text-white mb-3 tracking-tight leading-tight">
                 {submission.giftTitle.toUpperCase()}
               </h2>
-              <p className="text-gray-500 text-sm mb-2">FOR</p>
-              <p className="text-xl sm:text-2xl font-bold text-racing-red tracking-wider">
+              <p className="text-gray-500 text-xs mb-1 font-semibold">FOR</p>
+              <p className="text-base sm:text-lg font-bold text-racing-red tracking-wide">
                 {submission.assignedDriver.toUpperCase()}
               </p>
             </div>
 
             {/* User Attribution */}
-            <div className="flex items-center justify-center gap-3 pt-6 border-t border-gray-800">
+            <div className="flex items-center justify-center gap-2 pt-4 border-t border-gray-800/50">
               {submission.userAvatar && (
                 <img
                   src={submission.userAvatar}
                   alt={submission.userName}
-                  className="w-10 h-10 rounded-full"
+                  className="w-8 h-8 rounded-full"
                 />
               )}
               <div className="text-left">
-                <p className="text-white font-bold">{submission.userName}</p>
+                <p className="text-white font-bold text-sm">{submission.userName}</p>
                 <p className="text-xs text-gray-500">via @Box_Boxd</p>
               </div>
             </div>

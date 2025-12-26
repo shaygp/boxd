@@ -77,10 +77,24 @@ export interface DriverAssignment {
   driverName: string;
   year: number;
   assignedAt: Date;
+  previousDrivers: string[]; // Track all previous drivers to avoid duplicates
+  lastSharedAt?: Date; // When user last shared on Twitter
+  canGetNewDriver: boolean; // Whether user is eligible for new driver today
 }
 
 /**
- * Assign a random driver to a user (one-time only per year)
+ * Check if it's 10AM CET or later today
+ */
+const isAfter10AMCET = (): boolean => {
+  const now = new Date();
+  // Convert to CET (UTC+1) or CEST (UTC+2 during daylight saving)
+  const cetOffset = 1; // CET is UTC+1
+  const cetTime = new Date(now.getTime() + (cetOffset * 60 * 60 * 1000) + (now.getTimezoneOffset() * 60 * 1000));
+  return cetTime.getHours() >= 10;
+};
+
+/**
+ * Assign a driver to a user (daily at 10AM CET if they shared on Twitter)
  */
 export const assignDriverToUser = async (): Promise<Driver> => {
   const user = auth.currentUser;
@@ -88,7 +102,84 @@ export const assignDriverToUser = async (): Promise<Driver> => {
 
   const year = 2026;
 
-  // Check if user already has an assignment for this year
+  // Check if user already has an assignment
+  const q = query(
+    assignmentsCollection,
+    where('userId', '==', user.uid),
+    where('year', '==', year)
+  );
+
+  const snapshot = await getDocs(q);
+  const assignmentDoc = snapshot.empty ? null : snapshot.docs[0];
+
+  if (assignmentDoc) {
+    const assignmentData = assignmentDoc.data();
+    const previousDrivers = assignmentData.previousDrivers || [];
+    const lastSharedAt = assignmentData.lastSharedAt?.toDate();
+    const assignedAt = assignmentData.assignedAt?.toDate();
+    const now = new Date();
+
+    // Check if it's been 24 hours since last assignment
+    const is24HoursPassed = assignedAt && (now.getTime() - assignedAt.getTime()) >= 24 * 60 * 60 * 1000;
+
+    // Check if user has shared on Twitter since their last assignment
+    const hasShared = lastSharedAt && assignedAt && lastSharedAt.getTime() > assignedAt.getTime();
+
+    // Only give new driver if BOTH conditions are met: 24h passed AND user shared
+    if (!is24HoursPassed || !hasShared) {
+      // Return current driver
+      const currentDriver = DRIVERS_2026.find(d => d.name === assignmentData.driverName);
+      if (currentDriver) return currentDriver;
+    }
+
+    // User is eligible for a new driver! (24h passed + shared on Twitter)
+    const availableDrivers = DRIVERS_2026.filter(d => !previousDrivers.includes(d.name) && d.name !== assignmentData.driverName);
+
+    if (availableDrivers.length === 0) {
+      // All drivers have been assigned, return current one
+      const currentDriver = DRIVERS_2026.find(d => d.name === assignmentData.driverName);
+      if (currentDriver) return currentDriver;
+      throw new Error('No more drivers available');
+    }
+
+    const newDriver = availableDrivers[Math.floor(Math.random() * availableDrivers.length)];
+
+    // Update assignment with new driver and reset share status
+    await updateDoc(assignmentDoc.ref, {
+      driverName: newDriver.name,
+      previousDrivers: [...previousDrivers, assignmentData.driverName],
+      assignedAt: Timestamp.now(),
+      lastSharedAt: null, // Reset so they need to share again
+      canGetNewDriver: false,
+    });
+
+    return newDriver;
+  }
+
+  // First time assignment - pick random driver
+  const randomDriver = DRIVERS_2026[Math.floor(Math.random() * DRIVERS_2026.length)];
+
+  await addDoc(assignmentsCollection, {
+    userId: user.uid,
+    driverName: randomDriver.name,
+    year,
+    assignedAt: Timestamp.now(),
+    previousDrivers: [],
+    canGetNewDriver: false,
+  });
+
+  return randomDriver;
+};
+
+/**
+ * Mark that user shared on Twitter (eligibility for tomorrow's driver)
+ */
+export const markSharedOnTwitter = async (): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+
+  const year = 2026;
+
   const q = query(
     assignmentsCollection,
     where('userId', '==', user.uid),
@@ -99,24 +190,11 @@ export const assignDriverToUser = async (): Promise<Driver> => {
   const snapshot = await getDocs(q);
 
   if (!snapshot.empty) {
-    // User already has an assignment
-    const assignmentData = snapshot.docs[0].data();
-    const driver = DRIVERS_2026.find(d => d.name === assignmentData.driverName);
-    if (driver) return driver;
+    await updateDoc(snapshot.docs[0].ref, {
+      lastSharedAt: Timestamp.now(),
+      canGetNewDriver: true,
+    });
   }
-
-  // Assign random driver
-  const randomDriver = DRIVERS_2026[Math.floor(Math.random() * DRIVERS_2026.length)];
-
-  // Save assignment
-  await addDoc(assignmentsCollection, {
-    userId: user.uid,
-    driverName: randomDriver.name,
-    year,
-    assignedAt: Timestamp.now(),
-  });
-
-  return randomDriver;
 };
 
 /**
@@ -146,18 +224,27 @@ export const getUserAssignedDriver = async (): Promise<Driver | null> => {
 };
 
 /**
- * Check if user has already submitted a gift
+ * Check if user has already submitted a gift for their current driver
  */
-export const hasUserSubmitted = async (): Promise<boolean> => {
+export const hasUserSubmitted = async (currentDriverName?: string): Promise<boolean> => {
   const user = auth.currentUser;
   if (!user) return false;
 
   const year = 2026;
 
+  // If no driver name provided, get the current assigned driver
+  let driverName = currentDriverName;
+  if (!driverName) {
+    const assignment = await getUserAssignedDriver();
+    if (!assignment) return false;
+    driverName = assignment.name;
+  }
+
   const q = query(
     submissionsCollection,
     where('userId', '==', user.uid),
     where('year', '==', year),
+    where('assignedDriver', '==', driverName),
     firestoreLimit(1)
   );
 
@@ -179,10 +266,10 @@ export const submitSecretSantaGift = async (
   const user = auth.currentUser;
   if (!user) throw new Error('User not authenticated');
 
-  // Check if already submitted
-  const alreadySubmitted = await hasUserSubmitted();
+  // Check if already submitted for this driver
+  const alreadySubmitted = await hasUserSubmitted(driver.name);
   if (alreadySubmitted) {
-    throw new Error('You have already submitted a gift for this year');
+    throw new Error('You have already submitted a gift for this driver');
   }
 
   // Get user profile
@@ -235,7 +322,7 @@ export const submitSecretSantaGift = async (
 };
 
 /**
- * Get user's submission
+ * Get user's submission for their current driver
  */
 export const getUserSubmission = async (): Promise<SecretSantaSubmission | null> => {
   const user = auth.currentUser;
@@ -243,10 +330,15 @@ export const getUserSubmission = async (): Promise<SecretSantaSubmission | null>
 
   const year = 2026;
 
+  // Get current assigned driver
+  const currentDriver = await getUserAssignedDriver();
+  if (!currentDriver) return null;
+
   const q = query(
     submissionsCollection,
     where('userId', '==', user.uid),
     where('year', '==', year),
+    where('assignedDriver', '==', currentDriver.name),
     firestoreLimit(1)
   );
 
@@ -259,6 +351,31 @@ export const getUserSubmission = async (): Promise<SecretSantaSubmission | null>
     ...snapshot.docs[0].data(),
     createdAt: snapshot.docs[0].data().createdAt?.toDate(),
   } as SecretSantaSubmission;
+};
+
+/**
+ * Get all user's submissions (all gifts they've given)
+ */
+export const getAllUserSubmissions = async (): Promise<SecretSantaSubmission[]> => {
+  const user = auth.currentUser;
+  if (!user) return [];
+
+  const year = 2026;
+
+  const q = query(
+    submissionsCollection,
+    where('userId', '==', user.uid),
+    where('year', '==', year),
+    orderBy('createdAt', 'desc')
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    createdAt: doc.data().createdAt?.toDate(),
+  })) as SecretSantaSubmission[];
 };
 
 /**

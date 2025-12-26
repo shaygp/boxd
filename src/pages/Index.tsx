@@ -275,6 +275,13 @@ const Index = () => {
           className="relative overflow-hidden border border-gray-800/60 hover:border-racing-red/50 rounded-xl cursor-pointer group transition-all duration-200"
           onClick={() => navigate('/secret-santa')}
         >
+          {/* Checkered F1 Track Pattern Background */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `repeating-linear-gradient(90deg, #fff 0px, #fff 40px, transparent 40px, transparent 80px)`,
+            }}></div>
+          </div>
+
           <div className="relative z-10 p-5 sm:p-6">
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1">

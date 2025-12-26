@@ -653,7 +653,14 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                 {/* Secret Santa Gift Display */}
                 {activity.type === 'secretSanta' && activity.giftImageUrl && activity.giftTitle && (
                   <Link to={getActivityLink(activity)} className="block">
-                    <div className="rounded-lg border border-gray-800/50 overflow-hidden hover:border-gray-700 transition-colors">
+                    <div className="rounded-lg border border-gray-800/50 overflow-hidden hover:border-gray-700 transition-colors relative">
+                      {/* Checkered F1 Track Pattern Background */}
+                      <div className="absolute inset-0 opacity-5">
+                        <div className="absolute inset-0" style={{
+                          backgroundImage: `repeating-linear-gradient(90deg, #fff 0px, #fff 40px, transparent 40px, transparent 80px)`,
+                        }}></div>
+                      </div>
+
                       <div className="aspect-video relative overflow-hidden">
                         <img
                           src={activity.giftImageUrl}
@@ -664,7 +671,7 @@ export const ActivityFeed = ({ feedType, limit = 50, initialShow = 10 }: Activit
                           }}
                         />
                       </div>
-                      <div className="p-3">
+                      <div className="p-3 relative">
                         <p className="text-sm font-bold text-white mb-1">
                           {activity.giftTitle}
                         </p>
