@@ -119,7 +119,7 @@ export const Header = () => {
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-gray-800/60 bg-black/95 backdrop-blur-xl">
-        <div className="container flex h-14 items-center justify-between px-4">
+        <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-6 flex-1">
             {/* Back button - show on specific pages */}
             {!['/home', '/login', '/'].includes(location.pathname) && (
