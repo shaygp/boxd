@@ -182,8 +182,8 @@ const RaceCardComponent = ({
     >
       {/* Poster */}
       <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-gray-900 to-black">
-        {/* Letterboxd-style hover overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
+        {/* Letterboxd-style hover overlay - only on desktop */}
+        <div className="hidden md:block absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none" />
 
         {posterUrl ? (
           <img
