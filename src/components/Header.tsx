@@ -141,7 +141,7 @@ export const Header = () => {
   return (
     <>
       <header className={`sticky top-0 z-50 w-full border-b border-gray-800/60 bg-black/95 backdrop-blur-xl transition-transform duration-300 ${scrolled ? '-translate-y-full' : 'translate-y-0'}`}>
-        <div className="container flex h-16 items-center justify-between px-4">
+        <div className="container flex h-24 items-center justify-between px-4 pt-4">
           <div className="flex items-center gap-6 flex-1">
             {/* Back button - show on specific pages */}
             {!['/home', '/login', '/'].includes(location.pathname) && (
@@ -199,10 +199,10 @@ export const Header = () => {
           <Button
             size="icon"
             variant="ghost"
-            className="lg:hidden text-gray-400 hover:text-white hover:bg-white/5 w-9 h-9"
+            className="lg:hidden text-gray-400 hover:text-white hover:bg-white/5 w-12 h-12 mt-3"
             onClick={() => navigate('/search')}
           >
-            <Search className="w-5 h-5" />
+            <Search className="w-6 h-6" />
           </Button>
 
           <LogRaceDialog
@@ -218,10 +218,10 @@ export const Header = () => {
 
           <DropdownMenu modal={false} open={notificationsOpen} onOpenChange={setNotificationsOpen}>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="relative w-9 h-9 hover:bg-white/5">
-                <Bell className="w-5 h-5 text-gray-400" />
+              <Button size="icon" variant="ghost" className="relative w-12 h-12 hover:bg-white/5 mt-3">
+                <Bell className="w-6 h-6 text-gray-400" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-racing-red text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                  <span className="absolute top-0 right-0 w-5 h-5 bg-racing-red text-white text-[11px] rounded-full flex items-center justify-center font-bold">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}

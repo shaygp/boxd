@@ -114,6 +114,13 @@ const RaceCardComponent = ({
   const handleMouseEnter = () => {
     // Prefetch RaceDetail component on hover
     import('@/pages/RaceDetail');
+
+    // Prefetch race data if we have season and round
+    if (season && round) {
+      import('@/services/raceCache').then(({ prefetchRaceData }) => {
+        prefetchRaceData(season, round);
+      });
+    }
   };
 
   const handleWatchlistToggle = async (e: React.MouseEvent | React.TouchEvent) => {
@@ -178,23 +185,23 @@ const RaceCardComponent = ({
     <Card
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
-      className="group relative overflow-hidden bg-gradient-to-br from-black via-black to-red-950/20 border border-gray-800/60 hover:border-racing-red/50 hover:scale-[1.02] transition-all duration-300 cursor-pointer touch-manipulation"
+      className="group relative overflow-hidden bg-black border border-gray-800/50 hover:border-gray-600 transition-all duration-200 cursor-pointer"
     >
       {/* Poster */}
-      <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-red-950/30">
-        {/* Letterboxd-style hover overlay - only on desktop */}
-        <div className="hidden md:block absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none" />
+      <div className="aspect-[2/3] relative overflow-hidden bg-black">
+        {/* Letterboxd-style subtle gradient overlay on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10" />
 
         {posterUrl ? (
           <img
             src={posterUrl}
             alt={`${season} ${gpName}`}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-2 sm:p-3 space-y-1.5 sm:space-y-2 bg-gradient-to-b from-transparent via-black/30 to-black/70">
+          <div className="w-full h-full flex flex-col items-center justify-center p-3 space-y-2 bg-gradient-to-br from-gray-900 to-black">
             {flagUrl && (
-              <div className="w-20 h-12 sm:w-24 sm:h-14 md:w-28 md:h-16 rounded overflow-hidden border-2 border-racing-red/40 shadow-xl shadow-black/50 flex items-center justify-center">
+              <div className="w-24 h-16 rounded overflow-hidden border border-gray-700 shadow-lg flex items-center justify-center">
                 <img
                   src={flagUrl}
                   alt={country || circuit}
@@ -205,51 +212,51 @@ const RaceCardComponent = ({
                 />
               </div>
             )}
-            <div className="text-center space-y-0.5">
-              <div className="text-base sm:text-lg md:text-xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{season}</div>
-              <div className="text-[10px] sm:text-xs font-black line-clamp-2 px-1 text-white uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">{gpName}</div>
+            <div className="text-center space-y-1">
+              <div className="text-lg font-bold text-white">{season}</div>
+              <div className="text-xs font-semibold line-clamp-2 px-2 text-gray-300">{gpName}</div>
               {sessionType && (
-                <div className="flex justify-center">
-                  <Badge variant="outline" className={`text-[8px] sm:text-[9px] px-1 py-0 h-4 font-bold uppercase tracking-wider ${
-                    sessionType === 'race' ? 'border-racing-red/60 text-racing-red bg-racing-red/10' :
-                    sessionType === 'sprint' ? 'border-orange-500/60 text-orange-500 bg-orange-500/10' :
-                    sessionType === 'qualifying' ? 'border-blue-500/60 text-blue-500 bg-blue-500/10' :
-                    sessionType === 'sprintQualifying' ? 'border-purple-500/60 text-purple-500 bg-purple-500/10' :
-                    'border-gray-500/60 text-gray-500 bg-gray-500/10'
+                <div className="flex justify-center mt-1">
+                  <Badge variant="outline" className={`text-[9px] px-1.5 py-0.5 font-semibold ${
+                    sessionType === 'race' ? 'border-racing-red/40 text-racing-red/90 bg-racing-red/5' :
+                    sessionType === 'sprint' ? 'border-orange-500/40 text-orange-400 bg-orange-500/5' :
+                    sessionType === 'qualifying' ? 'border-blue-500/40 text-blue-400 bg-blue-500/5' :
+                    sessionType === 'sprintQualifying' ? 'border-purple-500/40 text-purple-400 bg-purple-500/5' :
+                    'border-gray-500/40 text-gray-400 bg-gray-500/5'
                   }`}>
-                    {sessionType === 'race' ? '🏁 Race' :
-                     sessionType === 'sprint' ? '⚡ Sprint' :
-                     sessionType === 'qualifying' ? '🏎️ Qualifying' :
-                     sessionType === 'sprintQualifying' ? '⚡ Sprint Qual' :
+                    {sessionType === 'race' ? 'Race' :
+                     sessionType === 'sprint' ? 'Sprint' :
+                     sessionType === 'qualifying' ? 'Qualifying' :
+                     sessionType === 'sprintQualifying' ? 'Sprint Qual' :
                      sessionType}
                   </Badge>
                 </div>
               )}
               {displayWinner && (
-                <div className="text-xs sm:text-sm font-black text-racing-red line-clamp-1 px-1 flex items-center justify-center gap-1 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-                  <span>🏆 {displayWinner}</span>
+                <div className="text-xs font-medium text-gray-400 line-clamp-1 px-2 mt-1">
+                  <span>Winner: {displayWinner}</span>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Rating overlay */}
+        {/* Rating overlay - Subtle */}
         {rating && (
-          <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded flex items-center gap-1 z-20">
-            <Star className="w-3 h-3 fill-racing-red text-racing-red" />
-            <span className="text-xs font-bold text-white">{rating.toFixed(1)}</span>
+          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-1 z-20">
+            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-xs font-medium text-white">{rating.toFixed(1)}</span>
           </div>
         )}
 
-        {/* Watched indicator */}
+        {/* Watched indicator - Minimal */}
         {watched && (
-          <div className="absolute top-2 right-2 bg-racing-red/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold z-20">
-            ✓ Logged
+          <div className="absolute top-2 right-2 w-6 h-6 bg-racing-red/90 backdrop-blur-sm rounded-full flex items-center justify-center z-20">
+            <Eye className="w-3.5 h-3.5 text-white" />
           </div>
         )}
 
-        {/* Action buttons - Show on hover (Letterboxd style) */}
+        {/* Action buttons - Letterboxd style on hover */}
         {showWatchlistButton && !watched && (
           <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
             <LogRaceDialog
@@ -261,29 +268,29 @@ const RaceCardComponent = ({
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="h-9 w-9 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm border border-gray-700 text-white"
+                  className="h-8 w-8 bg-black/80 hover:bg-white hover:text-black backdrop-blur-sm border-none text-white rounded-full"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                 </Button>
               }
             />
             <Button
               size="icon"
               variant="secondary"
-              className="h-9 w-9 bg-black/90 hover:bg-racing-red hover:text-white backdrop-blur-sm border border-gray-700 text-white"
+              className="h-8 w-8 bg-black/80 hover:bg-white hover:text-black backdrop-blur-sm border-none text-white rounded-full"
               onClick={handleWatchlistToggle}
             >
-              <Eye className={`w-4 h-4 ${isInWatchlist ? 'fill-white' : ''}`} />
+              <Eye className={`w-3.5 h-3.5 ${isInWatchlist ? 'fill-white' : ''}`} />
             </Button>
           </div>
         )}
       </div>
 
-      {/* Info */}
-      <div className="p-3 bg-gradient-to-br from-black via-black to-red-950/10 border-t border-gray-800/60">
-        <h3 className="font-bold text-sm line-clamp-1 text-white mb-1">{gpName}</h3>
-        <p className="text-xs text-gray-500">{season}</p>
+      {/* Info - Minimal Letterboxd style */}
+      <div className="p-2.5 bg-black border-t border-gray-800/50">
+        <h3 className="font-medium text-xs line-clamp-1 text-gray-200 mb-0.5">{gpName}</h3>
+        <p className="text-xs text-gray-600">{season}</p>
       </div>
     </Card>
   );

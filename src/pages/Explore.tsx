@@ -175,179 +175,178 @@ const Explore = () => {
   }, [selectedSeason]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-[#1a1412] via-[#0f0d0c] to-[#050403] pb-20 lg:pb-0">
       <Header />
 
-      <main className="container px-4 sm:px-6 py-6 sm:py-8">
-        <div className="mb-6 sm:mb-8 pb-4 border-b-2 border-red-900/30">
-          <div className="inline-block px-4 py-1 bg-racing-red/20 border border-racing-red rounded-full mb-2">
-            <span className="text-racing-red font-black text-xs tracking-widest">TRACK BROWSER</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">EXPLORE RACES</h1>
-          <p className="text-xs sm:text-sm text-gray-400 mt-1 font-bold uppercase tracking-wider">
-            Browse seasons · Trending · Reviews · Lists
-          </p>
-        </div>
-
+      <main className="container px-4 sm:px-6 py-6 sm:py-8 max-w-7xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className="w-full overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="w-full sm:w-auto inline-flex min-w-max border-2 border-red-900/30 bg-black/50">
-              <TabsTrigger value="seasons" className="gap-1 sm:gap-2 text-[10px] sm:text-xs whitespace-nowrap px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <History className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden xs:inline">Browse </span>Seasons
+          <div className="border-b-2 border-gray-800/60">
+            <TabsList className="w-full justify-start bg-transparent h-auto p-0 space-x-0">
+              <TabsTrigger value="seasons" className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-5 py-4 font-black text-sm uppercase tracking-wider transition-all">
+                Seasons
               </TabsTrigger>
-              <TabsTrigger value="lists" className="gap-1 sm:gap-2 text-[10px] sm:text-xs whitespace-nowrap px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <List className="w-3 h-3 sm:w-4 sm:h-4" />
+              <TabsTrigger value="lists" className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-5 py-4 font-black text-sm uppercase tracking-wider transition-all">
                 Lists
               </TabsTrigger>
-              <TabsTrigger value="trending" className="gap-1 sm:gap-2 text-[10px] sm:text-xs whitespace-nowrap px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden xs:inline">Trending</span>
-                <span className="xs:hidden">Trend</span>
+              <TabsTrigger value="trending" className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-5 py-4 font-black text-sm uppercase tracking-wider transition-all">
+                Trending
               </TabsTrigger>
-              <TabsTrigger value="reviews" className="gap-1 sm:gap-2 text-[10px] sm:text-xs whitespace-nowrap px-2 sm:px-3 font-black uppercase tracking-wider data-[state=active]:bg-racing-red data-[state=active]:text-white">
-                <Star className="w-3 h-3 sm:w-4 sm:h-4" />
+              <TabsTrigger value="reviews" className="rounded-none border-b-2 border-transparent data-[state=active]:border-racing-red data-[state=active]:bg-transparent bg-transparent text-gray-400 data-[state=active]:text-white px-5 py-4 font-black text-sm uppercase tracking-wider transition-all">
                 Reviews
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="seasons" className="space-y-6">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-6 justify-start">
-                {/* Year Dropdown */}
-                <Select value={selectedSeason.toString()} onValueChange={(value) => {
-                  const year = parseInt(value);
-                  setSelectedSeason(year);
-                  // Update URL params to persist year selection
-                  const newParams = new URLSearchParams(searchParams);
-                  newParams.set('season', value);
-                  setSearchParams(newParams);
-                }}>
-                  <SelectTrigger className="w-[100px] h-8 text-xs font-bold uppercase tracking-wider bg-black/60 border-2 border-racing-red text-white hover:bg-racing-red/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-black/95 border-2 border-gray-700">
-                    {[2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010].map((year) => (
-                      <SelectItem key={year} value={year.toString()} className="text-xs font-bold uppercase text-white cursor-pointer">
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <TabsContent value="seasons" className="space-y-0">
+            {/* Season Selector Bar - Full width red accent */}
+            <div className="bg-gradient-to-r from-black via-racing-red/5 to-black border-y-2 border-racing-red/30 py-4 px-6 mb-6">
+              <div className="flex flex-wrap items-center gap-3 justify-between max-w-7xl mx-auto">
+                <div className="flex items-center gap-3">
+                  {/* Year Dropdown */}
+                  <Select value={selectedSeason.toString()} onValueChange={(value) => {
+                    const year = parseInt(value);
+                    setSelectedSeason(year);
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.set('season', value);
+                    setSearchParams(newParams);
+                  }}>
+                    <SelectTrigger className="w-[120px] h-10 text-sm font-black uppercase tracking-wider bg-racing-red border-2 border-red-400 text-white hover:bg-red-600 shadow-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black/95 border-2 border-racing-red">
+                      {[2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010].map((year) => (
+                        <SelectItem key={year} value={year.toString()} className="text-sm font-black uppercase text-white cursor-pointer hover:bg-racing-red/20">
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                {/* Rating Display + Edit/Rate Button */}
-                {userSeasonRating ? (
-                  <button
-                    onClick={() => setRateSeasonDialogOpen(true)}
-                    className="flex items-center gap-1.5 bg-racing-red/10 hover:bg-racing-red/20 border-2 border-racing-red/30 hover:border-racing-red px-2 py-1 rounded transition-colors cursor-pointer"
-                  >
-                    <span className="text-xs font-black text-yellow-400">{userSeasonRating}</span>
-                    <span className="text-[10px] text-yellow-400 font-bold">/ 5</span>
-                    <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                    <span className="text-[10px] text-gray-500 font-bold uppercase ml-1">Edit</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setRateSeasonDialogOpen(true)}
-                    className="group relative bg-gradient-to-r from-racing-red/10 to-racing-red/5 hover:from-racing-red hover:to-red-600 text-white px-2 py-1 text-[10px] rounded font-black uppercase tracking-wider border-2 border-racing-red hover:border-red-400 transition-all duration-300 whitespace-nowrap shadow-lg hover:shadow-red-500/50 backdrop-blur-sm"
-                  >
-                    <span className="flex items-center gap-1">
-                      <Star className="w-3 h-3 group-hover:fill-yellow-400 group-hover:text-yellow-400 transition-all" />
-                      Rate Season
-                    </span>
-                  </button>
+                  <div className="h-6 w-px bg-gray-700"></div>
+
+                  {/* Rating Display + Edit/Rate Button */}
+                  {userSeasonRating ? (
+                    <button
+                      onClick={() => setRateSeasonDialogOpen(true)}
+                      className="flex items-center gap-2 bg-black/60 hover:bg-black border-2 border-yellow-600/50 hover:border-yellow-500 px-3 py-2 rounded-lg transition-all"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-black text-yellow-400">{userSeasonRating}</span>
+                        <span className="text-xs text-yellow-400/70 font-bold">/5</span>
+                      </div>
+                      <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                      <span className="text-xs text-gray-400 font-bold uppercase">Edit</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setRateSeasonDialogOpen(true)}
+                      className="group bg-black/60 hover:bg-racing-red text-white px-4 py-2 text-xs rounded-lg font-black uppercase tracking-wider border-2 border-racing-red/50 hover:border-red-400 transition-all shadow-lg hover:shadow-red-500/50"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Star className="w-4 h-4 group-hover:fill-yellow-400 group-hover:text-yellow-400 transition-all" />
+                        Rate Season
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Season Stats */}
+                {!seasonLoading && seasonRaces.length > 0 && (
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <Trophy className="w-4 h-4 text-racing-red" />
+                    <span className="font-bold">{seasonRaces.length} Races</span>
+                  </div>
                 )}
               </div>
+            </div>
 
-              {seasonLoading ? (
-                <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider">Loading {selectedSeason}...</div>
-              ) : seasonRaces.length === 0 ? (
+            {/* Races Grid */}
+            {seasonLoading ? (
+              <div className="text-center py-16">
+                <div className="inline-flex items-center gap-3 text-gray-400">
+                  <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse" />
+                  <span className="text-sm font-bold uppercase tracking-wider">Loading {selectedSeason}...</span>
+                </div>
+              </div>
+            ) : seasonRaces.length === 0 ? (
+              <div className="py-12">
                 <EmptyState
                   icon={History}
                   title={`No races found for ${selectedSeason}`}
                   description="Try selecting a different season or check back later"
                 />
-              ) : (
-                <>
-                  <p className="text-xs text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)] mb-2">Showing {seasonRaces.length} races for {selectedSeason}</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-                    {seasonRaces.map((race) => (
-                        <RaceCard
-                          key={race.meeting_key}
-                          season={race.year}
-                          round={race.round}
-                          gpName={race.meeting_name}
-                          circuit={race.circuit_short_name}
-                          date={race.date_start}
-                          country={race.country_code}
-                        />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                {seasonRaces.map((race) => (
+                  <RaceCard
+                    key={race.meeting_key}
+                    season={race.year}
+                    round={race.round}
+                    gpName={race.meeting_name}
+                    circuit={race.circuit_short_name}
+                    date={race.date_start}
+                    country={race.country_code}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="trending" className="space-y-6">
-            <div>
-              <div className="inline-block px-4 py-1 bg-racing-red/20 border border-racing-red rounded-full mb-2">
-                <span className="text-racing-red font-black text-xs tracking-widest">HOT LAPS</span>
+          <TabsContent value="trending" className="space-y-0">
+            {loading ? (
+              <div className="text-center py-16">
+                <div className="inline-flex items-center gap-3 text-gray-400">
+                  <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse" />
+                  <span className="text-sm font-bold uppercase tracking-wider">Loading...</span>
+                </div>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-2">TRENDING RACES</h2>
-              <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider mb-6">Most logged races in the paddock</p>
-              {loading ? (
-                <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
-              ) : trendingRaces.length === 0 ? (
+            ) : trendingRaces.length === 0 ? (
+              <div className="py-12">
                 <EmptyState
                   icon={TrendingUp}
                   title="No trending races yet"
                   description="Start logging races to see what's trending in the community"
                 />
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {trendingRaces.map((race) => (
-                    <RaceCard
-                      key={race.id}
-                      id={race.id}
-                      season={race.raceYear}
-                      round={race.round || 1}
-                      gpName={race.raceName}
-                      circuit={race.raceLocation}
-                      date={race.dateWatched?.toDate?.()?.toISOString() || ''}
-                      rating={race.rating}
-                      watched={true}
-                      country={race.countryCode}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                {trendingRaces.map((race) => (
+                  <RaceCard
+                    key={race.id}
+                    id={race.id}
+                    season={race.raceYear}
+                    round={race.round || 1}
+                    gpName={race.raceName}
+                    circuit={race.raceLocation}
+                    date={race.dateWatched?.toDate?.()?.toISOString() || ''}
+                    rating={race.rating}
+                    watched={true}
+                    country={race.countryCode}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="reviews" className="space-y-4">
-            <div>
-              <div className="inline-block px-4 py-1 bg-racing-red/20 border border-racing-red rounded-full mb-2">
-                <span className="text-racing-red font-black text-xs tracking-widest">RACE ANALYSIS</span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-2">TOP REVIEWS</h2>
-              <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider mb-6">Most liked race reviews</p>
-
-              {loading ? (
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center gap-2 text-gray-400">
-                    <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse" />
-                    <span className="text-sm">Loading reviews...</span>
-                  </div>
+          <TabsContent value="reviews" className="space-y-0">
+            {loading ? (
+              <div className="text-center py-16">
+                <div className="inline-flex items-center gap-3 text-gray-400">
+                  <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse" />
+                  <span className="text-sm font-bold uppercase tracking-wider">Loading reviews...</span>
                 </div>
-              ) : topReviews.length === 0 ? (
+              </div>
+            ) : topReviews.length === 0 ? (
+              <div className="py-12">
                 <EmptyState
                   icon={Star}
                   title="No reviews yet"
                   description="Be the first to write a review and share your thoughts on F1 races"
                 />
-              ) : (
-                <div className="space-y-3 sm:space-y-4 md:space-y-5 max-w-3xl mx-auto">
+              </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4 max-w-4xl mx-auto">
                   {topReviews.map((review) => (
                     <Card key={review.id} className="group bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30 cursor-pointer"
                       onClick={() => navigate(`/race/${review.id}`)}>
@@ -454,78 +453,81 @@ const Explore = () => {
                       </div>
                     </Card>
                   ))}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="lists" className="space-y-4">
-            <div>
-              <div className="inline-block px-4 py-1 bg-racing-red/20 border border-racing-red rounded-full mb-2">
-                <span className="text-racing-red font-black text-xs tracking-widest">COLLECTIONS</span>
-              </div>
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">LISTS</h2>
+          <TabsContent value="lists" className="space-y-0">
+            {/* Filter Bar - Full width */}
+            <div className="bg-gradient-to-r from-black via-racing-red/5 to-black border-y-2 border-racing-red/30 py-4 px-6 mb-6">
+              <div className="flex flex-wrap items-center gap-3 justify-between max-w-7xl mx-auto">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-400 font-black uppercase tracking-wider">Sort:</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setListFilter('recent')}
+                      className={`px-3 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${
+                        listFilter === 'recent'
+                          ? 'bg-racing-red text-white border-2 border-red-400 shadow-lg'
+                          : 'bg-black/60 border-2 border-gray-700 text-gray-400 hover:border-racing-red/50'
+                      }`}
+                    >
+                      Recent
+                    </button>
+                    <button
+                      onClick={() => setListFilter('liked')}
+                      className={`px-3 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${
+                        listFilter === 'liked'
+                          ? 'bg-racing-red text-white border-2 border-red-400 shadow-lg'
+                          : 'bg-black/60 border-2 border-gray-700 text-gray-400 hover:border-racing-red/50'
+                      }`}
+                    >
+                      Top Liked
+                    </button>
+                    <button
+                      onClick={() => setListFilter('items')}
+                      className={`px-3 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all ${
+                        listFilter === 'items'
+                          ? 'bg-racing-red text-white border-2 border-red-400 shadow-lg'
+                          : 'bg-black/60 border-2 border-gray-700 text-gray-400 hover:border-racing-red/50'
+                      }`}
+                    >
+                      Most Items
+                    </button>
+                  </div>
+                </div>
+
                 <CreateListDialog
                   trigger={
-                    <Button size="sm" className="bg-racing-red hover:bg-red-600 text-white font-black uppercase tracking-wider border-2 border-red-400 shadow-lg shadow-red-500/30 text-[10px] px-2 py-1 h-auto">
-                      <Plus className="w-3 h-3 mr-0.5" />
+                    <Button className="bg-racing-red hover:bg-red-600 text-white font-black uppercase tracking-wider border-2 border-red-400 shadow-lg shadow-red-500/30 text-xs px-4 py-2 h-auto">
+                      <Plus className="w-4 h-4 mr-1.5" />
                       Create List
                     </Button>
                   }
                   onSuccess={(listId) => {
-                    // Navigate to the newly created list
                     navigate(`/list/${listId}`);
                   }}
                 />
               </div>
+            </div>
 
-              {/* Filter Tabs */}
-              <div className="flex items-center gap-2 mb-6">
-                <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Sort by:</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setListFilter('recent')}
-                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all ${
-                      listFilter === 'recent'
-                        ? 'bg-racing-red text-white border-2 border-red-400'
-                        : 'bg-black/60 border-2 border-red-900/50 text-gray-400 hover:border-racing-red/50'
-                    }`}
-                  >
-                    Recent
-                  </button>
-                  <button
-                    onClick={() => setListFilter('liked')}
-                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all ${
-                      listFilter === 'liked'
-                        ? 'bg-racing-red text-white border-2 border-red-400'
-                        : 'bg-black/60 border-2 border-red-900/50 text-gray-400 hover:border-racing-red/50'
-                    }`}
-                  >
-                    Top Liked
-                  </button>
-                  <button
-                    onClick={() => setListFilter('items')}
-                    className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-all ${
-                      listFilter === 'items'
-                        ? 'bg-racing-red text-white border-2 border-red-400'
-                        : 'bg-black/60 border-2 border-red-900/50 text-gray-400 hover:border-racing-red/50'
-                    }`}
-                  >
-                    Most Items
-                  </button>
+            {/* Lists Grid */}
+            {loading ? (
+              <div className="text-center py-16">
+                <div className="inline-flex items-center gap-3 text-gray-400">
+                  <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse" />
+                  <span className="text-sm font-bold uppercase tracking-wider">Loading...</span>
                 </div>
               </div>
-
-              {loading ? (
-                <div className="text-center py-12 text-gray-200 font-bold uppercase tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">Loading...</div>
-              ) : popularLists.length === 0 ? (
+            ) : popularLists.length === 0 ? (
+              <div className="py-12">
                 <EmptyState
                   icon={List}
                   title="No lists yet"
                   description="Create the first list and share your favorite race collections"
                 />
-              ) : (() => {
+              </div>
+            ) : (() => {
                 // Sort lists based on selected filter
                 const sortedLists = [...popularLists].sort((a, b) => {
                   if (listFilter === 'recent') {
@@ -549,14 +551,14 @@ const Explore = () => {
                 });
 
                 return (
-                <>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    {sortedLists.slice(0, listsToShow).map((list) => (
-                      <Card
-                        key={list.id}
-                        onClick={() => navigate(`/list/${list.id}`)}
-                        className="group bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30 cursor-pointer"
-                      >
+                  <>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                      {sortedLists.slice(0, listsToShow).map((list) => (
+                        <Card
+                          key={list.id}
+                          onClick={() => navigate(`/list/${list.id}`)}
+                          className="group bg-black/90 border-2 border-red-900/40 hover:border-racing-red transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-lg hover:shadow-xl hover:shadow-red-500/30 cursor-pointer"
+                        >
                       {/* Racing accent line */}
                       <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-racing-red to-transparent shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
 
@@ -643,27 +645,26 @@ const Explore = () => {
                           </div>
                         </div>
                       </div>
-                    </Card>
-                  ))}
-                </div>
+                        </Card>
+                      ))}
+                    </div>
 
-                {/* View More Button */}
-                {sortedLists.length > listsToShow && (
-                  <div className="flex justify-center mt-6">
-                    <Button
-                      onClick={() => setListsToShow(prev => prev + 10)}
-                      variant="outline"
-                      className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-bold uppercase tracking-wider"
-                    >
-                      <ArrowRight className="w-4 h-4 mr-2" />
-                      View More Lists ({sortedLists.length - listsToShow} remaining)
-                    </Button>
-                  </div>
-                )}
-              </>
+                    {/* View More Button */}
+                    {sortedLists.length > listsToShow && (
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          onClick={() => setListsToShow(prev => prev + 10)}
+                          variant="outline"
+                          className="border-2 border-racing-red bg-black/60 text-white hover:bg-racing-red/20 font-black uppercase tracking-wider"
+                        >
+                          <ArrowRight className="w-4 h-4 mr-2" />
+                          View More Lists ({sortedLists.length - listsToShow} remaining)
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 );
               })()}
-            </div>
           </TabsContent>
         </Tabs>
       </main>

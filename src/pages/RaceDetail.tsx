@@ -19,6 +19,7 @@ import { getCountryFlag } from "@/services/f1Api";
 import { getRaceByYearAndRound as getFirestoreRaceByYearAndRound } from "@/services/f1Calendar";
 import { getRaceLogById, getPublicRaceLogs, getRaceLogsByRace, deleteRaceLog, getWeGotYouYukiCount } from "@/services/raceLogs";
 import { auth } from "@/lib/firebase";
+import { getCachedRaceData, setCachedRaceData } from "@/services/raceCache";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -112,8 +113,21 @@ const RaceDetail = () => {
           }
         }
       } else if (year && round) {
-        // Fetch race info from Firestore first and show immediately
-        const firestoreRace = await getFirestoreRaceByYearAndRound(parseInt(year), parseInt(round));
+        const seasonNum = parseInt(year);
+        const roundNum = parseInt(round);
+
+        // Check cache first for instant loading
+        const cached = getCachedRaceData(seasonNum, roundNum);
+        if (cached) {
+          console.log('[RaceDetail] Using cached data for instant load!');
+          setRaceInfo(cached.raceInfo);
+          setAllRaceLogs(cached.raceLogs);
+          setLoading(false); // Show content immediately from cache!
+          return;
+        }
+
+        // Not in cache, fetch race info from Firestore
+        const firestoreRace = await getFirestoreRaceByYearAndRound(seasonNum, roundNum);
 
         if (firestoreRace) {
           const raceData = {
@@ -144,10 +158,17 @@ const RaceDetail = () => {
           }
 
           const results = await Promise.all(parallelTasks);
-          setAllRaceLogs(results[0] || []);
+          const raceLogs = results[0] || [];
+          setAllRaceLogs(raceLogs);
           if (results[1] !== undefined) {
             setYukiTributeCount(results[1]);
           }
+
+          // Cache the data for future use
+          setCachedRaceData(seasonNum, roundNum, {
+            raceInfo: raceData,
+            raceLogs: raceLogs
+          });
         } else {
           setLoading(false);
         }
@@ -173,7 +194,7 @@ const RaceDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] racing-grid pb-20 lg:pb-0">
+      <div className="min-h-screen bg-gradient-to-br from-[#1a1412] via-[#0f0d0c] to-[#050403] pb-20 lg:pb-0">
         <Header />
         <main className="container px-4 sm:px-6 py-6 sm:py-8">
           {/* Loading Skeleton */}
@@ -253,10 +274,10 @@ const RaceDetail = () => {
 
   if (!race) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] racing-grid">
+      <div className="min-h-screen bg-gradient-to-br from-[#1a1412] via-[#0f0d0c] to-[#050403]">
         <Header />
         <div className="container py-8 text-center">
-          <p className="text-gray-400 font-bold uppercase tracking-wider">Race not found. Please try again.</p>
+          <p className="text-gray-400">Race not found. Please try again.</p>
         </div>
       </div>
     );
@@ -499,7 +520,7 @@ const RaceDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-black to-red-950/20 racing-grid pb-20 lg:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-[#1a1412] via-[#0f0d0c] to-[#050403] pb-20 lg:pb-0">
       <Header />
 
       <main className="container px-4 sm:px-6 py-4 sm:py-6 max-w-full">
